@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}Enter Scores - {{ subject.name }}{% endblock %}
+
+{% block page_title %}
+<h1 class="h4"><i class="fas fa-edit"></i> Scores: {{ subject.name }}</h1>
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="separator">/</span>
+<a href="{{ url_for('teacher.my_subjects') }}">My Subjects</a>
+<span class="separator">/</span>
+<span>{{ subject.name }} - {{ classroom.name }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="scores-container">
+    <div class="scores-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="mb-1"><i class="fas fa-edit"></i> Enter Scores</h3>
+                <p class="mb-0 opacity-90">Enter assessment scores for students</p>
+            </div>
+            <div class="text-white">
+                <i class="fas fa-users"></i> {{ students|length }} students
+            </div>
+        </div>
+    </div>
+    
+    <div class="scores-body">
+        <!-- Subject Information -->
+        <div class="subject-info-card">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                    <h5 class="mb-1">{{ subject.name }} ({{ subject.code }})</h5>
+                    <p class="mb-0 text-muted small">
+                        Class: {{ classroom.name }} | 
+                        Term: {{ current_term.name }} (Term {{ current_term.term_number }})
+                    </p>
+                </div>
+                <div class="badge bg-primary">
+                    <i class="fas fa-chart-line"></i> Pass Mark: {{ subject.pass_mark or 40 }}%
+                </div>
+            </div>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Subject</span>
+                    <span class="info-value">{{ subject.name }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Class</span>
+                    <span class="info-value">{{ classroom.name }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Term</span>
+                    <span class="info-value">{{ current_term.name }} (Term {{ current_term.term_number }})</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Pass Mark</span>
+                    <span class="info-value">{{ subject.pass_mark or 40 }}%</span>
+                </div>
+            </div>
+            
+            {% if assessments %}
+            <div class="mt-3">
+                <span class="info-label">Assessment Structure</span>
+                <div class="d-flex flex-wrap gap-2 mt-1">
+                    {% for assessment in assessments %}
+                    <span class="assessment-badge">
+                        {{ assessment.assessment_type }}
+                        <span class="weight-badge">{{ assessment.weight }}%</span>
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Stats Overview -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="statCompleted">0</div>
+                <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statPassing">0</div>
+                <div class="stat-label">Passing</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statAverage">0%</div>
+                <div class="stat-label">Average Score</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statFilled">0%</div>
+                <div class="stat-label">Filled</div>
+            </div>
+        </div>
+        
+        <!-- Weight Summary -->
+        {% if assessments %}
+        <div class="weight-summary mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="info-label">Total Assessment Weight</span>
+                <span class="info-value" id="totalWeight">0%</span>
+            </div>
+            <div class="progress" style="height: 8px;">
+                <div id="weightProgress" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Scores Table -->
+        <div class="table-container">
+            <table class="scores-table">
+                <thead>
+                    <tr>
+                        <th class="student-cell">Student</th>
+                        {% if assessments %}
+                            {% for assessment in assessments %}
+                            <th style="min-width: 90px;">
+                                <div class="small">{{ assessment.assessment_type }}</div>
+                                <div class="text-muted" style="font-size: 0.7rem;">
+                                    Max: {{ assessment.max_score }}<br>
+                                    <small>Weight: {{ assessment.weight }}%</small>
+                                </div>
+                            </th>
+                            {% endfor %}
+                        {% else %}
+                            <th colspan="3" class="text-center text-muted py-3">
+                                <div class="d-flex flex-column align-items-center">
+                                    <i class="fas fa-exclamation-circle mb-2" style="font-size: 1.5rem;"></i>
+                                    No assessments configured for this term
+                                </div>
+                            </th>
+                        {% endif %}
+                        <th style="min-width: 70px;">Total</th>
+                        <th style="min-width: 60px;">%</th>
+                        <th style="min-width: 40px;">Grade</th>
+                        <th style="min-width: 70px;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr>
+                        <td class="student-cell">
+                            <div class="student-name">{{ student.first_name }} {{ student.last_name }}</div>
+                            <div class="student-id">{{ student.admission_number }}</div>
+                        </td>
+                        
+                        {% if assessments %}
+                            {% for assessment in assessments %}
+                            <td>
+                                {% set student_score = student_scores[student.id][assessment.id] %}
+                                <input type="number" 
+                                    class="score-input" 
+                                    id="score_{{ student.id }}_{{ assessment.id }}"
+                                    data-student-id="{{ student.id }}"
+                                    data-assessment-id="{{ assessment.id }}"
+                                    data-max-score="{{ assessment.max_score }}"
+                                    data-weight="{{ assessment.weight }}"
+                                    value="{{ student_score.score if student_score.score is not none else '' }}"
+                                    min="0" 
+                                    max="{{ assessment.max_score }}"
+                                    step="0.5"
+                                    placeholder="0.0">
+                                
+                                {% if student_score.entered_at %}
+                                <small class="text-muted d-block mt-1">
+                                    {% if student_score.is_approved %}
+                                    <span class="badge bg-success">Approved</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Pending</span>
+                                    {% endif %}
+                                    
+                                    <br>
+                                    <small>{{ student_score.entered_at.strftime('%d/%m/%Y %H:%M') if student_score.entered_at else '' }}</small>
+                                </small>
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        {% else %}
+                            <td colspan="{{ assessments|length if assessments else 3 }}" class="text-center text-muted py-3">
+                                No assessments available
+                            </td>
+                        {% endif %}
+                        
+                        <td class="total-cell" id="total_{{ student.id }}">
+                            {% if student.id in student_averages %}
+                            {{ "%.1f"|format(student_averages[student.id]['total']) }}
+                            {% else %}
+                            0.0
+                            {% endif %}
+                        </td>
+                        <td class="percentage-cell" id="percentage_{{ student.id }}">
+                            {% if student.id in student_averages %}
+                            {{ "%.0f"|format((student_averages[student.id]['average'] / assessments[0].max_score * 100) if assessments else 0) }}%
+                            {% else %}
+                            0%
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span id="grade_{{ student.id }}" class="grade-badge grade-F">-</span>
+                        </td>
+                        <td>
+                            {% if student.id in student_averages and student_averages[student.id]['count'] > 0 %}
+                            <span id="status_{{ student.id }}" class="status-badge status-submitted">Submitted</span>
+                            {% else %}
+                            <span id="status_{{ student.id }}" class="status-badge status-empty">Empty</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Action Bar -->
+        <div class="action-bar">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex gap-2">
+                    <button type="button" class="action-btn action-btn-secondary" id="clearAllBtn">
+                        <i class="fas fa-eraser"></i> Clear All
+                    </button>
+                    <button type="button" class="action-btn action-btn-secondary" id="fillRandomBtn">
+                        <i class="fas fa-random"></i> Fill Random
+                    </button>
+                </div>
+                <div class="d-flex gap-2">
+                    <!-- REMOVED: Save Draft Button -->
+                    <button type="button" class="action-btn action-btn-success" id="submitScoresBtn">
+                        <i class="fas fa-paper-plane"></i> Submit Scores
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <div class="quick-actions-title">
+                <i class="fas fa-bolt"></i> Quick Actions
+            </div>
+            <div class="d-flex flex-wrap gap-2 justify-content-center">
+                <button type="button" class="action-btn action-btn-secondary" id="downloadTemplateBtn">
+                    <i class="fas fa-download"></i> Download Template
+                </button>
+                <button type="button" class="action-btn action-btn-secondary" id="uploadScoresBtn">
+                    <i class="fas fa-upload"></i> Upload Scores
+                </button>
+                <a href="{{ url_for('teacher.enter_comments') }}?subject_id={{ subject.id }}&class_id={{ classroom.id }}" 
+                   class="action-btn action-btn-secondary">
+                    <i class="fas fa-comment"></i> Enter Comments
+                </a>
+                <a href="{{ url_for('teacher.my_subjects') }}" 
+                   class="action-btn action-btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Subjects
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal-overlay" id="uploadModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4 class="modal-title"><i class="fas fa-upload"></i> Upload Scores</h4>
+            <button type="button" class="btn-close" id="closeUploadModalBtn"></button>
+        </div>
+        <div class="modal-body">
+            <p class="text-muted mb-3">Upload a CSV file with student scores. Download the template first for the correct format.</p>
+            <div class="mb-3">
+                <input type="file" id="scoreFile" class="form-control" accept=".csv">
+                <div class="form-text small">Only CSV files are supported</div>
+            </div>
+            <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="action-btn action-btn-secondary" id="cancelUploadBtn">
+                    Cancel
+                </button>
+                <button type="button" class="action-btn action-btn-primary" id="processUploadBtn">
+                    <i class="fas fa-upload"></i> Upload
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<style>
+    .scores-container {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .scores-header {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .scores-body {
+        padding: 1.5rem;
+    }
+    
+    .subject-info-card {
+        background: #f0f9ff;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #bae6fd;
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 0.75rem;
+    }
+    
+    .info-item {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .info-label {
+        font-size: 0.8rem;
+        color: #64748b;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+    
+    .info-value {
+        font-size: 0.95rem;
+        color: #1e293b;
+        font-weight: 600;
+    }
+    
+    .assessment-badge {
+        font-size: 0.75rem;
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        font-weight: 500;
+    }
+    
+    .weight-badge {
+        font-size: 0.65rem;
+        background: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
+        padding: 0.1rem 0.4rem;
+        border-radius: 4px;
+        margin-left: 0.25rem;
+        font-weight: 600;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+        transition: all 0.2s ease;
+    }
+    
+    .stat-card:hover {
+        border-color: #10b981;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+    }
+    
+    .stat-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #10b981;
+        margin-bottom: 0.25rem;
+        line-height: 1;
+    }
+    
+    .stat-label {
+        font-size: 0.75rem;
+        color: #64748b;
+        font-weight: 500;
+    }
+    
+    /* Table Styles */
+    .table-container {
+        position: relative;
+        max-height: 500px;
+        overflow: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    
+    .scores-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+    
+    .scores-table th {
+        background: #f8fafc;
+        padding: 0.75rem;
+        text-align: center;
+        font-weight: 600;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+        white-space: nowrap;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .scores-table td {
+        padding: 0.75rem;
+        border: 1px solid #e2e8f0;
+        text-align: center;
+        vertical-align: middle;
+    }
+    
+    .student-cell {
+        text-align: left;
+        min-width: 180px;
+        position: sticky;
+        left: 0;
+        background: white;
+        z-index: 5;
+        font-size: 0.85rem;
+    }
+    
+    .student-name {
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.1rem;
+        line-height: 1.2;
+    }
+    
+    .student-id {
+        font-size: 0.75rem;
+        color: #64748b;
+    }
+    
+    .score-input {
+        width: 70px;
+        padding: 0.375rem;
+        text-align: center;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .score-input:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        outline: none;
+    }
+    
+    .score-input.error {
+        border-color: #ef4444;
+        background-color: #fef2f2;
+    }
+    
+    .score-input.warning {
+        border-color: #f59e0b;
+        background-color: #fffbeb;
+    }
+    
+    .total-cell {
+        font-weight: 700;
+        color: #10b981;
+        font-size: 0.95rem;
+        min-width: 70px;
+    }
+    
+    .percentage-cell {
+        font-size: 0.85rem;
+        color: #64748b;
+        min-width: 60px;
+    }
+    
+    .grade-badge {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.4rem;
+        border-radius: 12px;
+        font-weight: 700;
+        min-width: 40px;
+        display: inline-block;
+        text-align: center;
+    }
+    
+    .grade-A { background: #d1fae5; color: #065f46; }
+    .grade-B { background: #dbeafe; color: #1e40af; }
+    .grade-C { background: #e0e7ff; color: #3730a3; }
+    .grade-D { background: #fef3c7; color: #92400e; }
+    .grade-E { background: #fef3c7; color: #92400e; }
+    .grade-F { background: #fee2e2; color: #991b1b; }
+    
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.4rem;
+        border-radius: 12px;
+        font-weight: 600;
+        min-width: 70px;
+        display: inline-block;
+        text-align: center;
+    }
+    
+    .status-empty { background: #f1f5f9; color: #64748b; }
+    .status-submitted { background: #d1fae5; color: #065f46; }
+    
+    /* Action Bar */
+    .action-bar {
+        position: sticky;
+        bottom: 0;
+        background: white;
+        padding: 1rem;
+        border-top: 1px solid #e2e8f0;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        z-index: 20;
+    }
+    
+    .action-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .action-btn-primary {
+        background: #10b981;
+        color: white;
+        border-color: #10b981;
+    }
+    
+    .action-btn-primary:hover {
+        background: #059669;
+        border-color: #059669;
+    }
+    
+    .action-btn-secondary {
+        background: white;
+        color: #475569;
+        border-color: #cbd5e1;
+    }
+    
+    .action-btn-secondary:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+    }
+    
+    .action-btn-warning {
+        background: #f59e0b;
+        color: white;
+        border-color: #f59e0b;
+    }
+    
+    .action-btn-warning:hover {
+        background: #d97706;
+        border-color: #d97706;
+    }
+    
+    .action-btn-success {
+        background: #10b981;
+        color: white;
+        border-color: #10b981;
+    }
+    
+    .action-btn-success:hover {
+        background: #059669;
+        border-color: #059669;
+    }
+    
+    /* Quick Actions */
+    .quick-actions {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1.5rem;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .quick-actions-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    /* Toast Container */
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+    
+    .toast {
+        background: white;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-left: 4px solid #3b82f6;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-width: 300px;
+        animation: slideIn 0.3s ease;
+    }
+    
+    .toast.success {
+        border-left-color: #10b981;
+    }
+    
+    .toast.error {
+        border-left-color: #ef4444;
+    }
+    
+    .toast.warning {
+        border-left-color: #f59e0b;
+    }
+    
+    .toast.info {
+        border-left-color: #3b82f6;
+    }
+    
+    .toast-icon {
+        font-size: 1.25rem;
+    }
+    
+    .toast-content {
+        flex: 1;
+        font-size: 0.9rem;
+    }
+    
+    .toast-close {
+        background: none;
+        border: none;
+        color: #64748b;
+        cursor: pointer;
+        padding: 0.25rem;
+    }
+    
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    /* Modal */
+    .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    display: none; /* Keep only one display property */
+}
+    
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow: auto;
+    }
+    
+    .modal-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .modal-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0;
+    }
+    
+    .modal-body {
+        padding: 1.5rem;
+    }
+    
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .table-container {
+            max-height: 400px;
+        }
+        
+        .score-input {
+            width: 60px;
+            padding: 0.3rem;
+            font-size: 0.8rem;
+        }
+        
+        .student-cell {
+            min-width: 150px;
+        }
+        
+        .action-bar .d-flex {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .action-bar .d-flex > div {
+            width: 100%;
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .action-btn {
+            flex: 1;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .scores-table {
+            font-size: 0.75rem;
+        }
+        
+        .score-input {
+            width: 50px;
+            padding: 0.25rem;
+            font-size: 0.75rem;
+        }
+        
+        .student-cell {
+            min-width: 130px;
+            font-size: 0.75rem;
+        }
+        
+        .scores-table th,
+        .scores-table td {
+            padding: 0.5rem;
+        }
+        
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    // Scores Entry Application
+    class ScoresEntryApp {
+        constructor() {
+            try {
+                // Safely get data from template with fallbacks
+                const subjectId = {{ subject.id|tojson|safe if subject else 'null' }};
+                const classId = {{ classroom.id|tojson|safe if classroom else 'null' }};
+                const termId = {{ current_term.id|tojson|safe if current_term else 'null' }};
+                const passMark = {{ subject.pass_mark|tojson|safe if subject and subject.pass_mark else '40' }};
+                
+                // Initialize arrays
+                let assessmentsData = [];
+                let studentsData = [];
+                
+                // Get assessment data
+                try {
+                    {% if assessments %}
+                    assessmentsData = [
+                        {% for assessment in assessments %}
+                        {
+                            id: "{{ assessment.id }}",
+                            assessment_type: "{{ assessment.assessment_type }}",
+                            weight: {{ assessment.weight }},
+                            max_score: {{ assessment.max_score }},
+                            order: {{ assessment.order if assessment.order else 0 }}
+                        }{% if not loop.last %},{% endif %}
+                        {% endfor %}
+                    ];
+                    {% endif %}
+                } catch (error) {
+                    console.error('Error parsing assessment data:', error);
+                }
+
+                // Get student data
+                try {
+                    {% if students %}
+                    {% for student in students %}
+                    let studentScores = {};
+                    {% for assessment in assessments %}
+                    {% set score_data = student_scores[student.id][assessment.id] %}
+                    studentScores["{{ assessment.id }}"] = {% if score_data.score is not none %}{{ score_data.score }}{% else %}null{% endif %};
+                    {% endfor %}
+                    
+                    studentsData.push({
+                        id: "{{ student.id }}",
+                        first_name: "{{ student.first_name }}",
+                        last_name: "{{ student.last_name }}",
+                        admission_number: "{{ student.admission_number }}",
+                        existing_scores: studentScores
+                    });
+                    {% endfor %}
+                    {% endif %}
+                } catch (error) {
+                    console.error('Error parsing student data:', error);
+                }
+                
+                this.config = {
+                    passMark: passMark,
+                    subjectId: subjectId,
+                    classId: classId,
+                    termId: termId,
+                    assessments: assessmentsData,
+                    students: studentsData
+                };
+                
+                this.scoresData = new Map();
+                this.autoSaveInterval = null;
+                this.isSubmitting = false;
+                
+                console.log('ScoresEntryApp initialized with config:', this.config);
+                this.init();
+            } catch (error) {
+                console.error('Error in ScoresEntryApp constructor:', error);
+                throw error;
+            }
+        }
+        
+        init() {
+            try {
+                this.bindEvents();
+                this.calculateAllStudentTotals();
+                this.updateStatistics();
+                console.log('ScoresEntryApp initialized successfully');
+            } catch (error) {
+                console.error('Error initializing ScoresEntryApp:', error);
+                this.showToast('Error initializing application: ' + error.message, 'error');
+            }
+        }
+        
+        bindEvents() {
+            try {
+                // Score input events
+                document.querySelectorAll('.score-input').forEach(input => {
+                    input.addEventListener('input', (e) => this.onScoreInput(e));
+                    input.addEventListener('blur', (e) => this.validateScoreInput(e.target));
+                });
+                
+                // Action buttons - add null checks
+                const clearAllBtn = document.getElementById('clearAllBtn');
+                const fillRandomBtn = document.getElementById('fillRandomBtn');
+                const submitScoresBtn = document.getElementById('submitScoresBtn');
+                const uploadScoresBtn = document.getElementById('uploadScoresBtn');
+                const downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
+                
+                if (clearAllBtn) clearAllBtn.addEventListener('click', () => this.clearAllScores());
+                if (fillRandomBtn) fillRandomBtn.addEventListener('click', () => this.fillRandomScores());
+                if (submitScoresBtn) submitScoresBtn.addEventListener('click', () => this.submitScores());
+                if (uploadScoresBtn) uploadScoresBtn.addEventListener('click', () => this.showUploadModal());
+                if (downloadTemplateBtn) downloadTemplateBtn.addEventListener('click', () => this.downloadTemplate());
+                
+                // Upload modal elements
+                const closeUploadModalBtn = document.getElementById('closeUploadModalBtn');
+                const cancelUploadBtn = document.getElementById('cancelUploadBtn');
+                const processUploadBtn = document.getElementById('processUploadBtn');
+                
+                if (closeUploadModalBtn) closeUploadModalBtn.addEventListener('click', () => this.hideUploadModal());
+                if (cancelUploadBtn) cancelUploadBtn.addEventListener('click', () => this.hideUploadModal());
+                if (processUploadBtn) processUploadBtn.addEventListener('click', () => this.processUpload());
+                
+                // Before unload warning
+                window.addEventListener('beforeunload', (e) => {
+                    if (this.hasUnsavedScores()) {
+                        e.preventDefault();
+                        e.returnValue = 'You have unsaved scores. Are you sure you want to leave?';
+                    }
+                });
+                
+                console.log('Event listeners bound successfully');
+            } catch (error) {
+                console.error('Error binding events:', error);
+                this.showToast('Error setting up event handlers. Please refresh the page.', 'error');
+            }
+        }
+        
+        onScoreInput(event) {
+            try {
+                const input = event.target;
+                this.validateScoreInput(input);
+                
+                const studentId = input.dataset.studentId;
+                if (studentId) {
+                    this.calculateStudentTotal(studentId);
+                }
+            } catch (error) {
+                console.error('Error in onScoreInput:', error);
+            }
+        }
+        
+        validateScoreInput(input) {
+            try {
+                const value = input.value.trim();
+                const maxScore = parseFloat(input.dataset.maxScore);
+                
+                if (value === '') {
+                    input.classList.remove('error', 'warning');
+                    return true;
+                }
+                
+                const score = parseFloat(value);
+                
+                if (isNaN(score)) {
+                    input.classList.add('error');
+                    this.showToast('Please enter a valid number', 'error');
+                    input.value = '';
+                    return false;
+                }
+                
+                if (score > maxScore) {
+                    input.classList.add('warning');
+                    input.value = maxScore;
+                    this.showToast(`Score cannot exceed maximum of ${maxScore}`, 'warning');
+                    return false;
+                }
+                
+                if (score < 0) {
+                    input.classList.add('error');
+                    input.value = '0';
+                    this.showToast('Score cannot be negative', 'error');
+                    return false;
+                }
+                
+                // Limit to one decimal place
+                if (value.includes('.')) {
+                    const decimalPlaces = value.split('.')[1].length;
+                    if (decimalPlaces > 1) {
+                        input.value = score.toFixed(1);
+                    }
+                }
+                
+                input.classList.remove('error', 'warning');
+                return true;
+            } catch (error) {
+                console.error('Error validating score input:', error);
+                return false;
+            }
+        }
+        
+        calculateStudentTotal(studentId) {
+            try {
+                let total = 0;
+                let count = 0;
+                
+                this.config.assessments.forEach(assessment => {
+                    const input = document.getElementById(`score_${studentId}_${assessment.id}`);
+                    if (!input) return;
+                    
+                    const value = input.value.trim();
+                    if (value !== '') {
+                        const score = parseFloat(value);
+                        if (!isNaN(score)) {
+                            total += score;
+                            count++;
+                        }
+                    }
+                });
+                
+                // Calculate percentage
+                const maxPossibleTotal = this.config.assessments.reduce((sum, a) => sum + a.max_score, 0);
+                const percentage = maxPossibleTotal > 0 ? Math.round((total / maxPossibleTotal) * 100) : 0;
+                const grade = this.calculateGrade(percentage);
+                
+                // Update display
+                const totalElement = document.getElementById(`total_${studentId}`);
+                const percentageElement = document.getElementById(`percentage_${studentId}`);
+                const gradeElement = document.getElementById(`grade_${studentId}`);
+                const statusElement = document.getElementById(`status_${studentId}`);
+                
+                if (totalElement) totalElement.textContent = total.toFixed(1);
+                if (percentageElement) percentageElement.textContent = `${percentage}%`;
+                
+                if (gradeElement) {
+                    gradeElement.textContent = grade;
+                    gradeElement.className = `grade-badge grade-${grade}`;
+                }
+                
+                if (statusElement) {
+                    if (count > 0) {
+                        statusElement.textContent = 'Submitted';
+                        statusElement.className = 'status-badge status-submitted';
+                    } else {
+                        statusElement.textContent = 'Empty';
+                        statusElement.className = 'status-badge status-empty';
+                    }
+                }
+                
+                // Update scores data
+                this.updateStudentScores(studentId);
+                
+                // Update statistics
+                this.updateStatistics();
+            } catch (error) {
+                console.error('Error calculating student total:', error);
+            }
+        }
+        
+        calculateGrade(percentage) {
+            try {
+                const passMark = this.config.passMark;
+                
+                if (percentage >= 80) return 'A';
+                if (percentage >= 70) return 'B';
+                if (percentage >= 60) return 'C';
+                if (percentage >= 50) return 'D';
+                if (percentage >= passMark) return 'E';
+                return 'F';
+            } catch (error) {
+                console.error('Error calculating grade:', error);
+                return 'F';
+            }
+        }
+        
+        calculateAllStudentTotals() {
+            try {
+                this.config.students.forEach(student => {
+                    this.calculateStudentTotal(student.id);
+                });
+            } catch (error) {
+                console.error('Error calculating all student totals:', error);
+            }
+        }
+        
+        updateStudentScores(studentId) {
+            try {
+                const scores = {};
+                this.config.assessments.forEach(assessment => {
+                    const input = document.getElementById(`score_${studentId}_${assessment.id}`);
+                    if (input) {
+                        const value = input.value.trim();
+                        scores[assessment.id] = value !== '' ? parseFloat(value) : null;
+                    }
+                });
+                
+                this.scoresData.set(studentId, scores);
+            } catch (error) {
+                console.error('Error updating student scores:', error);
+            }
+        }
+        
+        updateStatistics() {
+            try {
+                let completed = 0;
+                let passing = 0;
+                let totalScore = 0;
+                let totalStudents = this.config.students.length;
+                let filledFields = 0;
+                let totalFields = this.config.students.length * this.config.assessments.length;
+                
+                this.config.students.forEach(student => {
+                    const percentageElement = document.getElementById(`percentage_${student.id}`);
+                    if (percentageElement) {
+                        const percentageText = percentageElement.textContent.replace('%', '');
+                        const percentageValue = parseInt(percentageText);
+                        if (!isNaN(percentageValue)) {
+                            if (percentageValue >= this.config.passMark) {
+                                passing++;
+                            }
+                            totalScore += percentageValue;
+                        }
+                    }
+                    
+                    // Check if student has any scores
+                    let hasScores = false;
+                    this.config.assessments.forEach(assessment => {
+                        const input = document.getElementById(`score_${student.id}_${assessment.id}`);
+                        if (input && input.value.trim() !== '') {
+                            hasScores = true;
+                            filledFields++;
+                        }
+                    });
+                    
+                    if (hasScores) {
+                        completed++;
+                    }
+                });
+                
+                // Update statistics display
+                const statCompleted = document.getElementById('statCompleted');
+                const statPassing = document.getElementById('statPassing');
+                const statAverage = document.getElementById('statAverage');
+                const statFilled = document.getElementById('statFilled');
+                
+                if (statCompleted) statCompleted.textContent = `${completed}/${totalStudents}`;
+                if (statPassing) statPassing.textContent = `${passing}/${totalStudents}`;
+                if (statAverage) statAverage.textContent = totalStudents > 0 ? `${Math.round(totalScore / totalStudents)}%` : '0%';
+                if (statFilled) statFilled.textContent = totalFields > 0 ? `${Math.round((filledFields / totalFields) * 100)}%` : '0%';
+                
+                // Also update the weight summary
+                let totalWeight = 0;
+                this.config.assessments.forEach(assessment => {
+                    totalWeight += assessment.weight;
+                });
+                
+                const totalWeightElement = document.getElementById('totalWeight');
+                if (totalWeightElement) {
+                    totalWeightElement.textContent = `${totalWeight.toFixed(1)}%`;
+                }
+                
+                const progressBar = document.getElementById('weightProgress');
+                if (progressBar) {
+                    const percentage = Math.min(100, totalWeight);
+                    progressBar.style.width = `${percentage}%`;
+                    progressBar.textContent = `${totalWeight.toFixed(1)}%`;
+                    
+                    if (totalWeight > 100) {
+                        progressBar.classList.remove('bg-success');
+                        progressBar.classList.add('bg-warning');
+                    } else if (totalWeight < 100) {
+                        progressBar.classList.remove('bg-success', 'bg-warning');
+                        progressBar.classList.add('bg-info');
+                    } else {
+                        progressBar.classList.remove('bg-info', 'bg-warning');
+                        progressBar.classList.add('bg-success');
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating statistics:', error);
+            }
+        }
+        
+        hasUnsavedScores() {
+            return this.scoresData.size > 0;
+        }
+
+        submitScores() {
+            if (this.isSubmitting) return;
+            
+            // Validate all scores
+            let hasErrors = false;
+            
+            this.config.students.forEach(student => {
+                this.config.assessments.forEach(assessment => {
+                    const input = document.getElementById(`score_${student.id}_${assessment.id}`);
+                    if (input && input.value.trim() !== '') {
+                        const value = parseFloat(input.value);
+                        const maxScore = parseFloat(input.dataset.maxScore);
+                        
+                        if (isNaN(value) || value < 0 || value > maxScore) {
+                            hasErrors = true;
+                            input.classList.add('error');
+                        }
+                    }
+                });
+            });
+            
+            if (hasErrors) {
+                this.showToast('Found invalid scores. Please correct them before submitting.', 'error');
+                return;
+            }
+            
+            // Prepare submission data
+            const submissionData = {
+                subject_id: this.config.subjectId,
+                class_id: this.config.classId,
+                academic_term_id: this.config.termId,
+                scores: []
+            };
+            
+            this.config.students.forEach(student => {
+                this.config.assessments.forEach(assessment => {
+                    const input = document.getElementById(`score_${student.id}_${assessment.id}`);
+                    if (input && input.value.trim() !== '') {
+                        submissionData.scores.push({
+                            student_id: student.id,
+                            assessment_id: assessment.id,
+                            score: parseFloat(input.value)
+                        });
+                    }
+                });
+            });
+            
+            if (submissionData.scores.length === 0) {
+                this.showToast('No scores to submit. Please enter some scores first.', 'warning');
+                return;
+            }
+            
+            // Show confirmation
+            if (!confirm(`Are you sure you want to submit ${submissionData.scores.length} scores? This action cannot be undone.`)) {
+                return;
+            }
+            
+            this.isSubmitting = true;
+            const submitBtn = document.getElementById('submitScoresBtn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            submitBtn.disabled = true;
+            
+            // Submit to server
+            fetch('/teacher/save-scores', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(submissionData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.showToast('Scores submitted successfully!', 'success');
+                    
+                    // Update all statuses to submitted
+                    this.config.students.forEach(student => {
+                        const statusElement = document.getElementById(`status_${student.id}`);
+                        if (statusElement) {
+                            statusElement.textContent = 'Submitted';
+                            statusElement.className = 'status-badge status-submitted';
+                        }
+                    });
+                    
+                    // Disable all inputs
+                    document.querySelectorAll('.score-input').forEach(input => {
+                        input.disabled = true;
+                        input.classList.add('bg-light');
+                    });
+                    
+                    // Disable action buttons except download
+                    const submitBtn = document.getElementById('submitScoresBtn');
+                    const clearAllBtn = document.getElementById('clearAllBtn');
+                    const fillRandomBtn = document.getElementById('fillRandomBtn');
+                    
+                    if (submitBtn) submitBtn.style.display = 'none';
+                    if (clearAllBtn) clearAllBtn.style.display = 'none';
+                    if (fillRandomBtn) fillRandomBtn.style.display = 'none';
+                } else {
+                    throw new Error(data.message || 'Failed to submit scores');
+                }
+            })
+            .catch(error => {
+                console.error('Error submitting scores:', error);
+                this.showToast('Error submitting scores: ' + error.message, 'error');
+            })
+            .finally(() => {
+                this.isSubmitting = false;
+                if (submitBtn) {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            });
+        }
+        
+        clearAllScores() {
+            if (!confirm('Are you sure you want to clear all scores? This cannot be undone.')) {
+                return;
+            }
+            
+            document.querySelectorAll('.score-input').forEach(input => {
+                input.value = '';
+                input.classList.remove('error', 'warning');
+            });
+            
+            this.calculateAllStudentTotals();
+            this.updateStatistics();
+            
+            this.showToast('All scores cleared', 'info');
+        }
+        
+        fillRandomScores() {
+            this.config.students.forEach(student => {
+                this.config.assessments.forEach(assessment => {
+                    const input = document.getElementById(`score_${student.id}_${assessment.id}`);
+                    if (input) {
+                        const maxScore = parseFloat(input.dataset.maxScore);
+                        const randomScore = (Math.random() * maxScore).toFixed(1);
+                        input.value = randomScore;
+                    }
+                });
+            });
+            
+            this.calculateAllStudentTotals();
+            this.updateStatistics();
+            
+            this.showToast('Random scores filled for demonstration', 'info');
+        }
+        
+        showUploadModal() {
+            const uploadModal = document.getElementById('uploadModal');
+            if (uploadModal) {
+                uploadModal.style.display = 'flex';
+            }
+        }
+        
+        hideUploadModal() {
+            const uploadModal = document.getElementById('uploadModal');
+            if (uploadModal) {
+                uploadModal.style.display = 'none';
+            }
+            const scoreFile = document.getElementById('scoreFile');
+            if (scoreFile) {
+                scoreFile.value = '';
+            }
+        }
+        
+        processUpload() {
+            const fileInput = document.getElementById('scoreFile');
+            if (!fileInput) return;
+            
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                this.showToast('Please select a file to upload', 'warning');
+                return;
+            }
+            
+            if (!file.name.endsWith('.csv')) {
+                this.showToast('Please upload a CSV file', 'error');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const csvContent = e.target.result;
+                    const rows = csvContent.split('\n');
+                    
+                    // Skip header row
+                    const dataRows = rows.slice(1).filter(row => row.trim() !== '');
+                    
+                    let processedCount = 0;
+                    let errorCount = 0;
+                    
+                    dataRows.forEach((row, index) => {
+                        try {
+                            const columns = row.split(',');
+                            if (columns.length < 3) {
+                                errorCount++;
+                                return;
+                            }
+                            
+                            const admissionNumber = columns[0].trim().replace(/"/g, '');
+                            const assessmentType = columns[1].trim().replace(/"/g, '');
+                            const score = columns[2].trim().replace(/"/g, '');
+                            
+                            // Find student by admission number
+                            const student = this.config.students.find(s => 
+                                s.admission_number === admissionNumber
+                            );
+                            
+                            if (!student) {
+                                errorCount++;
+                                return;
+                            }
+                            
+                            // Find assessment by type
+                            const assessment = this.config.assessments.find(a =>
+                                a.assessment_type === assessmentType
+                            );
+                            
+                            if (!assessment) {
+                                errorCount++;
+                                return;
+                            }
+                            
+                            // Update the score input
+                            const input = document.getElementById(`score_${student.id}_${assessment.id}`);
+                            if (input) {
+                                input.value = score;
+                                processedCount++;
+                            } else {
+                                errorCount++;
+                            }
+                        } catch (error) {
+                            errorCount++;
+                            console.error(`Error processing row ${index + 2}:`, error);
+                        }
+                    });
+                    
+                    this.calculateAllStudentTotals();
+                    this.updateStatistics();
+                    
+                    this.hideUploadModal();
+                    
+                    if (errorCount > 0) {
+                        this.showToast(`Uploaded ${processedCount} scores with ${errorCount} errors`, 'warning');
+                    } else {
+                        this.showToast(`Successfully uploaded ${processedCount} scores`, 'success');
+                    }
+                } catch (error) {
+                    this.showToast('Error processing CSV file: ' + error.message, 'error');
+                }
+            };
+            
+            reader.onerror = () => {
+                this.showToast('Error reading file', 'error');
+            };
+            
+            reader.readAsText(file);
+        }
+        
+        downloadTemplate() {
+            try {
+                // Create CSV content
+                let csvContent = 'Admission Number,Assessment Type,Score\n';
+                
+                this.config.students.forEach(student => {
+                    this.config.assessments.forEach(assessment => {
+                        const input = document.getElementById(`score_${student.id}_${assessment.id}`);
+                        const currentScore = input ? input.value : '';
+                        csvContent += `"${student.admission_number}","${assessment.assessment_type}","${currentScore}"\n`;
+                    });
+                });
+                
+                // Create download link
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `scores_template_${this.config.subjectId}_${this.config.classId}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                this.showToast('Template downloaded successfully', 'success');
+            } catch (error) {
+                console.error('Error downloading template:', error);
+                this.showToast('Error downloading template: ' + error.message, 'error');
+            }
+        }
+        
+        showToast(message, type = 'info') {
+            try {
+                const toastContainer = document.getElementById('toastContainer');
+                if (!toastContainer) return;
+                
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                
+                const iconMap = {
+                    'success': 'fas fa-check-circle',
+                    'error': 'fas fa-exclamation-circle',
+                    'warning': 'fas fa-exclamation-triangle',
+                    'info': 'fas fa-info-circle'
+                };
+                
+                toast.innerHTML = `
+                    <div class="toast-icon">
+                        <i class="${iconMap[type] || 'fas fa-info-circle'}"></i>
+                    </div>
+                    <div class="toast-content">${message}</div>
+                    <button class="toast-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
+                toastContainer.appendChild(toast);
+                
+                // Auto-remove after 5 seconds
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.style.opacity = '0';
+                        setTimeout(() => {
+                            if (toast.parentNode) {
+                                toast.parentNode.removeChild(toast);
+                            }
+                        }, 300);
+                    }
+                }, 5000);
+                
+                // Close button
+                toast.querySelector('.toast-close').addEventListener('click', () => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => {
+                        if (toast.parentNode) {
+                            toast.parentNode.removeChild(toast);
+                        }
+                    }, 300);
+                });
+            } catch (error) {
+                console.error('Error showing toast:', error);
+            }
+        }
+    }
+
+    // Initialize the application when the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        try {
+            window.scoresApp = new ScoresEntryApp();
+        } catch (error) {
+            console.error('Failed to initialize ScoresEntryApp:', error);
+            
+            // Show error message to user
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert alert-danger m-3';
+            errorDiv.innerHTML = `
+                <h5><i class="fas fa-exclamation-triangle"></i> Error Loading Page</h5>
+                <p>There was an error loading the scores entry page. Please try refreshing.</p>
+                <button class="btn btn-sm btn-danger" onclick="window.location.reload()">
+                    <i class="fas fa-sync-alt"></i> Refresh Page
+                </button>
+            `;
+            
+            // Insert at the beginning of the content
+            const content = document.querySelector('.scores-container');
+            if (content) {
+                content.parentNode.insertBefore(errorDiv, content);
+                content.style.display = 'none';
+            }
+        }
+    });
+</script>
+{% endblock %}

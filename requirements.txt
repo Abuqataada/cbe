@@ -1,0 +1,34 @@
+Flask
+Flask-SQLAlchemy
+Flask-Login
+Flask-Migrate
+Flask-WTF
+Flask-Limiter
+Werkzeug
+SQLAlchemy
+psycopg2-binary  # For PostgreSQL
+pandas
+openpyxl
+python-dotenv
+reportlab  # For PDF generation
+cryptography
+pyotp
+bcrypt
+pyjwt
+qrcode
+pillow
+redis
+sentry-sdk
+bleach
+defusedxml
+zxcvbn
+flask-wtf
+flask-limiter
+flask-cors
+flask-talisman
+flask-helmet
+flask-paranoid
+flask-bcrypt
+flask-session
+ttkbootstrap
+pystray

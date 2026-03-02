@@ -1,0 +1,102 @@
+<div class="assessment-details">
+    <div class="row mb-3">
+        <div class="col-6">
+            <h4>Student Information</h4>
+            <p><strong>Name:</strong> {{ student_assessment.student.first_name }} {{ student_assessment.student.last_name }}</p>
+            <p><strong>Admission Number:</strong> {{ student_assessment.student.admission_number }}</p>
+            <p><strong>Class:</strong> {{ student_assessment.classroom.name }}</p>
+        </div>
+        <div class="col-6">
+            <h4>Subject Information</h4>
+            <p><strong>Subject:</strong> {{ student_assessment.subject.name }} ({{ student_assessment.subject.code }})</p>
+            <p><strong>Term:</strong> Term {{ terms.name }}</p>
+            <p><strong>Status:</strong> 
+                <span class="badge {% if student_assessment.is_approved %}badge-success{% else %}badge-warning{% endif %}">
+                    {% if student_assessment.is_approved %}Approved{% else %}Pending{% endif %}
+                </span>
+            </p>
+        </div>
+    </div>
+    
+    <div class="mb-3">
+        <h4>Scores Summary</h4>
+        <div class="d-flex gap-3">
+            <div class="text-center">
+                <div class="text-muted small">Total Score</div>
+                <div class="h3 text-primary">{{ "%.1f"|format(student_assessment.total_score) }}</div>
+            </div>
+            <div class="text-center">
+                <div class="text-muted small">Average Score</div>
+                <div class="h3 text-primary">{{ "%.1f"|format(student_assessment.average_score) }}</div>
+            </div>
+            <div class="text-center">
+                <div class="text-muted small">Assessment Count</div>
+                <div class="h3 text-primary">{{ student_assessment.assessment_scores|length }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mb-3">
+        <h4>Individual Assessment Scores</h4>
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Assessment Type</th>
+                        <th>Weight</th>
+                        <th>Max Score</th>
+                        <th>Score</th>
+                        <th>Percentage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for detail in assessment_details %}
+                    <tr>
+                        <td>{{ detail.assessment.assessment_type }}</td>
+                        <td>{{ detail.assessment.weight }}%</td>
+                        <td>{{ detail.assessment.max_score }}</td>
+                        <td>{{ detail.score }}</td>
+                        <td>
+                            {% set percentage = (detail.score / detail.assessment.max_score * 100) if detail.assessment.max_score > 0 else 0 %}
+                            <span class="badge {% if percentage >= 50 %}badge-success{% else %}badge-danger{% endif %}">
+                                {{ "%.1f"|format(percentage) }}%
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="mb-3">
+        <h4>Timeline</h4>
+        <div class="timeline-item">
+            <div class="timeline-icon">
+                <i class="fas fa-pen"></i>
+            </div>
+            <div class="timeline-content">
+                <h5>Entered by Teacher</h5>
+                <p>Scores were entered</p>
+                <div class="timeline-time">
+                    {{ student_assessment.entered_at.strftime('%Y-%m-%d %H:%M') if student_assessment.entered_at else 'N/A' }}
+                </div>
+            </div>
+        </div>
+        
+        {% if student_assessment.is_approved and student_assessment.approved_at %}
+        <div class="timeline-item">
+            <div class="timeline-icon">
+                <i class="fas fa-check"></i>
+            </div>
+            <div class="timeline-content">
+                <h5>Approved by Admin</h5>
+                <p>Assessment was approved{% if student_assessment.approver %} by {{ student_assessment.approver.username }}{% endif %}</p>
+                <div class="timeline-time">
+                    {{ student_assessment.approved_at.strftime('%Y-%m-%d %H:%M') }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>

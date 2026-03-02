@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}Add Question - ARNDALE CBT{% endblock %}
+
+{% block page_title %}
+<h1 class="h3 mb-2"><i class="fas fa-plus-circle"></i> Add New Question</h1>
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="separator">/</span>
+<a href="{{ url_for('teacher.dashboard') }}">Dashboard</a>
+<span class="separator">/</span>
+<a href="{{ url_for('teacher.question_bank') }}">Question Bank</a>
+<span class="separator">/</span>
+<span>Add Question</span>
+{% endblock %}
+
+{% block content %}
+<!-- MathJax for rendering -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+<!-- Font Awesome for icons (already in your base template) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<div class="main-layout">
+    <!-- Main Content -->
+    <div>
+        <!-- Add Question Form -->
+        <div class="content-card">
+            <div class="card-header">
+                <i class="fas fa-edit"></i>
+                <h5>Question Details</h5>
+            </div>
+            
+            <form method="POST" id="questionForm" enctype="multipart/form-data">
+                <!-- Subject Selection -->
+                <div class="mb-3">
+                    <label for="subject_id" class="form-label required">Subject</label>
+                    <select name="subject_id" id="subject_id" class="form-select" required>
+                        <option value="">Select Subject</option>
+                        {% for subject_info in assigned_subjects %}
+                        <option value="{{ subject_info.subject.id }}">
+                            {{ subject_info.subject.name }} ({{ subject_info.subject.code }})
+                            {% if subject_info.classroom %}
+                            - {{ subject_info.classroom.name }}
+                            {% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Question Text with Math Support -->
+                <div class="mb-3">
+                    <label for="question_text" class="form-label required">Question Text</label>
+                    <div class="math-toolbar mb-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="²">x²</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="³">x³</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-pow-btn" data-target="question_text">x^</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="½">½</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="¼">¼</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="¾">¾</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="√">√</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="∛">∛</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-nth-root-btn" data-target="question_text">n√</button>
+                    </div>
+                    <div class="math-toolbar mb-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="∫">∫</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="∑">∑</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="∏">∏</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="∞">∞</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="≈">≈</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="≠">≠</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="≤">≤</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="≥">≥</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="±">±</button>
+                    </div>
+                    <div class="math-toolbar mb-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="×">×</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="÷">÷</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="·">·</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="α">α</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="β">β</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="γ">γ</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="θ">θ</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="π">π</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="φ">φ</button>
+                    </div>
+                    <div class="math-toolbar mb-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="∈">∈</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="∉">∉</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="⊂">⊂</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="⊃">⊃</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="∪">∪</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="∩">∩</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="∀">∀</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="∃">∃</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="question_text" data-symbol="∅">∅</button>
+                    </div>
+                    <textarea name="question_text" id="question_text" 
+                              class="form-control" rows="3" 
+                              placeholder="Enter your question here..." required></textarea>
+                    <div class="form-text">
+                        <i class="fas fa-info-circle"></i> 
+                        Click the buttons above to insert mathematical symbols directly.
+                        <br>• <strong>x^</strong> - Click to enter a power (e.g., enter 5 for x⁵)
+                        <br>• <strong>n√</strong> - Click to enter nth root (e.g., enter 3 for ∛, 4 for ∜)
+                    </div>
+                </div>
+                
+                <!-- Question Image -->
+                <div class="mb-3">
+                    <label class="form-label">
+                        <i class="fas fa-image"></i> Question Image (Optional)
+                    </label>
+                    
+                    <div class="image-upload-section">
+                        <input type="file" name="question_image" id="question_image" 
+                               class="form-control" accept="image/*" 
+                               onchange="previewQuestionImage(this)">
+                        <div class="form-text mt-2">
+                            Upload an image (max 5MB). Supported: JPG, PNG, GIF
+                        </div>
+                    </div>
+                    
+                    <div class="image-preview" id="question_image_preview" style="display: none;">
+                        <p class="form-text mb-2">Image Preview:</p>
+                        <img id="preview_img" class="img-thumbnail">
+                        <button type="button" class="btn btn-sm btn-outline-danger mt-2" 
+                                onclick="removeQuestionImage()">
+                            <i class="fas fa-times"></i> Remove Image
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Question Type -->
+                <div class="mb-3">
+                    <label for="question_type" class="form-label required">Question Type</label>
+                    <select name="question_type" id="question_type" class="form-select" required>
+                        <option value="">Select Type</option>
+                        <option value="multiple_choice">Multiple Choice</option>
+                        <option value="true_false">True/False</option>
+                        <option value="short_answer">Short Answer</option>
+                        <option value="essay">Essay</option>
+                    </select>
+                </div>
+                
+                <!-- Question Type Specific Fields -->
+                <div id="type_specific_fields">
+                    <!-- Fields will be dynamically added based on question type -->
+                </div>
+                
+                <!-- Difficulty & Marks -->
+                <div class="grid-2 mb-3">
+                    <div>
+                        <label for="difficulty" class="form-label">Difficulty</label>
+                        <select name="difficulty" id="difficulty" class="form-select">
+                            <option value="easy">Easy</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="hard">Hard</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="marks" class="form-label">Marks</label>
+                        <input type="number" name="marks" id="marks" 
+                               class="form-control" min="0.5" step="0.5" value="1.0">
+                    </div>
+                </div>
+                
+                <!-- Topics -->
+                <div class="mb-3">
+                    <label for="topics" class="form-label">Topics</label>
+                    <input type="text" name="topics" id="topics" 
+                           class="form-control" 
+                           placeholder="e.g., algebra, equations, functions">
+                    <div class="form-text">Separate multiple topics with commas</div>
+                </div>
+                
+                <!-- Explanation with Math Support -->
+                <div class="mb-3">
+                    <label for="explanation" class="form-label">Explanation (Optional)</label>
+                    <div class="math-toolbar mb-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="explanation" data-symbol="²">x²</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="explanation" data-symbol="³">x³</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-pow-btn" data-target="explanation">x^</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="explanation" data-symbol="½">½</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="explanation" data-symbol="√">√</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="explanation" data-symbol="∛">∛</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-nth-root-btn" data-target="explanation">n√</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="explanation" data-symbol="π">π</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary math-btn" data-target="explanation" data-symbol="∞">∞</button>
+                    </div>
+                    <textarea name="explanation" id="explanation" 
+                              class="form-control" rows="2"
+                              placeholder="Provide an explanation or solution..."></textarea>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <a href="{{ url_for('teacher.question_bank') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Question Bank
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Question
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div>
+        <!-- Quick Help Card -->
+        <div class="content-card">
+            <div class="card-header">
+                <i class="fas fa-question-circle"></i>
+                <h5>Quick Help</h5>
+            </div>
+            
+            <div class="alert-info">
+                <strong><i class="fas fa-info-circle me-1"></i>Question Types:</strong>
+                <ul>
+                    <li><strong>Multiple Choice:</strong> Multiple options, one correct answer</li>
+                    <li><strong>True/False:</strong> Statement is either true or false</li>
+                    <li><strong>Short Answer:</strong> Brief text answer</li>
+                    <li><strong>Essay:</strong> Longer, detailed answer</li>
+                </ul>
+            </div>
+            
+            <div class="alert-warning">
+                <strong><i class="fas fa-info-circle me-1"></i>Math Symbols:</strong>
+                <ul>
+                    <li>Click any symbol button to insert it directly</li>
+                    <li><strong>x^ button:</strong> Click and enter a number for the power (e.g., 5 → x⁵)</li>
+                    <li><strong>n√ button:</strong> Click and enter a number for nth root (e.g., 4 → ∜)</li>
+                    <li>Common symbols: ² ³ √ π ∞ ± ≠ ≤ ≥</li>
+                </ul>
+            </div>
+            
+            <div class="alert-warning">
+                <strong><i class="fas fa-exclamation-triangle me-1"></i>Image Guidelines:</strong>
+                <ul>
+                    <li>Max file size: 5MB per image</li>
+                    <li>Supported formats: JPG, PNG, GIF</li>
+                    <li>Use clear, readable images</li>
+                    <li>Keep file names descriptive</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Recent Questions -->
+        <div class="content-card">
+            <div class="card-header">
+                <i class="fas fa-history"></i>
+                <h5>Recent Questions</h5>
+            </div>
+            
+            <ul class="recent-list">
+                {% for subject_info in assigned_subjects[:5] %}
+                <li class="recent-item">
+                    <span class="recent-subject">{{ subject_info.subject.name }}</span>
+                    <span class="recent-count">{{ subject_info.question_count }} questions</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Main Layout */
+    .main-layout {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    @media (min-width: 992px) {
+        .main-layout {
+            grid-template-columns: 2fr 1fr;
+        }
+    }
+    
+    /* Card Styling */
+    .content-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1.5rem;
+    }
+    
+    .card-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .card-header h5 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+    
+    /* Form Styling */
+    .form-label {
+        font-weight: 600;
+        color: #475569;
+        font-size: 0.9rem;
+        margin-bottom: 0.4rem;
+    }
+    
+    .form-label.required::after {
+        content: " *";
+        color: #ef4444;
+    }
+    
+    .form-control, .form-select {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 0.6rem 0.75rem;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        outline: none;
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+    
+    .form-check-input:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+    
+    .form-check-input:checked {
+        background-color: #10b981;
+        border-color: #10b981;
+    }
+    
+    /* Math Toolbar */
+    .math-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        padding: 0.5rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+    }
+    
+    .math-toolbar .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 1rem;
+        min-width: 2.2rem;
+        font-family: 'Segoe UI', 'Arial', sans-serif;
+    }
+    
+    .math-toolbar .btn-sm:hover {
+        background: #10b981;
+        color: white;
+        border-color: #10b981;
+    }
+    
+    /* Special buttons */
+    .math-toolbar .math-pow-btn,
+    .math-toolbar .math-nth-root-btn {
+        background: #e0f2fe;
+        border-color: #7dd3fc;
+        font-weight: bold;
+    }
+    
+    .math-toolbar .math-pow-btn:hover,
+    .math-toolbar .math-nth-root-btn:hover {
+        background: #10b981;
+        color: white;
+        border-color: #10b981;
+    }
+    
+    /* Image Upload */
+    .image-upload-section {
+        border: 2px dashed #cbd5e1;
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+        background: #f8fafc;
+        transition: all 0.2s ease;
+    }
+    
+    .image-upload-section:hover {
+        border-color: #10b981;
+        background: #f0fdfa;
+    }
+    
+    .image-preview {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 0.5rem;
+    }
+    
+    .image-preview img {
+        max-width: 100%;
+        max-height: 200px;
+        border-radius: 6px;
+        object-fit: contain;
+    }
+    
+    /* Option Cards */
+    .option-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background: #f8fafc;
+        transition: all 0.2s ease;
+    }
+    
+    .option-card:hover {
+        border-color: #10b981;
+        background: white;
+    }
+    
+    .option-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.75rem;
+    }
+    
+    .option-number {
+        font-weight: 700;
+        color: #10b981;
+        background: rgba(16, 185, 129, 0.1);
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+    }
+    
+    .correct-indicator {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #10b981;
+    }
+    
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e2e8f0;
+    }
+    
+    .btn {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .btn-primary {
+        background: #10b981;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: #059669;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+    
+    .btn-outline-secondary {
+        background: white;
+        color: #64748b;
+        border: 1px solid #cbd5e1;
+    }
+    
+    .btn-outline-secondary:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+        color: #475569;
+    }
+    
+    /* Alert Styling */
+    .alert-info {
+        background: rgba(14, 165, 233, 0.1);
+        border: 1px solid rgba(14, 165, 233, 0.2);
+        border-left: 4px solid #0ea5e9;
+        color: #0c4a6e;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    
+    .alert-warning {
+        background: rgba(245, 158, 11, 0.1);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        border-left: 4px solid #f59e0b;
+        color: #92400e;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    
+    .alert ul {
+        margin: 0.5rem 0 0 0;
+        padding-left: 1.2rem;
+    }
+    
+    .alert li {
+        margin-bottom: 0.25rem;
+        line-height: 1.4;
+    }
+    
+    .alert li:last-child {
+        margin-bottom: 0;
+    }
+    
+    /* Recent Questions */
+    .recent-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .recent-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #e2e8f0;
+        align-items: center;
+    }
+    
+    .recent-item:last-child {
+        border-bottom: none;
+    }
+    
+    .recent-subject {
+        font-weight: 500;
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+    
+    .recent-count {
+        font-weight: 600;
+        color: #1e293b;
+        background: rgba(16, 185, 129, 0.1);
+        padding: 0.25rem 0.5rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+    }
+    
+    /* Grid */
+    .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+    
+    @media (max-width: 768px) {
+        .grid-2 {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    /* Type Badges */
+    .type-badge {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-weight: 600;
+        display: inline-block;
+        margin-left: 0.5rem;
+    }
+    
+    .badge-mcq { background: #dbeafe; color: #1e40af; }
+    .badge-tf { background: #d1fae5; color: #065f46; }
+    .badge-sa { background: #fef3c7; color: #92400e; }
+    .badge-essay { background: #f3e8ff; color: #7c3aed; }
+    
+    /* True/False Cards */
+    .tf-option {
+        border: 2px solid;
+        border-radius: 8px;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .tf-option.true {
+        border-color: #d1fae5;
+        background: rgba(209, 250, 229, 0.1);
+    }
+    
+    .tf-option.false {
+        border-color: #fee2e2;
+        background: rgba(254, 226, 226, 0.1);
+    }
+    
+    .tf-option:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .tf-option.selected.true {
+        background: #d1fae5;
+        border-color: #10b981;
+    }
+    
+    .tf-option.selected.false {
+        background: #fee2e2;
+        border-color: #ef4444;
+    }
+    
+    /* Form Text */
+    .form-text {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin-top: 0.25rem;
+    }
+    
+    /* Textarea */
+    textarea.form-control {
+        resize: vertical;
+        min-height: 80px;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .content-card {
+            padding: 1rem;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+
+<script>
+// Function to convert number to superscript
+function toSuperscript(num) {
+    const superscriptMap = {
+        '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
+        '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
+        '-': '⁻', '+': '⁺', '(': '⁽', ')': '⁾'
+    };
+    return num.toString().split('').map(char => superscriptMap[char] || char).join('');
+}
+
+// Function to convert number to subscript (for roots)
+function toSubscript(num) {
+    const subscriptMap = {
+        '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄',
+        '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉',
+        '-': '₋', '+': '₊', '(': '₍', ')': '₎'
+    };
+    return num.toString().split('').map(char => subscriptMap[char] || char).join('');
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Add Question page loaded');
+    
+    // Regular math symbol insertion
+    document.querySelectorAll('.math-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.dataset.target;
+            const symbol = this.dataset.symbol;
+            const targetInput = document.getElementById(targetId);
+            
+            if (targetInput) {
+                const start = targetInput.selectionStart;
+                const end = targetInput.selectionEnd;
+                const text = targetInput.value;
+                const newText = text.substring(0, start) + symbol + text.substring(end);
+                targetInput.value = newText;
+                
+                // Set cursor position after inserted symbol
+                targetInput.focus();
+                targetInput.setSelectionRange(start + symbol.length, start + symbol.length);
+            }
+        });
+    });
+    
+    // Power button (x^)
+    document.querySelectorAll('.math-pow-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.dataset.target;
+            const targetInput = document.getElementById(targetId);
+            
+            if (targetInput) {
+                const power = prompt('Enter the power/exponent:', '2');
+                if (power !== null && power.trim() !== '') {
+                    const superscript = toSuperscript(power);
+                    const start = targetInput.selectionStart;
+                    const end = targetInput.selectionEnd;
+                    const text = targetInput.value;
+                    
+                    // Check if there's selected text to use as base
+                    let newText;
+                    if (start !== end) {
+                        // If text is selected, use it as base and add superscript
+                        const selectedBase = text.substring(start, end);
+                        newText = text.substring(0, start) + selectedBase + superscript + text.substring(end);
+                    } else {
+                        // If no selection, just add the superscript
+                        newText = text.substring(0, start) + 'x' + superscript + text.substring(end);
+                    }
+                    
+                    targetInput.value = newText;
+                    targetInput.focus();
+                    targetInput.setSelectionRange(start + newText.length, start + newText.length);
+                }
+            }
+        });
+    });
+    
+    // nth root button (n√)
+    document.querySelectorAll('.math-nth-root-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.dataset.target;
+            const targetInput = document.getElementById(targetId);
+            
+            if (targetInput) {
+                const n = prompt('Enter the root value (e.g., 2 for square root, 3 for cube root):', '3');
+                if (n !== null && n.trim() !== '') {
+                    const start = targetInput.selectionStart;
+                    const end = targetInput.selectionEnd;
+                    const text = targetInput.value;
+                    
+                    // Create nth root symbol with subscript
+                    let rootSymbol;
+                    if (n === '2') {
+                        rootSymbol = '√'; // Square root
+                    } else if (n === '3') {
+                        rootSymbol = '∛'; // Cube root
+                    } else {
+                        // For other roots, use subscript notation
+                        const subscript = toSubscript(n);
+                        rootSymbol = subscript + '√';
+                    }
+                    
+                    // Check if there's selected text to put under the root
+                    let newText;
+                    if (start !== end) {
+                        // If text is selected, put it under the root
+                        const selectedText = text.substring(start, end);
+                        newText = text.substring(0, start) + rootSymbol + '(' + selectedText + ')' + text.substring(end);
+                    } else {
+                        // If no selection, just add the root symbol
+                        newText = text.substring(0, start) + rootSymbol + text.substring(end);
+                    }
+                    
+                    targetInput.value = newText;
+                    targetInput.focus();
+                    targetInput.setSelectionRange(start + newText.length, start + newText.length);
+                }
+            }
+        });
+    });
+    
+    const questionTypeSelect = document.getElementById('question_type');
+    const typeSpecificFields = document.getElementById('type_specific_fields');
+    const questionImageInput = document.getElementById('question_image');
+    
+    // Image preview for question image
+    if (questionImageInput) {
+        questionImageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Validate file size (5MB)
+                const maxSize = 5 * 1024 * 1024;
+                if (file.size > maxSize) {
+                    alert('Image is too large. Maximum size is 5MB.');
+                    this.value = '';
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('question_image_preview');
+                    const previewImg = document.getElementById('preview_img');
+                    previewImg.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    // Handle question type change
+    questionTypeSelect.addEventListener('change', function() {
+        const type = this.value;
+        typeSpecificFields.innerHTML = '';
+        
+        if (type === 'multiple_choice') {
+            typeSpecificFields.innerHTML = `
+                <div class="mb-4">
+                    <div class="card-header mb-3">
+                        <i class="fas fa-list-ul"></i>
+                        <h5>Multiple Choice Options</h5>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Number of Options</label>
+                        <select name="option_count" class="form-select" id="option_count_select">
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4" selected>4</option>
+                            <option value="5">5</option>
+                        </select>
+                    </div>
+                    
+                    <div id="options_container">
+                        ${generateOptions(4)}
+                    </div>
+                </div>
+            `;
+            
+            // Add event listener for option count change
+            const optionCountSelect = document.getElementById('option_count_select');
+            if (optionCountSelect) {
+                optionCountSelect.addEventListener('change', function() {
+                    updateOptions(parseInt(this.value));
+                });
+            }
+            
+        } else if (type === 'true_false') {
+            typeSpecificFields.innerHTML = `
+                <div class="mb-4">
+                    <div class="card-header mb-3">
+                        <i class="fas fa-check-circle"></i>
+                        <h5>True/False Settings</h5>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label required">Correct Answer</label>
+                        <div class="grid-2">
+                            <div class="tf-option true" onclick="selectTFOption('true')">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" 
+                                           name="correct_tf" id="true_option" value="true" checked>
+                                    <label class="form-check-label fw-bold" for="true_option" style="color: #065f46;">
+                                        True
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="tf-option false" onclick="selectTFOption('false')">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" 
+                                           name="correct_tf" id="false_option" value="false">
+                                    <label class="form-check-label fw-bold" for="false_option" style="color: #991b1b;">
+                                        False
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Initialize True/False selection
+            selectTFOption('true');
+            
+        } else if (type === 'short_answer') {
+            typeSpecificFields.innerHTML = `
+                <div class="mb-4">
+                    <div class="card-header mb-3">
+                        <i class="fas fa-keyboard"></i>
+                        <h5>Short Answer Settings</h5>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="short_answer" class="form-label required">Correct Answer</label>
+                        <input type="text" name="short_answer" id="short_answer" 
+                               class="form-control" placeholder="Enter the correct answer">
+                    </div>
+                </div>
+            `;
+        } else if (type === 'essay') {
+            typeSpecificFields.innerHTML = `
+                <div class="alert alert-info mb-4">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Essay questions are manually graded. No automated scoring is available.
+                </div>
+            `;
+        }
+    });
+    
+    // Generate options for multiple choice with image upload and math toolbar
+    function generateOptions(count) {
+        let html = '';
+        for (let i = 1; i <= count; i++) {
+            html += `
+                <div class="option-card" data-option="${i}">
+                    <div class="option-header">
+                        <span class="option-number">Option ${i}</span>
+                        <div class="correct-indicator">
+                            <input class="form-check-input" type="radio" 
+                                   name="correct_option" value="${i}" 
+                                   id="correct_option_${i}" ${i === 1 ? 'checked' : ''}>
+                            <label class="form-check-label" for="correct_option_${i}">
+                                Correct Answer
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label required">Option Text</label>
+                        <div class="math-toolbar mb-2" style="margin-top: 0.25rem;">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertMathSymbol('option_${i}', '²')">x²</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertMathSymbol('option_${i}', '³')">x³</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertPowerWithPrompt('option_${i}')">x^</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertMathSymbol('option_${i}', '½')">½</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertMathSymbol('option_${i}', '√')">√</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertNthRootWithPrompt('option_${i}')">n√</button>
+                        </div>
+                        <input type="text" name="option_${i}" id="option_${i}"
+                               class="form-control option-text" 
+                               placeholder="Enter option text" required>
+                    </div>
+                    
+                    <div class="image-upload-section">
+                        <input type="file" name="option_image_${i}" 
+                               class="form-control option-image-input" 
+                               accept="image/*"
+                               onchange="previewOptionImage(this, ${i})">
+                        <div class="form-text mt-2">
+                            Upload an image for this option
+                        </div>
+                    </div>
+                    
+                    <div class="image-preview" id="option_preview_${i}" style="display: none;">
+                        <p class="form-text mb-2">Image Preview:</p>
+                        <img class="img-thumbnail option-preview-img">
+                        <button type="button" class="btn btn-sm btn-outline-danger mt-2" 
+                                onclick="removeOptionImage(${i})">
+                            <i class="fas fa-times"></i> Remove Image
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        return html;
+    }
+    
+    // Update options when count changes
+    function updateOptions(count) {
+        const container = document.getElementById('options_container');
+        if (container) {
+            container.innerHTML = generateOptions(count);
+        }
+    }
+    
+    // Insert math symbol into a specific input
+    window.insertMathSymbol = function(inputId, symbol) {
+        const input = document.getElementById(inputId);
+        if (input) {
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            const text = input.value;
+            const newText = text.substring(0, start) + symbol + text.substring(end);
+            input.value = newText;
+            
+            // Set cursor position after inserted symbol
+            input.focus();
+            input.setSelectionRange(start + symbol.length, start + symbol.length);
+        }
+    };
+    
+    // Insert power with prompt for option fields
+    window.insertPowerWithPrompt = function(inputId) {
+        const input = document.getElementById(inputId);
+        if (input) {
+            const power = prompt('Enter the power/exponent:', '2');
+            if (power !== null && power.trim() !== '') {
+                const superscript = toSuperscript(power);
+                const start = input.selectionStart;
+                const end = input.selectionEnd;
+                const text = input.value;
+                
+                let newText;
+                if (start !== end) {
+                    const selectedBase = text.substring(start, end);
+                    newText = text.substring(0, start) + selectedBase + superscript + text.substring(end);
+                } else {
+                    newText = text.substring(0, start) + 'x' + superscript + text.substring(end);
+                }
+                
+                input.value = newText;
+                input.focus();
+                input.setSelectionRange(start + newText.length, start + newText.length);
+            }
+        }
+    };
+    
+    // Insert nth root with prompt for option fields
+    window.insertNthRootWithPrompt = function(inputId) {
+        const input = document.getElementById(inputId);
+        if (input) {
+            const n = prompt('Enter the root value (e.g., 2 for square root, 3 for cube root):', '3');
+            if (n !== null && n.trim() !== '') {
+                const start = input.selectionStart;
+                const end = input.selectionEnd;
+                const text = input.value;
+                
+                let rootSymbol;
+                if (n === '2') {
+                    rootSymbol = '√';
+                } else if (n === '3') {
+                    rootSymbol = '∛';
+                } else {
+                    const subscript = toSubscript(n);
+                    rootSymbol = subscript + '√';
+                }
+                
+                let newText;
+                if (start !== end) {
+                    const selectedText = text.substring(start, end);
+                    newText = text.substring(0, start) + rootSymbol + '(' + selectedText + ')' + text.substring(end);
+                } else {
+                    newText = text.substring(0, start) + rootSymbol + text.substring(end);
+                }
+                
+                input.value = newText;
+                input.focus();
+                input.setSelectionRange(start + newText.length, start + newText.length);
+            }
+        }
+    };
+    
+    // Preview question image
+    window.previewQuestionImage = function(input) {
+        const preview = document.getElementById('question_image_preview');
+        const previewImg = document.getElementById('preview_img');
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    };
+    
+    // Remove question image preview
+    window.removeQuestionImage = function() {
+        const questionImageInput = document.getElementById('question_image');
+        const preview = document.getElementById('question_image_preview');
+        
+        questionImageInput.value = '';
+        preview.style.display = 'none';
+        const previewImg = document.getElementById('preview_img');
+        previewImg.src = '';
+    };
+    
+    // Preview option image
+    window.previewOptionImage = function(input, optionNum) {
+        const preview = document.getElementById(`option_preview_${optionNum}`);
+        const previewImg = preview.querySelector('.option-preview-img');
+        
+        if (input.files && input.files[0]) {
+            // Validate file size (5MB)
+            const maxSize = 5 * 1024 * 1024;
+            if (input.files[0].size > maxSize) {
+                alert('Image is too large. Maximum size is 5MB.');
+                input.value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    };
+    
+    // Remove option image preview
+    window.removeOptionImage = function(optionNum) {
+        const optionImageInput = document.querySelector(`input[name="option_image_${optionNum}"]`);
+        const preview = document.getElementById(`option_preview_${optionNum}`);
+        
+        if (optionImageInput) {
+            optionImageInput.value = '';
+        }
+        if (preview) {
+            preview.style.display = 'none';
+            const previewImg = preview.querySelector('.option-preview-img');
+            previewImg.src = '';
+        }
+    };
+    
+    // Select True/False option
+    window.selectTFOption = function(value) {
+        const trueOption = document.getElementById('true_option');
+        const falseOption = document.getElementById('false_option');
+        const trueCard = trueOption.closest('.tf-option');
+        const falseCard = falseOption.closest('.tf-option');
+        
+        if (value === 'true') {
+            trueOption.checked = true;
+            trueCard.classList.add('selected');
+            falseCard.classList.remove('selected');
+        } else {
+            falseOption.checked = true;
+            falseCard.classList.add('selected');
+            trueCard.classList.remove('selected');
+        }
+    };
+    
+    // Form validation
+    const questionForm = document.getElementById('questionForm');
+    if (questionForm) {
+        questionForm.addEventListener('submit', function(e) {
+            const type = questionTypeSelect.value;
+            
+            if (!type) {
+                alert('Please select a question type');
+                e.preventDefault();
+                return false;
+            }
+            
+            // Validate file sizes
+            const maxSize = 5 * 1024 * 1024;
+            
+            // Check question image size
+            const questionImageInput = document.getElementById('question_image');
+            if (questionImageInput.files[0] && questionImageInput.files[0].size > maxSize) {
+                alert('Question image is too large. Maximum size is 5MB.');
+                e.preventDefault();
+                return false;
+            }
+            
+            // Check option images size
+            const optionImageInputs = document.querySelectorAll('.option-image-input');
+            for (let input of optionImageInputs) {
+                if (input.files[0] && input.files[0].size > maxSize) {
+                    alert('Option image is too large. Maximum size is 5MB.');
+                    e.preventDefault();
+                    return false;
+                }
+            }
+            
+            // Add validation for specific question types
+            if (type === 'multiple_choice') {
+                const optionCountSelect = document.querySelector('select[name="option_count"]');
+                const optionCount = optionCountSelect ? parseInt(optionCountSelect.value) : 4;
+                let allFilled = true;
+                let emptyOptions = [];
+                
+                for (let i = 1; i <= optionCount; i++) {
+                    const optionInput = document.querySelector(`input[name="option_${i}"]`);
+                    if (optionInput && (!optionInput.value || optionInput.value.trim() === '')) {
+                        allFilled = false;
+                        emptyOptions.push(i);
+                    }
+                }
+                
+                if (!allFilled) {
+                    alert(`Please fill in all option fields. Missing options: ${emptyOptions.join(', ')}`);
+                    e.preventDefault();
+                    return false;
+                }
+            }
+            
+            return true;
+        });
+    }
+    
+    // Trigger change event to show initial state
+    if (questionTypeSelect) {
+        questionTypeSelect.dispatchEvent(new Event('change'));
+    }
+});
+</script>
+{% endblock %}

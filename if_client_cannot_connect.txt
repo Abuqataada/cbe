@@ -1,0 +1,2 @@
+# Open PowerShell as Administrator
+New-NetFirewallRule -DisplayName "CBT Server" -Direction Inbound -LocalPort 5000 -Protocol TCP -Action Allow

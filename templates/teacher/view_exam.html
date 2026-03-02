@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}View Exam - {{ exam.name }} - ARNDALE CBT{% endblock %}
+
+{% block page_title %}
+<h1 class="h3 mb-2"><i class="fas fa-eye"></i> {{ exam.name }}</h1>
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="separator">/</span>
+<a href="{{ url_for('teacher.dashboard') }}">Dashboard</a>
+<span class="separator">/</span>
+<a href="{{ url_for('teacher.exams') }}">Exams</a>
+<span class="separator">/</span>
+<span>View Exam</span>
+{% endblock %}
+
+{% block content %}
+<div class="main-layout">
+    <!-- Main Content -->
+    <div>
+        <!-- Exam Details -->
+        <div class="content-card">
+            <div class="card-header">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="fas fa-info-circle"></i>
+                    <h5>Exam Details</h5>
+                </div>
+                <span class="status-badge badge-{{ exam.status }}">
+                    {{ exam.status|title }}
+                </span>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-label">Subject</div>
+                    <div class="stat-value">{{ exam.subject.name }}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Class</div>
+                    <div class="stat-value">{{ exam.classroom.name }}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Duration</div>
+                    <div class="stat-value">{{ exam.duration_minutes }} mins</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Total Marks</div>
+                    <div class="stat-value">{{ exam.total_marks }}</div>
+                </div>
+            </div>
+            
+            {% if exam.scheduled_start %}
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div>
+                    <div style="font-weight: 600; color: #475569; font-size: 0.9rem; margin-bottom: 0.25rem;">
+                        Scheduled Start
+                    </div>
+                    <div style="color: #1e293b;">
+                        {{ exam.scheduled_start.strftime('%d %B %Y, %I:%M %p') }}
+                    </div>
+                </div>
+                <div>
+                    <div style="font-weight: 600; color: #475569; font-size: 0.9rem; margin-bottom: 0.25rem;">
+                        Scheduled End
+                    </div>
+                    <div style="color: #1e293b;">
+                        {{ exam.scheduled_end.strftime('%d %B %Y, %I:%M %p') if exam.scheduled_end else 'Not set' }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if exam.instructions %}
+            <div style="margin-bottom: 1.5rem;">
+                <div style="font-weight: 600; color: #475569; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                    Instructions
+                </div>
+                <div class="text-content">
+                    {{ exam.instructions }}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if exam.access_code %}
+            <div style="margin-bottom: 1.5rem;">
+                <div style="font-weight: 600; color: #475569; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                    Access Code
+                </div>
+                <div class="access-code">
+                    {{ exam.access_code }}
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="action-buttons">
+                <a href="{{ url_for('teacher.edit_exam', exam_id=exam.id) }}" class="btn btn-warning">
+                    <i class="fas fa-edit"></i> Edit Exam
+                </a>
+                {% if exam.status == 'draft' %}
+                <button class="btn btn-outline-success" onclick="publishExam('{{ exam.id }}')">
+                    <i class="fas fa-paper-plane"></i> Publish Exam
+                </button>
+                {% elif exam.status == 'scheduled' %}
+                <button class="btn btn-outline-success" onclick="activateExam('{{ exam.id }}')">
+                    <i class="fas fa-play"></i> Activate Exam
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Exam Questions -->
+        <div class="content-card">
+            <div class="card-header">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="fas fa-question-circle"></i>
+                    <h5>Exam Questions</h5>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span style="font-weight: 600; color: #1e293b;">{{ total_questions }} questions</span>
+                    <span style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9; padding: 0.25rem 0.75rem; border-radius: 12px; font-weight: 600; font-size: 0.85rem;">
+                        {{ total_marks }} marks
+                    </span>
+                </div>
+            </div>
+            
+            {% if questions %}
+            <div class="exam-accordion accordion" id="questionsAccordion">
+                {% for item in questions %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading{{ loop.index }}">
+                        <button class="accordion-button collapsed" type="button" 
+                                data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}"
+                                aria-expanded="false" aria-controls="collapse{{ loop.index }}">
+                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    <span style="font-weight: 700; color: #10b981;">Q{{ loop.index }}</span>
+                                    <span style="font-weight: 500; color: #1e293b; line-height: 1.3;">
+                                        {{ item.question.question_text|truncate(80) }}
+                                    </span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9; padding: 0.2rem 0.5rem; border-radius: 8px; font-weight: 600; font-size: 0.8rem;">
+                                        {{ item.marks }} marks
+                                    </span>
+                                </div>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" 
+                         aria-labelledby="heading{{ loop.index }}" data-bs-parent="#questionsAccordion">
+                        <div class="accordion-body">
+                            <!-- Question Header -->
+                            <div class="question-header">
+                                <div style="font-weight: 600; color: #1e293b; font-size: 1.1rem;">
+                                    Question {{ loop.index }}
+                                </div>
+                                <div class="question-meta">
+                                    {% if item.question.question_type == 'multiple_choice' %}
+                                    <span class="type-badge badge-mcq">Multiple Choice</span>
+                                    {% elif item.question.question_type == 'true_false' %}
+                                    <span class="type-badge badge-tf">True/False</span>
+                                    {% elif item.question.question_type == 'short_answer' %}
+                                    <span class="type-badge badge-sa">Short Answer</span>
+                                    {% elif item.question.question_type == 'essay' %}
+                                    <span class="type-badge badge-essay">Essay</span>
+                                    {% endif %}
+                                    
+                                    <span class="difficulty-badge badge-{{ item.question.difficulty }}">
+                                        {{ item.question.difficulty|title }}
+                                    </span>
+                                    
+                                    <span style="font-weight: 600; color: #0ea5e9;">
+                                        {{ item.marks }} marks
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <!-- Question Text -->
+                            <div style="margin-bottom: 1.5rem;">
+                                <div style="font-weight: 600; color: #475569; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                                    Question Text
+                                </div>
+                                <div class="text-content">
+                                    {{ item.question.question_text }}
+                                </div>
+                            </div>
+                            
+                            <!-- Question Image -->
+                            {% if item.question.question_image %}
+                            <div style="margin-bottom: 1.5rem;">
+                                <div style="font-weight: 600; color: #475569; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                                    Question Image
+                                </div>
+                                <img src="{{ item.question.question_image }}" 
+                                     class="img-thumbnail" 
+                                     style="max-width: 300px; max-height: 300px;"
+                                     alt="Question image">
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Options for Multiple Choice -->
+                            {% if item.question.question_type == 'multiple_choice' and item.question.options %}
+                            <div style="margin-bottom: 1.5rem;">
+                                <div style="font-weight: 600; color: #475569; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                                    Options
+                                </div>
+                                <ul class="options-list">
+                                    {% for option in item.question.options %}
+                                    <li class="option-item {% if option.is_correct %}correct{% endif %}">
+                                        <span class="option-number">{{ loop.index }}.</span>
+                                        <div class="option-content">
+                                            <div>{{ option.text }}</div>
+                                            {% if option.image %}
+                                            <div class="option-image">
+                                                <img src="{{ option.image }}" 
+                                                     class="img-thumbnail" 
+                                                     style="max-width: 150px; max-height: 150px;"
+                                                     alt="Option image">
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        {% if option.is_correct %}
+                                        <div style="background: #10b981; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
+                                            Correct
+                                        </div>
+                                        {% endif %}
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Correct Answer for other types -->
+                            {% if item.question.correct_answer and item.question.question_type != 'multiple_choice' %}
+                            <div style="margin-bottom: 1.5rem;">
+                                <div style="font-weight: 600; color: #475569; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                                    Correct Answer
+                                </div>
+                                <div class="text-content">
+                                    {{ item.question.correct_answer }}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Explanation -->
+                            {% if item.question.explanation %}
+                            <div style="margin-bottom: 1.5rem;">
+                                <div style="font-weight: 600; color: #475569; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                                    Explanation
+                                </div>
+                                <div class="text-content">
+                                    {{ item.question.explanation }}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Topics -->
+                            <div>
+                                <div style="font-weight: 600; color: #475569; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                                    Topics
+                                </div>
+                                <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                                    {% if item.question.topics %}
+                                        {% for topic in item.question.topics %}
+                                        <span class="topic-badge">{{ topic }}</span>
+                                        {% endfor %}
+                                    {% else %}
+                                        <span style="color: #64748b; font-size: 0.9rem;">No topics</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <h4>No Questions Added</h4>
+                <p>This exam doesn't have any questions yet</p>
+                <a href="{{ url_for('teacher.edit_exam', exam_id=exam.id) }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add Questions
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div>
+        <!-- Exam Actions -->
+        <div class="content-card">
+            <div class="card-header">
+                <i class="fas fa-cog"></i>
+                <h5>Exam Actions</h5>
+            </div>
+            
+            <div style="display: grid; gap: 0.5rem;">
+                <a href="{{ url_for('teacher.edit_exam', exam_id=exam.id) }}" class="btn btn-outline-primary">
+                    <i class="fas fa-edit"></i> Edit Exam
+                </a>
+                <a href="{{ url_for('teacher.question_bank') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-database"></i> Question Bank
+                </a>
+                
+                {% if exam.status == 'draft' %}
+                <button class="btn btn-outline-success" onclick="publishExam('{{ exam.id }}')">
+                    <i class="fas fa-paper-plane"></i> Publish Exam
+                </button>
+                {% elif exam.status == 'scheduled' %}
+                <button class="btn btn-outline-success" onclick="activateExam('{{ exam.id }}')">
+                    <i class="fas fa-play"></i> Activate Exam
+                </button>
+                {% endif %}
+
+                <button class="btn btn-outline-danger" onclick="deleteExam('{{ exam.id }}')">
+                    <i class="fas fa-trash"></i> Delete Exam
+                </button>
+            </div>
+        </div>
+        
+        <!-- Exam Statistics -->
+        <div class="content-card">
+            <div class="card-header">
+                <i class="fas fa-chart-bar"></i>
+                <h5>Exam Statistics</h5>
+            </div>
+            
+            <ul style="list-style: none; padding: 0; margin: 0;">
+                <li style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #e2e8f0;">
+                    <span style="font-weight: 500; color: #64748b;">Questions</span>
+                    <span style="font-weight: 600; color: #1e293b;">{{ total_questions }}</span>
+                </li>
+                <li style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #e2e8f0;">
+                    <span style="font-weight: 500; color: #64748b;">Total Marks</span>
+                    <span style="font-weight: 600; color: #1e293b;">{{ total_marks }}</span>
+                </li>
+                <li style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #e2e8f0;">
+                    <span style="font-weight: 500; color: #64748b;">Pass Mark</span>
+                    <span style="font-weight: 600; color: #1e293b;">{{ exam.pass_mark }}</span>
+                </li>
+                <li style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #e2e8f0;">
+                    <span style="font-weight: 500; color: #64748b;">Duration</span>
+                    <span style="font-weight: 600; color: #1e293b;">{{ exam.duration_minutes }} mins</span>
+                </li>
+                <li style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #e2e8f0;">
+                    <span style="font-weight: 500; color: #64748b;">Created</span>
+                    <span style="font-weight: 600; color: #1e293b;">{{ exam.created_at.strftime('%d %b %Y') }}</span>
+                </li>
+                <li style="display: flex; justify-content: space-between; padding: 0.75rem 0;">
+                    <span style="font-weight: 500; color: #64748b;">Last Updated</span>
+                    <span style="font-weight: 600; color: #1e293b;">{{ exam.updated_at.strftime('%d %b %Y') }}</span>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Student Sessions -->
+        <div class="content-card">
+            <div class="card-header">
+                <i class="fas fa-users"></i>
+                <h5>Student Sessions</h5>
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div style="font-size: 2rem; font-weight: 800; color: #1e293b; line-height: 1;">
+                    {{ exam_sessions|length }}
+                </div>
+                <div style="font-size: 0.9rem; color: #64748b; font-weight: 500;">
+                    Total Sessions
+                </div>
+            </div>
+            
+            {% if exam_sessions %}
+            <ul class="sessions-list">
+                {% for session in exam_sessions[:5] %}
+                <li class="session-item">
+                    <div class="student-info">
+                        <div class="student-name">
+                            {{ session.student.first_name }} {{ session.student.last_name }}
+                        </div>
+                        <div class="student-id">
+                            {{ session.student.admission_number }}
+                        </div>
+                    </div>
+                    <div>
+                        <span class="status-badge badge-{{ session.status }}">
+                            {{ session.status|replace('_', ' ')|title }}
+                        </span>
+                    </div>
+                </li>
+                {% endfor %}
+                
+                {% if exam_sessions|length > 5 %}
+                <li style="text-align: center; padding: 0.75rem 0;">
+                    <a href="#" style="color: #10b981; text-decoration: none; font-weight: 600; font-size: 0.9rem;">
+                        View all {{ exam_sessions|length }} sessions
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+            {% else %}
+            <div style="text-align: center; padding: 2rem 1rem;">
+                <i class="fas fa-user-graduate" style="font-size: 2.5rem; color: #e2e8f0; margin-bottom: 1rem;"></i>
+                <div style="color: #64748b; font-size: 0.9rem;">
+                    No student sessions yet
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Publish Exam Modal -->
+<div class="modal fade" id="publishExamModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-paper-plane"></i>
+                    <span>Publish Exam</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 1rem;">
+                    Are you sure you want to publish this exam?
+                </div>
+                <div style="background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.2); border-left: 4px solid #0ea5e9; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <i class="fas fa-info-circle" style="color: #0ea5e9;"></i>
+                        <strong style="color: #0c4a6e;">Note:</strong>
+                    </div>
+                    <div style="color: #0c4a6e; font-size: 0.85rem; line-height: 1.4;">
+                        Published exams can be scheduled for students.
+                    </div>
+                </div>
+                <div>
+                    <label for="exam_status" style="font-weight: 600; color: #475569; font-size: 0.9rem; margin-bottom: 0.5rem; display: block;">
+                        Set Status:
+                    </label>
+                    <select class="form-select" id="exam_status">
+                        <option value="scheduled">Scheduled (Set date/time)</option>
+                        <option value="active">Active (Start immediately)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmPublish">
+                    <i class="fas fa-paper-plane"></i> Publish Exam
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Main Layout */
+    .main-layout {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    @media (min-width: 992px) {
+        .main-layout {
+            grid-template-columns: 2fr 1fr;
+        }
+    }
+    
+    /* Card Styling */
+    .content-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1.5rem;
+    }
+    
+    .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .card-header h5 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    @media (max-width: 576px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .stat-item {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+    }
+    
+    .stat-label {
+        font-size: 0.85rem;
+        color: #64748b;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+    
+    .stat-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1e293b;
+    }
+    
+    /* Status Badge */
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.8rem;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    
+    .badge-draft { background: rgba(148, 163, 184, 0.1); color: #475569; }
+    .badge-scheduled { background: rgba(245, 158, 11, 0.1); color: #92400e; }
+    .badge-active { background: rgba(16, 185, 129, 0.1); color: #065f46; }
+    .badge-completed { background: rgba(14, 165, 233, 0.1); color: #0c4a6e; }
+    
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e2e8f0;
+    }
+    
+    .btn {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .btn-warning {
+        background: #f59e0b;
+        color: white;
+    }
+    
+    .btn-warning:hover {
+        background: #d97706;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+    }
+    
+    .btn-success {
+        background: #10b981;
+        color: white;
+    }
+    
+    .btn-success:hover {
+        background: #059669;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+    
+    .btn-outline-primary {
+        background: white;
+        color: #10b981;
+        border: 1px solid #10b981;
+    }
+    
+    .btn-outline-primary:hover {
+        background: #10b981;
+        color: white;
+    }
+    
+    .btn-outline-secondary {
+        background: white;
+        color: #64748b;
+        border: 1px solid #cbd5e1;
+    }
+    
+    .btn-outline-secondary:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+        color: #475569;
+    }
+    
+    .btn-outline-danger {
+        background: white;
+        color: #ef4444;
+        border: 1px solid #fecaca;
+    }
+    
+    .btn-outline-danger:hover {
+        background: #fef2f2;
+        border-color: #ef4444;
+        color: #dc2626;
+    }
+    
+    /* Accordion */
+    .exam-accordion .accordion-item {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+        overflow: hidden;
+    }
+    
+    .exam-accordion .accordion-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .exam-accordion .accordion-button {
+        background: #f8fafc;
+        border: none;
+        border-radius: 0;
+        padding: 1rem;
+        font-weight: 500;
+        color: #1e293b;
+        box-shadow: none;
+    }
+    
+    .exam-accordion .accordion-button:not(.collapsed) {
+        background: #f8fafc;
+        color: #1e293b;
+        box-shadow: none;
+    }
+    
+    .exam-accordion .accordion-button:focus {
+        box-shadow: none;
+        border-color: #e2e8f0;
+    }
+    
+    .exam-accordion .accordion-body {
+        padding: 1rem;
+        background: white;
+        border-top: 1px solid #e2e8f0;
+    }
+    
+    /* Question Preview */
+    .question-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .question-meta {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+    
+    /* Type Badges */
+    .type-badge {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    
+    .badge-mcq { background: #dbeafe; color: #1e40af; }
+    .badge-tf { background: #d1fae5; color: #065f46; }
+    .badge-sa { background: #fef3c7; color: #92400e; }
+    .badge-essay { background: #f3e8ff; color: #7c3aed; }
+    
+    /* Difficulty Badges */
+    .difficulty-badge {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    
+    .badge-easy { background: #d1fae5; color: #065f46; }
+    .badge-medium { background: #fef3c7; color: #92400e; }
+    .badge-hard { background: #fee2e2; color: #991b1b; }
+    
+    /* Options List */
+    .options-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .option-item {
+        padding: 0.75rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .option-item.correct {
+        background: rgba(16, 185, 129, 0.1);
+        border-color: #bbf7d0;
+    }
+    
+    .option-number {
+        font-weight: 600;
+        color: #475569;
+        min-width: 20px;
+    }
+    
+    .option-content {
+        flex: 1;
+    }
+    
+    .option-image {
+        margin-top: 0.5rem;
+    }
+    
+    /* Student Sessions */
+    .sessions-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .session-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .session-item:last-child {
+        border-bottom: none;
+    }
+    
+    .student-info {
+        flex: 1;
+    }
+    
+    .student-name {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 0.9rem;
+    }
+    
+    .student-id {
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+    
+    /* Topic Badges */
+    .topic-badge {
+        font-size: 0.7rem;
+        padding: 0.1rem 0.4rem;
+        background: #e2e8f0;
+        color: #475569;
+        border-radius: 4px;
+        font-weight: 500;
+    }
+    
+    /* Access Code */
+    .access-code {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.75rem;
+        font-family: 'Courier New', monospace;
+        font-size: 1.1rem;
+        letter-spacing: 1px;
+        color: #1e293b;
+        text-align: center;
+        margin-top: 0.5rem;
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1.5rem;
+    }
+    
+    .empty-icon {
+        font-size: 3rem;
+        color: #e2e8f0;
+        margin-bottom: 1rem;
+        opacity: 0.6;
+    }
+    
+    .empty-state h4 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+    }
+    
+    .empty-state p {
+        color: #64748b;
+        margin-bottom: 1.5rem;
+        max-width: 300px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    /* Image Styling */
+    .img-thumbnail {
+        object-fit: contain;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+    }
+    
+    /* Text Content */
+    .text-content {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 0.5rem 0;
+        border: 1px solid #e2e8f0;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .content-card {
+            padding: 1rem;
+        }
+        
+        .card-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .question-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        
+        .question-meta {
+            flex-wrap: wrap;
+        }
+    }
+</style>
+
+<script>
+let currentExamId = null;
+let publishExamModal = null;
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Bootstrap modal
+    const modalElement = document.getElementById('publishExamModal');
+    if (modalElement) {
+        publishExamModal = new bootstrap.Modal(modalElement);
+    }
+    
+    // Setup event listener for confirm publish button
+    const confirmPublishBtn = document.getElementById('confirmPublish');
+    if (confirmPublishBtn) {
+        confirmPublishBtn.addEventListener('click', function() {
+            if (!currentExamId) return;
+            
+            const status = document.getElementById('exam_status').value;
+            
+            fetch(`/teacher/exams/publish/${currentExamId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ status: status })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (status === 'scheduled') {
+                        // Redirect to edit page to set schedule
+                        window.location.href = "{{ url_for('teacher.edit_exam', exam_id=0) }}".replace('0', currentExamId);
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    alert(data.message || 'Error publishing exam');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error publishing exam');
+            });
+        });
+    }
+});
+
+function publishExam(examId) {
+    currentExamId = examId;
+    if (publishExamModal) {
+        publishExamModal.show();
+    } else {
+        console.error('Modal not initialized. Please refresh the page.');
+        // Fallback: show confirm dialog directly
+        if (confirm('Publish this exam? You can set the schedule in the edit page.')) {
+            const status = 'scheduled';
+            fetch(`/teacher/exams/publish/${examId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ status: status })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = "{{ url_for('teacher.edit_exam', exam_id=0) }}".replace('0', examId);
+                } else {
+                    alert(data.message || 'Error publishing exam');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error publishing exam');
+            });
+        }
+    }
+}
+
+function activateExam(examId) {
+    if (confirm('Activate this exam for students?')) {
+        fetch(`/teacher/exams/activate/${examId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Error activating exam');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error activating exam');
+        });
+    }
+}
+
+function deleteExam(examId) {
+    if (confirm('Are you sure you want to delete this exam? This action cannot be undone.')) {
+        fetch(`/teacher/exams/delete/${examId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = "{{ url_for('teacher.exams') }}";
+            } else {
+                alert(data.message || 'Error deleting exam');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting exam');
+        });
+    }
+}
+</script>
+{% endblock %}

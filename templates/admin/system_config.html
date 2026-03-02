@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Configuration - Admin Panel</title>
+    <style>
+        .signature-preview {
+            max-width: 200px;
+            max-height: 100px;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        .config-card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .config-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px 10px 0 0;
+            padding: 15px 20px;
+        }
+    </style>
+</head>
+<body>
+    {% extends 'admin/admin_base.html' %}
+    {% block content %}
+    <div class="container-fluid py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="bi bi-gear me-2"></i>System Configuration
+            </h1>
+        </div>
+
+        <div class="row">
+            <!-- Principal Signature Configuration -->
+            <div class="col-lg-6 mb-4">
+                <div class="card config-card">
+                    <div class="config-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-pen-fill me-2"></i>Principal Signature
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="signatureForm" method="POST" enctype="multipart/form-data" 
+                              action="{{ url_for('admin.upload_principal_signature') }}">
+                            <div class="mb-3">
+                                <label for="signatureUpload" class="form-label">
+                                    Upload Signature Image
+                                </label>
+                                <input class="form-control" type="file" id="signatureUpload" 
+                                       name="signature" accept=".png,.jpg,.jpeg,.svg">
+                                <div class="form-text">
+                                    Upload a clear image of the principal's signature (PNG, JPG, JPEG, SVG)
+                                </div>
+                            </div>
+                            
+                            {% if principal_signature %}
+                            <div class="mb-3">
+                                <label class="form-label">Current Signature Preview:</label>
+                                <div class="signature-preview">
+                                    <img src="{{ principal_signature }}" 
+                                         alt="Principal Signature" 
+                                         class="img-fluid"
+                                         onerror="this.style.display='none'">
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-upload me-1"></i>Upload Signature
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumption Date Configuration -->
+            <div class="col-lg-6 mb-4">
+                <div class="card config-card">
+                    <div class="config-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-calendar-date me-2"></i>Resumption Date
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="resumptionForm" method="POST" 
+                              action="{{ url_for('admin.update_resumption_date') }}">
+                            <div class="mb-3">
+                                <label for="resumptionDate" class="form-label">
+                                    Next Term Resumption Date
+                                </label>
+                                <input type="date" class="form-control" id="resumptionDate" 
+                                       name="resumption_date" 
+                                       value="{{ resumption_date if resumption_date else '' }}"
+                                       required>
+                                <div class="form-text">
+                                    This date will appear on student report cards
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Current Date:</label>
+                                <div class="alert alert-info">
+                                    {% if resumption_date %}
+                                        <strong>{{ resumption_date }}</strong>
+                                    {% else %}
+                                        <em>No resumption date set</em>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i>Save Resumption Date
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Existing Configurations Table -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-list-ul me-2"></i>All System Configurations
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Key</th>
+                                <th>Value</th>
+                                <th>Description</th>
+                                <th>Last Updated</th>
+                                <th>Updated By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for config in configs %}
+                            <tr>
+                                <td>
+                                    <strong>{{ config.config_key }}</strong>
+                                </td>
+                                <td>
+                                    {% if config.config_key == 'principal_signature' %}
+                                        {% if config.config_value %}
+                                            <a href="{{ url_for('static', filename=config.config_value.signature_path) }}" 
+                                            target="_blank" class="badge bg-info text-decoration-none">
+                                                View Signature
+                                            </a>
+                                        {% else %}
+                                            <span class="badge bg-secondary">No Signature</span>
+                                        {% endif %}
+                                    {% elif config.config_key == 'resumption_date' %}
+                                        <span class="badge bg-success">
+                                            {{ config.config_value.date if config.config_value else 'N/A' }}
+                                        </span>
+                                    {% else %}
+                                        <code>{{ config.config_value|tojson|truncate(50) }}</code>
+                                    {% endif %}
+                                </td>
+                                <td>{{ config.description or 'No description' }}</td>
+                                <td>{{ config.updated_at.strftime('%Y-%m-%d %H:%M') if config.updated_at else 'N/A' }}</td>
+                                <td>
+                                    {% if config.updater %}
+                                        {{ config.updater.username }}
+                                    {% else %}
+                                        System
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script>
+        // Preview signature before upload
+        document.getElementById('signatureUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const preview = document.querySelector('.signature-preview');
+                    if (!preview.querySelector('img')) {
+                        const img = document.createElement('img');
+                        img.src = event.target.result;
+                        img.className = 'img-fluid';
+                        img.alt = 'Signature Preview';
+                        preview.innerHTML = '';
+                        preview.appendChild(img);
+                    } else {
+                        preview.querySelector('img').src = event.target.result;
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Form validation
+        document.getElementById('resumptionForm').addEventListener('submit', function(e) {
+            const dateInput = document.getElementById('resumptionDate');
+            if (!dateInput.value) {
+                e.preventDefault();
+                alert('Please select a resumption date');
+                dateInput.focus();
+            }
+        });
+
+        // Show current date in a user-friendly format
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateInput = document.getElementById('resumptionDate');
+            if (dateInput.value) {
+                const date = new Date(dateInput.value);
+                const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                console.log('Resumption Date:', date.toLocaleDateString('en-US', options));
+            }
+        });
+    </script>
+    {% endblock %}
+</body>
+</html>

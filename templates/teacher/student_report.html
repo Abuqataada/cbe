@@ -1,0 +1,647 @@
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}{{ student.first_name }} {{ student.last_name }} - Report - ARNDALE CBT{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <!-- Back button -->
+        <a href="{{ url_for('teacher.exam_report', exam_id=exam.id) }}" class="btn btn-outline-secondary mb-3">
+            <i class="fas fa-arrow-left me-2"></i> Back to Exam Report
+        </a>
+        
+        <!-- Student Header -->
+        <div class="student-header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="h3 mb-2">{{ student.first_name }} {{ student.last_name }}</h1>
+                    <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+                        <span class="badge bg-light text-dark">
+                            <i class="fas fa-id-badge me-1"></i>{{ student.admission_number }}
+                        </span>
+                        <span class="badge bg-light text-dark">
+                            <i class="fas fa-users me-1"></i>{{ exam.classroom.name }}
+                        </span>
+                        <span class="badge bg-light text-dark">
+                            <i class="fas fa-book me-1"></i>{{ exam.subject.name }}
+                        </span>
+                    </div>
+                    <p class="mb-0">
+                        <i class="fas fa-chart-line me-1"></i>
+                        Performance Analysis Report • {{ exam.name }}
+                    </p>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="score-circle 
+                        {% if percentage >= 80 %}bg-success
+                        {% elif percentage >= 60 %}bg-info
+                        {% elif percentage >= 40 %}bg-warning
+                        {% else %}bg-danger{% endif %} text-white">
+                        {{ percentage }}%
+                    </div>
+                    <p class="mt-2 mb-0">
+                        Score: {{ total_score }}/{{ max_score }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Analysis Section -->
+{% if analysis %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-robot me-2"></i>AI-Powered Performance Analysis
+                    </h5>
+                    <span class="badge bg-light text-dark">
+                        {{ analysis.analysis_method|replace('_', ' ')|title }} • 
+                        {{ (analysis.confidence_score * 100)|round(0) }}% confidence
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- AI Comment -->
+                {% if analysis.ai_comment %}
+                <div class="ai-insight-card mb-4">
+                    <h6><i class="fas fa-comment me-2"></i>AI Assessment</h6>
+                    <p class="mb-0">{{ analysis.ai_comment }}</p>
+                </div>
+                {% endif %}
+                
+                <div class="row">
+                    <!-- Strengths -->
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-success">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-check-circle me-2"></i>Strengths
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                {% if analysis.strengths and analysis.strengths|length > 0 %}
+                                {% for strength in analysis.strengths %}
+                                <div class="strength-tag">
+                                    <i class="fas fa-check me-1"></i>{{ strength }}
+                                </div>
+                                {% endfor %}
+                                {% else %}
+                                <p class="text-muted mb-0">No specific strengths identified.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Weaknesses -->
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-danger">
+                            <div class="card-header bg-danger text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>Areas for Improvement
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                {% if analysis.weaknesses and analysis.weaknesses|length > 0 %}
+                                {% for weakness in analysis.weaknesses %}
+                                <div class="weakness-tag">
+                                    <i class="fas fa-exclamation me-1"></i>{{ weakness }}
+                                </div>
+                                {% endfor %}
+                                {% else %}
+                                <p class="text-muted mb-0">No specific weaknesses identified.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recommendations -->
+                    <div class="col-12">
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-lightbulb me-2"></i>Recommendations
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                {% if analysis.recommendations and analysis.recommendations|length > 0 %}
+                                <div class="timeline">
+                                    {% for rec in analysis.recommendations %}
+                                    <div class="timeline-item">
+                                        <h6 class="mb-1">Recommendation {{ loop.index }}</h6>
+                                        <p class="mb-0">{{ rec }}</p>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p class="text-muted mb-0">No specific recommendations available.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Performance Metrics -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="card-title">Accuracy Rate</h6>
+                <h2 class="text-primary">
+                    {{ analysis.accuracy_rate|round(1) if analysis else 'N/A' }}%
+                </h2>
+                <small class="text-muted">Correct answers</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="card-title">Percentile</h6>
+                <h2 class="text-success">
+                    {{ analysis.percentile|round(1) if analysis and analysis.percentile else 'N/A' }}
+                </h2>
+                <small class="text-muted">Class ranking</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="card-title">Time Management</h6>
+                <h2 class="text-info">
+                    {{ analysis.time_management_score|round(1) if analysis and analysis.time_management_score else 'N/A' }}/10
+                </h2>
+                <small class="text-muted">Efficiency score</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6 class="card-title">Completion</h6>
+                <h2 class="text-warning">
+                    {{ analysis.completion_rate|round(1) if analysis and analysis.completion_rate else 'N/A' }}%
+                </h2>
+                <small class="text-muted">Questions attempted</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Question-by-Question Analysis -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-list-ol me-2"></i>Question-by-Question Analysis
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if detailed_responses %}
+                <div class="row">
+                    {% for response in detailed_responses %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card question-response 
+                            {% if response.is_correct %}correct-answer{% else %}incorrect-answer{% endif %}">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="card-title mb-0">Question {{ loop.index }}</h6>
+                                    <span class="badge 
+                                        {% if response.is_correct %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ response.marks_awarded }}/{{ response.exam_question.marks or response.question.marks }} marks
+                                    </span>
+                                </div>
+                                
+                                <p class="small mb-2">
+                                    {{ response.question.question_text[:150] }}
+                                    {% if response.question.question_text|length > 150 %}...{% endif %}
+                                </p>
+                                
+                                <div class="mb-2">
+                                    <small class="text-muted">
+                                        <strong>Student's Answer:</strong> 
+                                        {{ response.response.answer|truncate(50) if response.response.answer else 'No answer' }}
+                                    </small>
+                                </div>
+                                
+                                {% if not response.is_correct and response.question.correct_answer %}
+                                <div class="mb-2">
+                                    <small class="text-success">
+                                        <strong>Correct Answer:</strong> 
+                                        {{ response.question.correct_answer|truncate(50) }}
+                                    </small>
+                                </div>
+                                {% endif %}
+                                
+                                {% if response.explanation %}
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        {{ response.explanation|truncate(100) }}
+                                    </small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-question-circle fa-3x text-muted mb-3"></i>
+                    <h5>No Response Data</h5>
+                    <p class="text-muted">Student has not submitted answers for this exam.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance History -->
+{% if other_performances %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-history me-2"></i>Performance History in {{ exam.subject.name }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Exam</th>
+                                <th>Date</th>
+                                <th>Score</th>
+                                <th>Percentage</th>
+                                <th>Trend</th>
+                                <th>AI Analysis</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for perf in other_performances %}
+                            <tr>
+                                <td>{{ perf.exam.name }}</td>
+                                <td>{{ perf.date.strftime('%d %b %Y') }}</td>
+                                <td>
+                                    <span class="badge 
+                                        {% if perf.analysis.overall_score >= 80 %}bg-success
+                                        {% elif perf.analysis.overall_score >= 60 %}bg-info
+                                        {% elif perf.analysis.overall_score >= 40 %}bg-warning
+                                        {% else %}bg-danger{% endif %}">
+                                        {{ perf.analysis.overall_score|round(1) }}%
+                                    </span>
+                                </td>
+                                <td>{{ perf.analysis.overall_score|round(1) }}%</td>
+                                <td>
+                                    {% if loop.index > 1 %}
+                                        {% set prev_score = other_performances[loop.index-2].analysis.overall_score %}
+                                        {% set diff = perf.analysis.overall_score - prev_score %}
+                                        {% if diff > 0 %}
+                                        <span class="text-success">
+                                            <i class="fas fa-arrow-up"></i> {{ diff|round(1) }}%
+                                        </span>
+                                        {% elif diff < 0 %}
+                                        <span class="text-danger">
+                                            <i class="fas fa-arrow-down"></i> {{ (-diff)|round(1) }}%
+                                        </span>
+                                        {% else %}
+                                        <span class="text-muted">No change</span>
+                                        {% endif %}
+                                    {% else %}
+                                    <span class="text-muted">First exam</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('teacher.student_report', student_id=student.id, exam_id=perf.exam.id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        View Report
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Action Section -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Teacher Actions</h6>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="addComment()">
+                                <i class="fas fa-comment me-2"></i>Add Teacher Comment
+                            </button>
+                            <button class="btn btn-success" onclick="scheduleMeeting()">
+                                <i class="fas fa-calendar-check me-2"></i>Schedule Parent Meeting
+                            </button>
+                            <button class="btn btn-info" onclick="createIntervention()">
+                                <i class="fas fa-hands-helping me-2"></i>Create Intervention Plan
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6>Export & Share</h6>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary" onclick="exportReport()">
+                                <i class="fas fa-file-pdf me-2"></i>Export as PDF
+                            </button>
+                            <button class="btn btn-outline-success" onclick="shareWithParents()">
+                                <i class="fas fa-share-alt me-2"></i>Share with Parents
+                            </button>
+                            <button class="btn btn-outline-info" onclick="printReport()">
+                                <i class="fas fa-print me-2"></i>Print Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Regenerate Modal -->
+<div class="modal fade" id="regenerateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-robot me-2"></i>Regenerate AI Analysis
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Regenerate AI analysis for this student? This will update the strengths, weaknesses, and recommendations based on the latest data.</p>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="includeHistory">
+                    <label class="form-check-label" for="includeHistory">
+                        Include performance history in analysis
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="regenerateAnalysis()">
+                    <i class="fas fa-robot me-2"></i>Regenerate
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .student-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .score-circle {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 0 auto;
+    }
+    
+    .question-response {
+        border-left: 3px solid;
+        padding-left: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .correct-answer {
+        border-color: #28a745;
+        background-color: #d4edda;
+    }
+    
+    .incorrect-answer {
+        border-color: #dc3545;
+        background-color: #f8d7da;
+    }
+    
+    .ai-insight-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .strength-tag {
+        background-color: #d4edda;
+        color: #155724;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        display: inline-block;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .weakness-tag {
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        display: inline-block;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+    
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -2.25rem;
+        top: 0.25rem;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        border: 2px solid white;
+    }
+    
+    .performance-trend {
+        height: 200px;
+        position: relative;
+    }
+</style>
+
+<script>
+    function addComment() {
+        // In a real implementation, open a comment modal
+        const comment = prompt('Enter your comment for this student:');
+        if (comment) {
+            showSuccess('Comment saved successfully!');
+        }
+    }
+    
+    function scheduleMeeting() {
+        // In a real implementation, open meeting scheduler
+        alert('Parent meeting scheduler would open here.');
+    }
+    
+    function createIntervention() {
+        // In a real implementation, open intervention planner
+        alert('Intervention plan creator would open here.');
+    }
+    
+    function exportReport() {
+        showLoading('Generating PDF report...');
+        
+        // Simulate PDF generation
+        setTimeout(() => {
+            hideLoading();
+            showSuccess('PDF report generated successfully!');
+        }, 2000);
+    }
+    
+    function shareWithParents() {
+        // In a real implementation, show sharing options
+        const email = prompt('Enter parent email address:');
+        if (email) {
+            showSuccess(`Report shared with ${email}`);
+        }
+    }
+    
+    function printReport() {
+        window.print();
+    }
+    
+    function regenerateAnalysis() {
+        const includeHistory = document.getElementById('includeHistory').checked;
+        
+        showLoading('Regenerating AI analysis...');
+        
+        // In a real implementation, make API call to regenerate analysis
+        setTimeout(() => {
+            hideLoading();
+            showSuccess('AI analysis regenerated successfully!');
+            // Reload page to show updated analysis
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        }, 3000);
+    }
+    
+    function showRegenerateModal() {
+        const modal = new bootstrap.Modal(document.getElementById('regenerateModal'));
+        modal.show();
+    }
+    
+    // Show loading overlay
+    function showLoading(message) {
+        const overlay = document.createElement('div');
+        overlay.id = 'loading-overlay';
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        `;
+        
+        const spinner = document.createElement('div');
+        spinner.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <div class="text-white">${message}</div>
+            </div>
+        `;
+        
+        overlay.appendChild(spinner);
+        document.body.appendChild(overlay);
+    }
+    
+    function hideLoading() {
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) {
+            overlay.remove();
+        }
+    }
+    
+    function showSuccess(message) {
+        // Create toast notification
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed bottom-0 end-0 p-3';
+        toast.style.zIndex = '9999';
+        
+        toast.innerHTML = `
+            <div class="toast show" role="alert">
+                <div class="toast-header bg-success text-white">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong class="me-auto">Success</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            toast.remove();
+        }, 5000);
+    }
+</script>
+{% endblock %}

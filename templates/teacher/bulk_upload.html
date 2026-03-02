@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}Bulk Upload Questions - ARNDALE CBT{% endblock %}
+
+{% block page_title %}
+<h1 class="h3 mb-2"><i class="fas fa-file-upload"></i> Bulk Upload Questions</h1>
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="separator">/</span>
+<a href="{{ url_for('teacher.dashboard') }}">Dashboard</a>
+<span class="separator">/</span>
+<a href="{{ url_for('teacher.question_bank') }}">Question Bank</a>
+<span class="separator">/</span>
+<span>Bulk Upload</span>
+{% endblock %}
+
+{% block content %}
+<div class="main-layout">
+    <!-- Main Content -->
+    <div>
+        <!-- Upload File Card -->
+        <div class="content-card">
+            <div class="card-header">
+                <i class="fas fa-upload"></i>
+                <h5>Upload File</h5>
+            </div>
+            
+            <form method="POST" enctype="multipart/form-data">
+                <div class="file-upload-section">
+                    <div class="file-upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <input type="file" name="file" id="file" class="form-control" accept=".xlsx,.xls,.csv" required>
+                    <div class="form-text mt-2">
+                        Supported formats: Excel (.xlsx, .xls) or CSV (.csv)
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <h6>
+                        <i class="fas fa-info-circle"></i>
+                        File Format Requirements
+                    </h6>
+                    <ul>
+                        <li>File must contain the required columns (see template)</li>
+                        <li>Subject codes must exist in the system</li>
+                        <li>Question types must be valid</li>
+                        <li>Use the template to ensure correct format</li>
+                    </ul>
+                </div>
+                
+                <div class="action-buttons">
+                    <a href="{{ url_for('teacher.question_bank') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Question Bank
+                    </a>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <a href="{{ url_for('teacher.download_question_template') }}" 
+                           class="btn btn-outline-primary">
+                            <i class="fas fa-download"></i> Download Template
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> Upload File
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div>
+        <!-- Required Columns Card -->
+        <div class="content-card">
+            <div class="card-header">
+                <i class="fas fa-list-alt"></i>
+                <h5>Required Columns</h5>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="compact-table">
+                    <thead>
+                        <tr>
+                            <th>Column</th>
+                            <th>Required</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>subject_code</code></td>
+                            <td><span class="badge badge-required">Required</span></td>
+                            <td>Subject code (must exist)</td>
+                        </tr>
+                        <tr>
+                            <td><code>question_text</code></td>
+                            <td><span class="badge badge-required">Required</span></td>
+                            <td>The question text</td>
+                        </tr>
+                        <tr>
+                            <td><code>question_type</code></td>
+                            <td><span class="badge badge-required">Required</span></td>
+                            <td>multiple_choice, true_false, short_answer, or essay</td>
+                        </tr>
+                        <tr>
+                            <td><code>difficulty</code></td>
+                            <td><span class="badge badge-optional">Optional</span></td>
+                            <td>easy, medium, or hard</td>
+                        </tr>
+                        <tr>
+                            <td><code>marks</code></td>
+                            <td><span class="badge badge-optional">Optional</span></td>
+                            <td>Marks (default: 1.0)</td>
+                        </tr>
+                        <tr>
+                            <td><code>correct_option</code></td>
+                            <td><span class="badge badge-conditional">Conditional</span></td>
+                            <td>For multiple_choice: option number (1-4)</td>
+                        </tr>
+                        <tr>
+                            <td><code>correct_answer</code></td>
+                            <td><span class="badge badge-conditional">Conditional</span></td>
+                            <td>For true_false/short_answer</td>
+                        </tr>
+                        <tr>
+                            <td><code>explanation</code></td>
+                            <td><span class="badge badge-optional">Optional</span></td>
+                            <td>Optional explanation</td>
+                        </tr>
+                        <tr>
+                            <td><code>topics</code></td>
+                            <td><span class="badge badge-optional">Optional</span></td>
+                            <td>Comma-separated topics</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="tips-box">
+                <h6>
+                    <i class="fas fa-lightbulb"></i>
+                    Tips for Successful Upload
+                </h6>
+                <ul>
+                    <li>Download and use the template file</li>
+                    <li>Test with a small file first</li>
+                    <li>Check subject codes before uploading</li>
+                    <li>Save your original file for reference</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Main Layout */
+    .main-layout {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    @media (min-width: 992px) {
+        .main-layout {
+            grid-template-columns: 2fr 1fr;
+        }
+    }
+    
+    /* Card Styling */
+    .content-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1.5rem;
+    }
+    
+    .card-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .card-header h5 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+    
+    /* Form Styling */
+    .form-label {
+        font-weight: 600;
+        color: #475569;
+        font-size: 0.9rem;
+        margin-bottom: 0.4rem;
+    }
+    
+    .form-label.required::after {
+        content: " *";
+        color: #ef4444;
+    }
+    
+    .form-control, .form-select {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 0.6rem 0.75rem;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        outline: none;
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+    
+    /* File Upload Section */
+    .file-upload-section {
+        border: 2px dashed #cbd5e1;
+        border-radius: 8px;
+        padding: 2rem;
+        text-align: center;
+        background: #f8fafc;
+        transition: all 0.2s ease;
+        margin-bottom: 1.5rem;
+    }
+    
+    .file-upload-section:hover {
+        border-color: #10b981;
+        background: #f0fdfa;
+    }
+    
+    .file-upload-icon {
+        font-size: 2.5rem;
+        color: #94a3b8;
+        margin-bottom: 1rem;
+    }
+    
+    /* Info Box */
+    .info-box {
+        background: rgba(14, 165, 233, 0.1);
+        border: 1px solid rgba(14, 165, 233, 0.2);
+        border-left: 4px solid #0ea5e9;
+        border-radius: 8px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .info-box h6 {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #0c4a6e;
+        margin-bottom: 0.75rem;
+    }
+    
+    .info-box ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .info-box li {
+        position: relative;
+        padding-left: 1.25rem;
+        margin-bottom: 0.4rem;
+        line-height: 1.4;
+        color: #0c4a6e;
+    }
+    
+    .info-box li:before {
+        content: "•";
+        position: absolute;
+        left: 0.5rem;
+        color: #0ea5e9;
+        font-weight: bold;
+    }
+    
+    .info-box li:last-child {
+        margin-bottom: 0;
+    }
+    
+    /* Tips Box */
+    .tips-box {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        border-left: 4px solid #10b981;
+        border-radius: 8px;
+        padding: 1.25rem;
+        margin-top: 1.5rem;
+    }
+    
+    .tips-box h6 {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #065f46;
+        margin-bottom: 0.75rem;
+    }
+    
+    .tips-box ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .tips-box li {
+        position: relative;
+        padding-left: 1.25rem;
+        margin-bottom: 0.4rem;
+        line-height: 1.4;
+        color: #065f46;
+    }
+    
+    .tips-box li:before {
+        content: "✓";
+        position: absolute;
+        left: 0.5rem;
+        color: #10b981;
+        font-weight: bold;
+    }
+    
+    .tips-box li:last-child {
+        margin-bottom: 0;
+    }
+    
+    /* Form Text */
+    .form-text {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin-top: 0.25rem;
+    }
+    
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e2e8f0;
+    }
+    
+    .btn {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .btn-primary {
+        background: #10b981;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: #059669;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+    
+    .btn-outline-primary {
+        background: white;
+        color: #10b981;
+        border: 1px solid #10b981;
+    }
+    
+    .btn-outline-primary:hover {
+        background: #10b981;
+        color: white;
+        transform: translateY(-1px);
+    }
+    
+    .btn-outline-secondary {
+        background: white;
+        color: #64748b;
+        border: 1px solid #cbd5e1;
+    }
+    
+    .btn-outline-secondary:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+        color: #475569;
+    }
+    
+    /* Table Styling */
+    .compact-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+    
+    .compact-table th {
+        background: #f8fafc;
+        padding: 0.75rem 0.75rem;
+        font-weight: 600;
+        color: #475569;
+        text-align: left;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .compact-table td {
+        padding: 0.75rem 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: top;
+    }
+    
+    .compact-table tr:hover {
+        background: #f8fafc;
+    }
+    
+    /* Badges */
+    .badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-weight: 600;
+    }
+    
+    .badge-required {
+        background: rgba(239, 68, 68, 0.1);
+        color: #dc2626;
+    }
+    
+    .badge-conditional {
+        background: rgba(245, 158, 11, 0.1);
+        color: #d97706;
+    }
+    
+    .badge-optional {
+        background: rgba(156, 163, 175, 0.1);
+        color: #6b7280;
+    }
+    
+    /* Code Styling */
+    code {
+        background: #f8fafc;
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.85rem;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .content-card {
+            padding: 1rem;
+        }
+        
+        .file-upload-section {
+            padding: 1.5rem 1rem;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .compact-table {
+            display: block;
+            overflow-x: auto;
+        }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Bulk upload page loaded');
+    
+    const fileInput = document.getElementById('file');
+    
+    // Optional: Add file name display
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const fileName = this.files[0]?.name || 'No file chosen';
+            console.log('Selected file:', fileName);
+            
+            // You could add a visual indicator here if needed
+            // e.g., display the file name next to the input
+        });
+    }
+    
+    // Form validation for file size
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (!fileInput.files[0]) {
+                alert('Please select a file to upload.');
+                e.preventDefault();
+                return false;
+            }
+            
+            const file = fileInput.files[0];
+            const validExtensions = ['.xlsx', '.xls', '.csv'];
+            const fileName = file.name.toLowerCase();
+            
+            // Check file extension
+            const hasValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
+            
+            if (!hasValidExtension) {
+                alert('Invalid file type. Please upload an Excel (.xlsx, .xls) or CSV (.csv) file.');
+                e.preventDefault();
+                return false;
+            }
+            
+            // Check file size (max 10MB)
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            if (file.size > maxSize) {
+                alert('File is too large. Maximum size is 10MB.');
+                e.preventDefault();
+                return false;
+            }
+            
+            return true;
+        });
+    }
+});
+</script>
+{% endblock %}

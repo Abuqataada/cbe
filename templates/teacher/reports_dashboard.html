@@ -1,0 +1,686 @@
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}Reports & Analytics - ARNDALE CBT{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-chart-line me-2"></i> Reports & Analytics Dashboard</h4>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    Generate AI-powered reports, analyze student performance, and gain insights into your teaching effectiveness.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card stats-card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-0">{{ total_exams }}</h2>
+                        <p class="mb-0">Total Exams</p>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="card stats-card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-0">{{ total_analyses }}</h2>
+                        <p class="mb-0">AI Analyses</p>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="card stats-card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-0">{{ total_reports }}</h2>
+                        <p class="mb-0">Generated Reports</p>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="#exams-section" class="text-decoration-none">
+                            <div class="quick-action-card">
+                                <div class="action-icon">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                                <h6>Analyze Exam</h6>
+                                <p class="small text-muted">Generate AI analysis for an exam</p>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <a href="#reports-section" class="text-decoration-none">
+                            <div class="quick-action-card">
+                                <div class="action-icon">
+                                    <i class="fas fa-file-contract"></i>
+                                </div>
+                                <h6>View Reports</h6>
+                                <p class="small text-muted">Browse generated reports</p>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('teacher.my_subjects') }}" class="text-decoration-none">
+                            <div class="quick-action-card">
+                                <div class="action-icon">
+                                    <i class="fas fa-chalkboard-teacher"></i>
+                                </div>
+                                <h6>Class Reports</h6>
+                                <p class="small text-muted">Generate class performance reports</p>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <div class="quick-action-card" onclick="showAIHelp()" style="cursor: pointer;">
+                            <div class="action-icon">
+                                <i class="fas fa-question-circle"></i>
+                            </div>
+                            <h6>AI Help</h6>
+                            <p class="small text-muted">Learn about AI features</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Exams for Analysis -->
+<div class="row mb-4" id="exams-section">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i> Recent Exams - Generate Reports</h5>
+            </div>
+            <div class="card-body">
+                {% if exams %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Exam Title</th>
+                                <th>Subject</th>
+                                <th>Class</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for exam in exams %}
+                            <tr>
+                                <td>
+                                    <strong>{{ exam.name }}</strong>
+                                    {% if exam.status == 'completed' %}
+                                    <span class="badge bg-success ms-2">Completed</span>
+                                    {% elif exam.status == 'active' %}
+                                    <span class="badge bg-warning ms-2">Active</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary ms-2">{{ exam.status|title }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ exam.subject.name }}</td>
+                                <td>{{ exam.classroom.name }}</td>
+                                <td>{{ exam.created_at.strftime('%d %b %Y') }}</td>
+                                <td>
+                                    {% set session_count = exam.exam_sessions|length %}
+                                    <span class="badge {% if session_count > 0 %}bg-primary{% else %}bg-secondary{% endif %}">
+                                        {{ session_count }} sessions
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('teacher.exam_report', exam_id=exam.id) }}" 
+                                           class="btn btn-outline-primary">
+                                            <i class="fas fa-chart-bar"></i> Report
+                                        </a>
+                                        <button type="button" class="btn btn-outline-success" 
+                                                onclick="analyzeExam('{{ exam.id }}', '{{ exam.name }}')">
+                                            <i class="fas fa-robot"></i> AI Analyze
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                    <h5>No Exams Available</h5>
+                    <p class="text-muted">You haven't created any exams yet.</p>
+                    <a href="{{ url_for('teacher.exams') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i> Create Exam
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent AI Analyses -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-robot me-2"></i> Recent AI Analyses</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_analyses %}
+                <div class="row">
+                    {% for analysis in recent_analyses %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card report-card border-left-info">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="mb-1">{{ analysis.student.first_name }} {{ analysis.student.last_name }}</h6>
+                                        <small class="text-muted">
+                                            {{ analysis.exam.name }} • {{ analysis.subject.name }}
+                                        </small>
+                                    </div>
+                                    <span class="badge ai-badge">
+                                        {{ analysis.analysis_method|replace('_', ' ')|title }}
+                                    </span>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress-ring me-3">
+                                            <svg viewBox="0 0 36 36">
+                                                <path d="M18 2.0845
+                                                    a 15.9155 15.9155 0 0 1 0 31.831
+                                                    a 15.9155 15.9155 0 0 1 0 -31.831"
+                                                    fill="none"
+                                                    stroke="#eee"
+                                                    stroke-width="3"/>
+                                                <path d="M18 2.0845
+                                                    a 15.9155 15.9155 0 0 1 0 31.831
+                                                    a 15.9155 15.9155 0 0 1 0 -31.831"
+                                                    fill="none"
+                                                    stroke="#4CAF50"
+                                                    stroke-width="3"
+                                                    stroke-dasharray="{{ analysis.overall_score or 0 }}, 100"/>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h4 class="mb-0">{{ analysis.overall_score|round(1) }}%</h4>
+                                            <small class="text-muted">Overall Score</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {% if analysis.strengths and analysis.strengths|length > 0 %}
+                                <div class="mb-2">
+                                    <small class="text-success">
+                                        <i class="fas fa-check-circle me-1"></i>
+                                        {{ analysis.strengths[0]|truncate(60) }}
+                                    </small>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        {{ analysis.created_at.strftime('%d %b %Y') }}
+                                    </small>
+                                    <a href="{{ url_for('teacher.student_report', student_id=analysis.student_id, exam_id=analysis.exam_id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-robot fa-3x text-muted mb-3"></i>
+                    <h5>No AI Analyses Yet</h5>
+                    <p class="text-muted">Run AI analysis on exams to see insights here.</p>
+                    <button type="button" class="btn btn-primary" onclick="scrollToExams()">
+                        <i class="fas fa-play me-2"></i> Start Analysis
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Generated Reports -->
+<div class="row" id="reports-section">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-file-contract me-2"></i> Generated Reports</h5>
+            </div>
+            <div class="card-body">
+                {% if generated_reports %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Report Title</th>
+                                <th>Type</th>
+                                <th>Subject</th>
+                                <th>Class</th>
+                                <th>Generated</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in generated_reports %}
+                            <tr>
+                                <td>
+                                    <strong>{{ report.title }}</strong>
+                                    {% if report.is_ai_generated %}
+                                    <span class="badge ai-badge ms-2">AI Generated</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark">
+                                        {{ report.report_type|replace('_', ' ')|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if report.subject %}
+                                    {{ report.subject.name }}
+                                    {% else %}
+                                    <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if report.classroom %}
+                                    {{ report.classroom.name }}
+                                    {% else %}
+                                    <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ report.generated_at.strftime('%d %b %Y') }}</td>
+                                <td>
+                                    <span class="badge {% if report.status == 'published' %}bg-success{% else %}bg-warning{% endif %}">
+                                        {{ report.status|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('teacher.view_report', report_id=report.id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="#" class="btn btn-outline-secondary">
+                        <i class="fas fa-history me-2"></i> View All Reports
+                    </a>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-file-contract fa-3x text-muted mb-3"></i>
+                    <h5>No Reports Generated</h5>
+                    <p class="text-muted">Generate your first report to see it here.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Information Modal -->
+<div class="modal fade" id="aiHelpModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-robot me-2"></i>AI-Powered Analytics
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-primary">
+                            <div class="card-body">
+                                <h6><i class="fas fa-user-graduate text-primary me-2"></i>Student Analysis</h6>
+                                <p class="small">AI analyzes individual student performance to identify:</p>
+                                <ul class="small">
+                                    <li>Academic strengths and weaknesses</li>
+                                    <li>Learning patterns and gaps</li>
+                                    <li>Personalized recommendations</li>
+                                    <li>Automated feedback comments</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-success">
+                            <div class="card-body">
+                                <h6><i class="fas fa-users text-success me-2"></i>Class Analysis</h6>
+                                <p class="small">AI provides class-level insights including:</p>
+                                <ul class="small">
+                                    <li>Overall performance trends</li>
+                                    <li>Common misconceptions</li>
+                                    <li>Teaching effectiveness metrics</li>
+                                    <li>Curriculum adjustment suggestions</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-info">
+                            <div class="card-body">
+                                <h6><i class="fas fa-chart-line text-info me-2"></i>Question Analysis</h6>
+                                <p class="small">AI evaluates exam questions to identify:</p>
+                                <ul class="small">
+                                    <li>Question difficulty levels</li>
+                                    <li>Discrimination indices</li>
+                                    <li>Problematic questions</li>
+                                    <li>Question bank optimization</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-warning">
+                            <div class="card-body">
+                                <h6><i class="fas fa-lightbulb text-warning me-2"></i>Predictive Analytics</h6>
+                                <p class="small">AI can predict and suggest:</p>
+                                <ul class="small">
+                                    <li>At-risk students</li>
+                                    <li>Optimal intervention timing</li>
+                                    <li>Learning progression paths</li>
+                                    <li>Personalized study plans</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle me-2"></i>How it Works</h6>
+                    <p class="small mb-0">
+                        Our AI analyzes student responses, exam patterns, and historical data to provide actionable insights. 
+                        The system uses both rule-based algorithms and OpenAI's GPT models (when configured) to generate 
+                        comprehensive analyses.
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="https://platform.openai.com/api-keys" target="_blank" class="btn btn-primary">
+                    <i class="fas fa-key me-2"></i>Get OpenAI API Key
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .stats-card {
+        border-radius: 10px;
+        border: none;
+        transition: transform 0.3s;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stat-icon {
+        font-size: 2.5rem;
+        opacity: 0.8;
+    }
+    
+    .report-card {
+        border-left: 4px solid;
+        transition: all 0.3s;
+    }
+    
+    .report-card:hover {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .exam-type-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .ai-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .quick-action-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        text-align: center;
+        height: 100%;
+        transition: all 0.3s;
+        border: 1px solid #e0e0e0;
+    }
+    
+    .quick-action-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        border-color: var(--primary-color);
+    }
+    
+    .action-icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: var(--primary-color);
+    }
+    
+    .progress-ring {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .progress-ring-circle {
+        transition: stroke-dashoffset 0.35s;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+    }
+</style>
+
+<script>
+    function analyzeExam(examId, examName) {
+        if (confirm(`Run AI analysis for "${examName}"? This may take a few moments.`)) {
+            showLoading('Analyzing exam data...');
+            
+            fetch(`/teacher/reports/analyze-all/${examId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                
+                if (data.success) {
+                    showSuccess(`Analysis completed! ${data.message}`);
+                    // Reload page after 2 seconds to show new analyses
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    showError(data.message || 'Analysis failed');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showError('Network error: ' + error.message);
+            });
+        }
+    }
+    
+    function showAIHelp() {
+        const modal = new bootstrap.Modal(document.getElementById('aiHelpModal'));
+        modal.show();
+    }
+    
+    function scrollToExams() {
+        document.getElementById('exams-section').scrollIntoView({ 
+            behavior: 'smooth' 
+        });
+    }
+    
+    function showLoading(message) {
+        // Create loading overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'loading-overlay';
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        `;
+        
+        const spinner = document.createElement('div');
+        spinner.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <div class="text-white">${message}</div>
+            </div>
+        `;
+        
+        overlay.appendChild(spinner);
+        document.body.appendChild(overlay);
+    }
+    
+    function hideLoading() {
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) {
+            overlay.remove();
+        }
+    }
+    
+    function showSuccess(message) {
+        // Create toast notification
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed bottom-0 end-0 p-3';
+        toast.style.zIndex = '9999';
+        
+        toast.innerHTML = `
+            <div class="toast show" role="alert">
+                <div class="toast-header bg-success text-white">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong class="me-auto">Success</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            toast.remove();
+        }, 5000);
+    }
+    
+    function showError(message) {
+        // Create error toast
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed bottom-0 end-0 p-3';
+        toast.style.zIndex = '9999';
+        
+        toast.innerHTML = `
+            <div class="toast show" role="alert">
+                <div class="toast-header bg-danger text-white">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong class="me-auto">Error</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            toast.remove();
+        }, 5000);
+    }
+    
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %}

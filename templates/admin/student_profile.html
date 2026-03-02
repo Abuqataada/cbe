@@ -1,0 +1,1658 @@
+<!DOCTYPE html>
+<!-- templates/admin/student_profile.html -->
+{% extends "admin/admin_base.html" %}
+
+{% block title %}{{ student.first_name }} {{ student.last_name }} - Student Profile{% endblock %}
+
+{% block page_title %}
+<h1>
+    <i class="fas fa-user-graduate"></i> 
+    Student Profile: {{ student.first_name }} {{ student.last_name }}
+</h1>
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="separator">/</span>
+<a href="{{ url_for('admin.manage_students') }}">Students</a>
+<span class="separator">/</span>
+<span>{{ student.first_name }} {{ student.last_name }}</span>
+{% endblock %}
+
+{% block content %}
+<!-- Profile Header -->
+<div class="profile-header">
+    <div class="profile-info">
+        <div class="student-avatar">
+            {{ student.first_name[0] }}{{ student.last_name[0] }}
+        </div>
+        
+        <div class="student-details">
+            <div class="student-name">
+                {{ student.first_name }} {{ student.last_name }}
+                {% if student.middle_name %}
+                {{ student.middle_name }}
+                {% endif %}
+            </div>
+            <div class="student-id">{{ student.admission_number }}</div>
+            
+            <!-- Enhanced Class Information -->
+            <div class="class-info-section">
+                {% if student.classroom %}
+                <div class="class-card">
+                    <div class="class-header">
+                        <div>
+                            <h5><i class="fas fa-chalkboard"></i> {{ student.classroom.name }} ({{ student.classroom.level }})</h5>
+                        </div>
+                    </div>
+                    
+                    <div class="class-details">
+                        {% if student.classroom.form_teacher %}
+                        <div class="form-teacher">
+                            <i class="fas fa-user-tie"></i>
+                            <div>
+                                <small>Form Teacher</small>
+                                <div>{{ student.classroom.form_teacher.first_name }} {{ student.classroom.form_teacher.last_name }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="no-class-alert">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>
+                        <strong>Not assigned to any class</strong>
+                        <small>This student needs to be assigned to a class to track academic progress.</small>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Status Badges -->
+            <div class="status-section">
+                <span class="status-badge status-{{ student.academic_status }}">
+                    <i class="fas fa-{{ 'check-circle' if student.is_active else 'times-circle' }}"></i>
+                    {{ student.academic_status|title }}
+                </span>
+                
+                {% if student.gender %}
+                <span class="status-badge gender-badge gender-{{ student.gender }}">
+                    <i class="fas fa-{{ 'mars' if student.gender == 'male' else 'venus' }}"></i>
+                    {{ student.gender|title }}
+                </span>
+                {% endif %}
+                
+                {% if student.classroom %}
+                <span class="status-badge session-badge">
+                    <i class="fas fa-calendar-alt"></i>
+                    {{ student.classroom.academic_session.name if student.classroom.academic_session else 'No Session' }}
+                </span>
+                {% endif %}
+            </div>
+            
+            <!-- Student Information Grid -->
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-card-title">Date of Birth</div>
+                    <div class="info-card-content">
+                        {% if student.date_of_birth %}
+                        {{ student.date_of_birth.strftime('%d %b %Y') }}
+                        {% else %}
+                        <span class="text-muted">Not specified</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="info-card">
+                    <div class="info-card-title">Age</div>
+                    <div class="info-card-content">
+                        {% if student.date_of_birth %}
+                            {% set dob = student.date_of_birth %}
+                            {% set age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day)) %}
+                            {{ age }} years
+                        {% else %}
+                            <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="info-card">
+                    <div class="info-card-title">Enrollment Date</div>
+                    <div class="info-card-content">
+                        {% if student.enrollment_date %}
+                        {{ student.enrollment_date.strftime('%d %b %Y') }}
+                        {% else %}
+                        <span class="text-muted">Not specified</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="info-card">
+                    <div class="info-card-title">Email</div>
+                    <div class="info-card-content">
+                        {{ student.email or 'Not specified' }}
+                    </div>
+                </div>
+                
+                {% if student.address %}
+                <div class="info-card">
+                    <div class="info-card-title">Address</div>
+                    <div class="info-card-content">{{ student.address }}</div>
+                </div>
+                {% endif %}
+                
+                <!-- Parent Information -->
+                {% if student.parent_name %}
+                <div class="info-card parent-info">
+                    <div class="info-card-title">Parent/Guardian</div>
+                    <div class="info-card-content">
+                        <div>{{ student.parent_name }}</div>
+                        {% if student.parent_phone %}
+                        <div class="parent-contact">
+                            <i class="fas fa-phone"></i> {{ student.parent_phone }}
+                        </div>
+                        {% endif %}
+                        {% if student.parent_email %}
+                        <div class="parent-contact">
+                            <i class="fas fa-envelope"></i> {{ student.parent_email }}
+                        </div>
+                        {% endif %}
+                        {% if student.parent_occupation %}
+                        <div class="parent-contact">
+                            <i class="fas fa-briefcase"></i> {{ student.parent_occupation }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Linked Parents -->
+                {% if parents %}
+                <div class="info-card linked-parents">
+                    <div class="info-card-title">Linked Parents</div>
+                    <div class="info-card-content">
+                        {% for link in parents %}
+                        <div class="parent-link">
+                            <div>{{ link.parent.first_name }} {{ link.parent.last_name }}</div>
+                            <div class="relationship">
+                                <small>{{ link.relationship or 'Parent' }}{{ ' (Primary)' if link.is_primary }}</small>
+                            </div>
+                            <div class="parent-contact">
+                                <i class="fas fa-phone"></i> {{ link.parent.phone }}
+                            </div>
+                        </div>
+                        {% if not loop.last %}<hr class="my-2">{% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <a href="{{ url_for('admin.manage_students') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Students
+                </a>
+                <button class="btn btn-primary" id="editStudentBtn">
+                    <i class="fas fa-edit"></i> Edit Profile
+                </button>
+                <button class="btn btn-outline-secondary" id="resetPasswordBtn" data-id="{{ student.id }}">
+                    <i class="fas fa-key"></i> Reset Password
+                </button>
+                <button class="btn btn-outline-warning" id="toggleAccountBtn" 
+                        data-id="{{ student.id }}" 
+                        data-active="{{ 'true' if student.user and student.user.is_active else 'false' }}">
+                    <i class="fas fa-user-{{ 'check' if student.user and student.user.is_active else 'times' }}"></i>
+                    {{ 'Deactivate' if student.user and student.user.is_active else 'Activate' }} Account
+                </button>
+                
+                {% if student.classroom %}
+                <button class="btn btn-outline-primary" id="viewClassBtn" 
+                        data-class-id="{{ student.classroom.id }}">
+                    <i class="fas fa-users"></i> View Class
+                </button>
+                <button class="btn btn-outline-danger" id="transferStudentBtn" 
+                        data-id="{{ student.id }}"
+                        data-current-class="{{ student.classroom.id }}">
+                    <i class="fas fa-exchange-alt"></i> Transfer Class
+                </button>
+                {% endif %}
+                
+                {% if student.academic_status == 'active' %}
+                <button class="btn btn-outline-success" id="promoteStudentBtn" data-id="{{ student.id }}">
+                    <i class="fas fa-graduation-cap"></i> Promote
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ attendance_summary.attendance_rate }}%</div>
+        <div class="stat-label">Attendance Rate</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-value">
+            {% if exam_results %}
+            {{ exam_results|length }}
+            {% else %}
+            0
+            {% endif %}
+        </div>
+        <div class="stat-label">Exams Taken</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-value">
+            {% if assessments %}
+            {{ assessments|length }}
+            {% else %}
+            0
+            {% endif %}
+        </div>
+        <div class="stat-label">Assessments</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-value">
+            {% if parents %}
+            {{ parents|length }}
+            {% else %}
+            0
+            {% endif %}
+        </div>
+        <div class="stat-label">Parents/Guardians</div>
+    </div>
+</div>
+
+<!-- Tabs Container -->
+<div class="tab-container">
+    <div class="tab-header">
+        <button class="tab-button active" data-tab="performance">
+            <i class="fas fa-chart-line"></i> Academic Performance
+        </button>
+        <button class="tab-button" data-tab="attendance">
+            <i class="fas fa-calendar-check"></i> Attendance
+        </button>
+        <button class="tab-button" data-tab="parents">
+            <i class="fas fa-user-friends"></i> Parents/Guardians
+        </button>
+        <button class="tab-button" data-tab="documents">
+            <i class="fas fa-file-alt"></i> Documents
+        </button>
+        <button class="tab-button" data-tab="history">
+            <i class="fas fa-history"></i> Student History
+        </button>
+    </div>
+    
+    <!-- Academic Performance Tab -->
+    <div class="tab-content active" id="performanceTab">
+        {% if exam_results %}
+        <h4 class="mb-3">Exam Results</h4>
+        {% for result in exam_results %}
+        <div class="exam-result-card">
+            <div class="exam-result-header">
+                <div class="exam-subject">{{ result.subject.name }}</div>
+                <div class="exam-score">{{ result.total_score }}/100</div>
+            </div>
+            <div class="exam-details">
+                <div>
+                    <i class="fas fa-calendar text-muted"></i>
+                    <span class="ms-1">Term {{ result.term }} - {{ result.academic_year }}</span>
+                </div>
+                <div>
+                    <i class="fas fa-chart-bar text-muted"></i>
+                    <span class="ms-1">CA: {{ result.ca_score or 'N/A' }}</span>
+                </div>
+                <div>
+                    <i class="fas fa-chart-line text-muted"></i>
+                    <span class="ms-1">Exam: {{ result.exam_score }}</span>
+                </div>
+                <div>
+                    <i class="fas fa-award text-muted"></i>
+                    <span class="ms-1">Grade: {{ result.grade or 'N/A' }}</span>
+                </div>
+                {% if result.position_in_class %}
+                <div>
+                    <i class="fas fa-medal text-muted"></i>
+                    <span class="ms-1">Position: {{ result.position_in_class }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <h4>No Exam Results</h4>
+            <p>This student hasn't taken any exams yet.</p>
+        </div>
+        {% endif %}
+        
+        <!-- In your student_profile.html template, update the assessments section: -->
+
+{% if assessments %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-chart-bar"></i> Assessment Scores</h5>
+            </div>
+            <div class="card-body">
+                {% for assessment_data in assessments %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <h6 class="mb-0">{{ assessment_data.subject.name }}</h6>
+                            <small class="text-muted">
+                                {{ assessment_data.classroom.name }} | 
+                                Term {{ assessment_data.term.term_number }}
+                            </small>
+                        </div>
+                        <div>
+                            <span class="badge bg-primary">Total: {{ "%.1f"|format(assessment_data.total_score) }}</span>
+                            <span class="badge bg-success">Avg: {{ "%.1f"|format(assessment_data.average_score) }}</span>
+                        </div>
+                    </div>
+                    
+                    {% if assessment_data.assessment_details %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Assessment Type</th>
+                                    <th>Weight</th>
+                                    <th>Max Score</th>
+                                    <th>Score</th>
+                                    <th>Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for detail in assessment_data.assessment_details %}
+                                <tr>
+                                    <td>{{ detail.assessment.assessment_type }}</td>
+                                    <td>{{ detail.assessment.weight }}%</td>
+                                    <td>{{ detail.assessment.max_score }}</td>
+                                    <td>{{ detail.score }}</td>
+                                    <td>
+                                        {% set percentage = (detail.score / detail.assessment.max_score * 100) if detail.assessment.max_score > 0 else 0 %}
+                                        <span class="badge {% if percentage >= 50 %}bg-success{% else %}bg-danger{% endif %}">
+                                            {{ "%.1f"|format(percentage) }}%
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info py-2 mb-0">
+                        <i class="fas fa-info-circle"></i> No assessment scores recorded for this subject.
+                    </div>
+                    {% endif %}
+                    
+                    {% if assessment_data.student_assessment.is_approved %}
+                    <div class="mt-2">
+                        <small class="text-success">
+                            <i class="fas fa-check-circle"></i> Approved
+                            {% if assessment_data.student_assessment.approved_at %}
+                                on {{ assessment_data.student_assessment.approved_at.strftime('%Y-%m-%d') }}
+                            {% endif %}
+                        </small>
+                    </div>
+                    {% else %}
+                    <div class="mt-2">
+                        <small class="text-warning">
+                            <i class="fas fa-clock"></i> Pending approval
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {% if not loop.last %}
+                <hr class="my-3">
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+    </div>
+    
+    <!-- Attendance Tab -->
+    <div class="tab-content" id="attendanceTab">
+        <div class="attendance-summary">
+            <div class="attendance-card">
+                <div class="attendance-value attendance-present">{{ attendance_summary.attendance_rate }}%</div>
+                <div class="attendance-label">Attendance Rate</div>
+            </div>
+            <div class="attendance-card">
+                <div class="attendance-value attendance-present">{{ attendance_summary.present }}</div>
+                <div class="attendance-label">Days Present</div>
+            </div>
+            <div class="attendance-card">
+                <div class="attendance-value attendance-absent">{{ attendance_summary.absent }}</div>
+                <div class="attendance-label">Days Absent</div>
+            </div>
+            <div class="attendance-card">
+                <div class="attendance-value attendance-late">{{ attendance_summary.late }}</div>
+                <div class="attendance-label">Days Late</div>
+            </div>
+        </div>
+        
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            <strong>Note:</strong> Detailed attendance records will be available soon. Currently showing summary statistics.
+        </div>
+        
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <h4>Attendance Details</h4>
+            <p>Detailed daily attendance records are under development.</p>
+            <div class="mt-3">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    This feature is under development. It will show daily attendance, 
+                    patterns, and trends for this student.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Parents/Guardians Tab -->
+    <div class="tab-content" id="parentsTab">
+        {% if parents %}
+        {% for parent in parents %}
+        <div class="parent-card">
+            <div class="parent-header">
+                <div class="parent-avatar">
+                    {{ parent.first_name[0] }}{{ parent.last_name[0] }}
+                </div>
+                <div>
+                    <div class="parent-name">{{ parent.first_name }} {{ parent.last_name }}</div>
+                    <div class="parent-relationship">
+                        {% set link = parent.student_links|selectattr('student_id', 'equalto', student.id)|first %}
+                        {% if link and link.relationship %}
+                        {{ link.relationship }}
+                        {% if link.is_primary %}
+                        <span class="badge bg-primary ms-1">Primary</span>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="parent-contact">
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="fas fa-phone"></i>
+                    </div>
+                    <div>
+                        <div class="small text-muted">Phone</div>
+                        <div>{{ parent.phone or 'Not specified' }}</div>
+                    </div>
+                </div>
+                
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div>
+                        <div class="small text-muted">Email</div>
+                        <div>{{ parent.email or 'Not specified' }}</div>
+                    </div>
+                </div>
+                
+                {% if parent.occupation %}
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="fas fa-briefcase"></i>
+                    </div>
+                    <div>
+                        <div class="small text-muted">Occupation</div>
+                        <div>{{ parent.occupation }}</div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if parent.address %}
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div>
+                        <div class="small text-muted">Address</div>
+                        <div>{{ parent.address }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-user-friends"></i>
+            </div>
+            <h4>No Parents/Guardians</h4>
+            <p>No parent or guardian information has been added for this student.</p>
+            <button class="btn btn-primary mt-2" id="addParentBtn">
+                <i class="fas fa-plus"></i> Add Parent/Guardian
+            </button>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Documents Tab -->
+    <div class="tab-content" id="documentsTab">
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <h4>Documents</h4>
+            <p>Student documents and files will be available here.</p>
+            <div class="mt-3">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    This feature is under development. It will allow uploading and 
+                    managing student documents like report cards, certificates, etc.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Student History Tab -->
+    <div class="tab-content" id="historyTab">
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-history"></i>
+            </div>
+            <h4>Student History</h4>
+            <p>Student history, promotions, and transfers will be displayed here.</p>
+            <div class="mt-3">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    This feature is under development. It will show the student's 
+                    academic history, class promotions, transfers, and other important events.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Buttons Footer -->
+<div class="d-flex justify-content-between mt-4">
+    <div>
+        <button class="btn btn-outline-secondary" onclick="window.print()">
+            <i class="fas fa-print"></i> Print Profile
+        </button>
+        <a href="{{ url_for('report.generate_report_card', student_id=student.id, term_id=term.id) }}" 
+            class="btn btn-primary">
+            <i class="fas fa-file-pdf"></i> Generate Report Card
+        </a>
+    </div>
+    <div>
+        <button class="btn btn-danger" id="deleteStudentBtn"
+                data-id="{{ student.id }}" 
+                data-name="{{ student.first_name }} {{ student.last_name }}">
+            <i class="fas fa-trash"></i> Delete Student
+        </button>
+    </div>
+</div>
+
+<!-- Edit Student Modal -->
+<div class="modal-overlay" id="editStudentModal">
+    <div class="modal">
+        <div class="card-header">
+            <h3 class="card-title" id="modalTitle">
+                <i class="fas fa-edit"></i> Edit Student Profile
+            </h3>
+            <button class="btn btn-secondary btn-sm" id="closeEditModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form id="editStudentForm">
+            <input type="hidden" id="editStudentId" name="student_id" value="{{ student.id }}">
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editAdmissionNumber" class="form-label">Admission Number *</label>
+                    <input type="text" class="form-control" id="editAdmissionNumber" name="admission_number" 
+                           value="{{ student.admission_number }}" required>
+                    <div class="form-text" id="admissionNumberFeedback"></div>
+                </div>
+                <div class="form-group">
+                    <label for="editEnrollmentDate" class="form-label">Enrollment Date *</label>
+                    <input type="date" class="form-control" id="editEnrollmentDate" name="enrollment_date" 
+                           value="{{ student.enrollment_date.strftime('%Y-%m-%d') if student.enrollment_date else '' }}" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editFirstName" class="form-label">First Name *</label>
+                    <input type="text" class="form-control" id="editFirstName" name="first_name" 
+                           value="{{ student.first_name }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="editLastName" class="form-label">Last Name *</label>
+                    <input type="text" class="form-control" id="editLastName" name="last_name" 
+                           value="{{ student.last_name }}" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editMiddleName" class="form-label">Middle Name</label>
+                    <input type="text" class="form-control" id="editMiddleName" name="middle_name" 
+                           value="{{ student.middle_name or '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="editDob" class="form-label">Date of Birth *</label>
+                    <input type="date" class="form-control" id="editDob" name="dob" 
+                           value="{{ student.date_of_birth.strftime('%Y-%m-%d') if student.date_of_birth else '' }}" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editGender" class="form-label">Gender *</label>
+                    <select class="form-control" id="editGender" name="gender" required>
+                        <option value="">Select Gender</option>
+                        <option value="male" {% if student.gender == 'male' %}selected{% endif %}>Male</option>
+                        <option value="female" {% if student.gender == 'female' %}selected{% endif %}>Female</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editClass" class="form-label">Class *</label>
+                    <select class="form-control" id="editClass" name="class_id" required>
+                        <option value="">Select Class</option>
+                        {% for class in classes %}
+                        <option value="{{ class.id }}" {% if student.current_class_id == class.id %}selected{% endif %}>
+                            {{ class.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editEmail" class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="editEmail" name="email" 
+                           value="{{ student.email or '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="editAddress" class="form-label">Address</label>
+                    <textarea class="form-control" id="editAddress" name="address" rows="2">{{ student.address or '' }}</textarea>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editParentName" class="form-label">Parent/Guardian Name *</label>
+                    <input type="text" class="form-control" id="editParentName" name="parent_name" 
+                           value="{{ student.parent_name or '' }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="editParentPhone" class="form-label">Parent Phone *</label>
+                    <input type="tel" class="form-control" id="editParentPhone" name="parent_phone" 
+                           value="{{ student.parent_phone or '' }}" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editParentEmail" class="form-label">Parent Email</label>
+                    <input type="email" class="form-control" id="editParentEmail" name="parent_email" 
+                           value="{{ student.parent_email or '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="editAcademicStatus" class="form-label">Academic Status *</label>
+                    <select class="form-control" id="editAcademicStatus" name="academic_status" required>
+                        <option value="active" {% if student.academic_status == 'active' %}selected{% endif %}>Active</option>
+                        <option value="inactive" {% if student.academic_status == 'inactive' %}selected{% endif %}>Inactive</option>
+                        <option value="graduated" {% if student.academic_status == 'graduated' %}selected{% endif %}>Graduated</option>
+                        <option value="transferred" {% if student.academic_status == 'transferred' %}selected{% endif %}>Transferred</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <button type="button" class="btn btn-secondary" id="cancelEditBtn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" class="btn btn-primary" id="saveStudentBtn">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay confirmation-modal" id="deleteModal">
+    <div class="modal">
+        <div class="confirmation-content">
+            <div class="confirmation-icon" style="color: var(--admin-danger);">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h4>Delete Student</h4>
+            <p id="deleteMessage">Are you sure you want to delete this student?</p>
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Warning:</strong> This action cannot be undone. All student records, grades, and attendance will be permanently deleted.
+            </div>
+            
+            <div class="confirmation-actions">
+                <button type="button" class="btn btn-secondary" id="cancelDeleteBtn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Profile Header */
+    .profile-header {
+        background: var(--admin-card);
+        border-radius: 8px;
+        padding: 1.25rem;
+        border: 1px solid var(--admin-border);
+        margin-bottom: 1.25rem;
+    }
+    
+    .profile-info {
+        display: flex;
+        gap: 1.5rem;
+        align-items: flex-start;
+    }
+    
+    .student-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--admin-primary), var(--admin-secondary));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2rem;
+        font-weight: bold;
+        flex-shrink: 0;
+    }
+    
+    .student-details {
+        flex: 1;
+    }
+    
+    .student-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.375rem;
+        color: var(--admin-dark);
+    }
+    
+    .student-id {
+        font-size: 1rem;
+        color: var(--admin-primary);
+        font-weight: 500;
+        margin-bottom: 0.75rem;
+    }
+    
+    /* Info Grid */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1.25rem;
+    }
+    
+    .info-card {
+        background: rgba(0, 0, 0, 0.02);
+        border-radius: 6px;
+        padding: 0.875rem;
+        border: 1px solid var(--admin-border);
+    }
+    
+    .info-card-title {
+        font-size: 0.8rem;
+        color: var(--admin-text-light);
+        margin-bottom: 0.375rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .info-card-content {
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+    
+    /* Status Badges */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.2rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 16px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
+    .status-active {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .status-inactive {
+        background: #fecaca;
+        color: #991b1b;
+    }
+    
+    .status-graduated {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+    
+    .status-transferred {
+        background: #f3e8ff;
+        color: #7c3aed;
+    }
+    
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 0.875rem;
+        margin-bottom: 1.25rem;
+    }
+    
+    .stat-card {
+        background: var(--admin-card);
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+        border: 1px solid var(--admin-border);
+        transition: transform 0.2s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--admin-primary);
+        margin-bottom: 0.375rem;
+    }
+    
+    .stat-label {
+        font-size: 0.8rem;
+        color: var(--admin-text-light);
+    }
+    
+    /* Tabs */
+    .tab-container {
+        background: var(--admin-card);
+        border-radius: 8px;
+        border: 1px solid var(--admin-border);
+        margin-bottom: 1.25rem;
+    }
+    
+    .tab-header {
+        display: flex;
+        border-bottom: 1px solid var(--admin-border);
+        padding: 0 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .tab-button {
+        padding: 0.875rem 1rem;
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        font-weight: 500;
+        color: var(--admin-text-light);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        font-size: 0.9rem;
+    }
+    
+    .tab-button.active {
+        color: var(--admin-primary);
+        border-bottom-color: var(--admin-primary);
+        background: rgba(var(--admin-primary-rgb), 0.05);
+    }
+    
+    .tab-button:hover:not(.active) {
+        color: var(--admin-text);
+        background: rgba(0, 0, 0, 0.02);
+    }
+    
+    .tab-content {
+        padding: 1.25rem;
+        display: none;
+    }
+    
+    .tab-content.active {
+        display: block;
+    }
+    
+    /* Exam Results */
+    .exam-result-card {
+        background: var(--admin-light);
+        border-radius: 6px;
+        padding: 0.875rem;
+        margin-bottom: 0.625rem;
+        border: 1px solid var(--admin-border);
+    }
+    
+    .exam-result-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.375rem;
+    }
+    
+    .exam-subject {
+        font-weight: 600;
+        color: var(--admin-dark);
+        font-size: 1rem;
+    }
+    
+    .exam-score {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--admin-primary);
+    }
+    
+    .exam-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 0.75rem;
+        font-size: 0.8rem;
+        color: var(--admin-text-light);
+    }
+    
+    /* Attendance */
+    .attendance-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 0.875rem;
+        margin-bottom: 1.25rem;
+    }
+    
+    .attendance-card {
+        background: var(--admin-light);
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+        border: 1px solid var(--admin-border);
+    }
+    
+    .attendance-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.375rem;
+    }
+    
+    .attendance-present { color: #10b981; }
+    .attendance-absent { color: #ef4444; }
+    .attendance-late { color: #f59e0b; }
+    
+    .attendance-label {
+        font-size: 0.8rem;
+        color: var(--admin-text-light);
+    }
+    
+    /* Parent Info */
+    .parent-card {
+        background: var(--admin-light);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.875rem;
+        border: 1px solid var(--admin-border);
+    }
+    
+    .parent-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.875rem;
+    }
+    
+    .parent-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--admin-primary-light);
+        color: var(--admin-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        font-weight: bold;
+    }
+    
+    .parent-name {
+        font-weight: 600;
+        font-size: 1rem;
+        color: var(--admin-dark);
+    }
+    
+    .parent-relationship {
+        font-size: 0.8rem;
+        color: var(--admin-text-light);
+    }
+    
+    .parent-contact {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.75rem;
+        margin-top: 0.875rem;
+    }
+    
+    .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        padding: 0.625rem;
+        background: rgba(0, 0, 0, 0.02);
+        border-radius: 6px;
+    }
+    
+    .contact-icon {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        background: var(--admin-primary-light);
+        color: var(--admin-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 2rem 1rem;
+        color: var(--admin-text-light);
+    }
+    
+    .empty-state-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.875rem;
+        color: var(--admin-border);
+    }
+    
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.375rem;
+        margin-top: 0.875rem;
+        flex-wrap: wrap;
+    }
+    
+    /* Modal Styles */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+    
+    .modal-overlay.active {
+        display: flex;
+    }
+    
+    .modal {
+        background: var(--admin-card);
+        border-radius: 8px;
+        width: 100%;
+        max-width: 550px;
+        max-height: 85vh;
+        overflow-y: auto;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+        border: 1px solid var(--admin-border);
+    }
+    
+    .modal .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid var(--admin-border);
+    }
+    
+    .modal .card-title {
+        margin: 0;
+        font-size: 1.125rem;
+    }
+    
+    .modal form {
+        padding: 1rem;
+    }
+    
+    .form-row {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 0.875rem;
+    }
+    
+    .form-row .form-group {
+        flex: 1;
+        margin-bottom: 0;
+    }
+    
+    /* Confirmation Modal */
+    .confirmation-modal .modal {
+        max-width: 400px;
+    }
+    
+    .confirmation-content {
+        text-align: center;
+        padding: 1.5rem;
+    }
+    
+    .confirmation-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.875rem;
+    }
+    
+    .confirmation-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+        margin-top: 1.25rem;
+    }
+    
+    /* Toast Notifications */
+    .toast-container {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        z-index: 9999;
+    }
+    
+    .toast {
+        background: var(--admin-card);
+        border-radius: 6px;
+        padding: 0.75rem;
+        margin-bottom: 0.375rem;
+        border: 1px solid var(--admin-border);
+        min-width: 280px;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        animation: slideIn 0.25s ease;
+    }
+    
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    .toast-success { border-left: 3px solid #10b981; }
+    .toast-error { border-left: 3px solid #ef4444; }
+    .toast-info { border-left: 3px solid #3b82f6; }
+    
+    .toast-body { 
+        flex: 1;
+        font-size: 0.85rem;
+    }
+    
+    .toast-close {
+        background: none;
+        border: none;
+        color: var(--admin-text-light);
+        cursor: pointer;
+        font-size: 0.9rem;
+        padding: 0.2rem;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .profile-info {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 1rem;
+        }
+        
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .tab-header {
+            overflow-x: auto;
+            padding: 0;
+        }
+        
+        .tab-button {
+            padding: 0.75rem;
+            font-size: 0.85rem;
+        }
+        
+        .tab-content {
+            padding: 1rem;
+        }
+        
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .attendance-summary {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .exam-details {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .parent-contact {
+            grid-template-columns: 1fr;
+        }
+        
+        .action-buttons {
+            justify-content: center;
+        }
+        
+        .modal {
+            max-height: 90vh;
+        }
+        
+        .form-row {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .toast {
+            min-width: 240px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .attendance-summary {
+            grid-template-columns: 1fr;
+        }
+        
+        .confirmation-modal .modal {
+            max-width: 300px;
+        }
+        
+        .confirmation-content {
+            padding: 1rem;
+        }
+        
+        .student-avatar {
+            width: 70px;
+            height: 70px;
+            font-size: 1.75rem;
+        }
+        
+        .student-name {
+            font-size: 1.25rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Elements
+        const editStudentModal = document.getElementById('editStudentModal');
+        const deleteModal = document.getElementById('deleteModal');
+        const editStudentForm = document.getElementById('editStudentForm');
+        
+        // State variables
+        let studentToDelete = null;
+        let deleteStudentName = null;
+        
+        // Tab functionality
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const tabId = this.getAttribute('data-tab');
+                
+                // Update active tab button
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Show active tab content
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === tabId + 'Tab') {
+                        content.classList.add('active');
+                    }
+                });
+            });
+        });
+        
+        // Open edit student modal
+        function openEditModal() {
+            editStudentModal.classList.add('active');
+        }
+        
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            const toastContainer = document.querySelector('.toast-container') || (() => {
+                const container = document.createElement('div');
+                container.className = 'toast-container';
+                document.body.appendChild(container);
+                return container;
+            })();
+            
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            
+            const icon = type === 'success' ? 'check-circle' : 
+                         type === 'error' ? 'exclamation-circle' : 'info-circle';
+            
+            toast.innerHTML = `
+                <div class="toast-body">
+                    <i class="fas fa-${icon}"></i> ${message}
+                </div>
+                <button class="toast-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Remove toast on close click
+            toast.querySelector('.toast-close').addEventListener('click', () => {
+                toast.remove();
+            });
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, 5000);
+        }
+        
+        // Validate admission number on input
+        document.getElementById('editAdmissionNumber')?.addEventListener('blur', function() {
+            const admissionNumber = this.value;
+            const studentId = document.getElementById('editStudentId').value;
+            
+            if (admissionNumber.trim() === '') return;
+            
+            fetch('/admin/students/validate-admission-number', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    admission_number: admissionNumber,
+                    exclude_student_id: studentId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const feedback = document.getElementById('admissionNumberFeedback');
+                if (data.exists) {
+                    feedback.textContent = 'Admission number already exists';
+                    feedback.className = 'form-text text-danger';
+                    this.classList.add('is-invalid');
+                } else {
+                    feedback.textContent = 'Admission number is available';
+                    feedback.className = 'form-text text-success';
+                    this.classList.remove('is-invalid');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+        
+        // Handle edit student form submission
+        editStudentForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const saveBtn = document.getElementById('saveStudentBtn');
+            const originalText = saveBtn.innerHTML;
+            
+            // Disable button and show loading
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            saveBtn.disabled = true;
+            
+            try {
+                const formData = new FormData(editStudentForm);
+                const data = {};
+                formData.forEach((value, key) => {
+                    data[key] = value;
+                });
+                
+                const response = await fetch('/admin/students/update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    editStudentModal.classList.remove('active');
+                    
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                showToast(error.message, 'error');
+                saveBtn.innerHTML = originalText;
+                saveBtn.disabled = false;
+            }
+        });
+        
+        // Handle reset password
+        document.getElementById('resetPasswordBtn')?.addEventListener('click', function() {
+            const studentId = this.getAttribute('data-id');
+            
+            if (confirm('Reset password for this student? The new password will be their admission number.')) {
+                fetch(`/admin/students/${studentId}/reset-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                    } else {
+                        showToast(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    showToast('Error resetting password: ' + error.message, 'error');
+                });
+            }
+        });
+        
+        // Handle toggle account status
+        document.getElementById('toggleAccountBtn')?.addEventListener('click', function() {
+            const studentId = this.getAttribute('data-id');
+            const isActive = this.getAttribute('data-active') === 'true';
+            const action = isActive ? 'deactivate' : 'activate';
+            
+            if (confirm(`Are you sure you want to ${action} this student's account?`)) {
+                fetch(`/admin/students/${studentId}/toggle-active`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showToast(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    showToast('Error toggling account status: ' + error.message, 'error');
+                });
+            }
+        });
+        
+        // Handle generate report card
+        document.getElementById('generateReportCardBtn')?.addEventListener('click', function() {
+            const studentId = this.getAttribute('data-id');
+            showToast('Report card generation feature coming soon!', 'info');
+        });
+        
+        // Handle transfer student
+        document.getElementById('transferStudentBtn')?.addEventListener('click', function() {
+            const studentId = this.getAttribute('data-id');
+            showToast('Student transfer feature coming soon!', 'info');
+        });
+        
+        // Handle promote student
+        document.getElementById('promoteStudentBtn')?.addEventListener('click', function() {
+            const studentId = this.getAttribute('data-id');
+            showToast('Student promotion feature coming soon!', 'info');
+        });
+        
+        // Handle add parent
+        document.getElementById('addParentBtn')?.addEventListener('click', function() {
+            showToast('Add parent/guardian feature coming soon!', 'info');
+        });
+        
+        // Handle delete student
+        document.getElementById('deleteStudentBtn')?.addEventListener('click', function() {
+            studentToDelete = this.getAttribute('data-id');
+            deleteStudentName = this.getAttribute('data-name');
+            
+            document.getElementById('deleteMessage').textContent = 
+                `Are you sure you want to delete "${deleteStudentName}"? This action cannot be undone.`;
+            deleteModal.classList.add('active');
+        });
+        
+        // Event listeners
+        document.getElementById('editStudentBtn')?.addEventListener('click', openEditModal);
+        
+        document.getElementById('closeEditModal')?.addEventListener('click', () => {
+            editStudentModal.classList.remove('active');
+        });
+        
+        document.getElementById('cancelEditBtn')?.addEventListener('click', () => {
+            editStudentModal.classList.remove('active');
+        });
+        
+        document.getElementById('cancelDeleteBtn')?.addEventListener('click', () => {
+            deleteModal.classList.remove('active');
+        });
+        
+        // Confirm delete
+        document.getElementById('confirmDeleteBtn')?.addEventListener('click', async function() {
+            const deleteBtn = this;
+            const originalText = deleteBtn.innerHTML;
+            
+            deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+            deleteBtn.disabled = true;
+            
+            try {
+                const response = await fetch(`/admin/students/delete/${studentToDelete}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    deleteModal.classList.remove('active');
+                    
+                    setTimeout(() => {
+                        window.location.href = '/admin/students';
+                    }, 1500);
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                showToast(error.message, 'error');
+                deleteBtn.innerHTML = originalText;
+                deleteBtn.disabled = false;
+            }
+        });
+        
+        // Close modals when clicking outside
+        [editStudentModal, deleteModal].forEach(modal => {
+            modal?.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+        
+        // Clear validation on modal hide
+        editStudentModal?.addEventListener('click', function(event) {
+            if (event.target === editStudentModal) {
+                const admissionNumberInput = document.getElementById('editAdmissionNumber');
+                const feedback = document.getElementById('admissionNumberFeedback');
+                
+                if (admissionNumberInput) {
+                    admissionNumberInput.classList.remove('is-invalid');
+                    feedback.textContent = '';
+                    feedback.className = 'form-text';
+                }
+            }
+        });
+        
+        // Calculate age if date of birth is present
+        function calculateAge() {
+            const dobElement = document.querySelector('.info-card-content:nth-child(2)');
+            if (dobElement && dobElement.textContent.includes('Not specified')) {
+                return;
+            }
+            
+            // Age calculation is done in the template
+        }
+        
+        calculateAge();
+    });
+</script>
+{% endblock %}

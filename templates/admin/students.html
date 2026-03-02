@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<!-- templates/admin/students.html -->
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Manage Students - Admin Panel{% endblock %}
+
+{% block page_title %}
+<h1><i class="fas fa-users"></i> Manage Students</h1>
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="separator">/</span>
+<span>Manage Students</span>
+{% endblock %}
+
+{% block content %}
+<!-- Stats Summary -->
+<div class="stats-summary">
+    <div class="stat-item">
+        <h4>{{ total_students }}</h4>
+        <p>Total Students</p>
+    </div>
+    <div class="stat-item">
+        <h4>{{ active_students }}</h4>
+        <p>Active Students</p>
+    </div>
+    <div class="stat-item">
+        <h4>{{ classes|length }}</h4>
+        <p>Classes</p>
+    </div>
+    <div class="stat-item">
+        <h4>{{ active_session.name if active_session else 'No Session' }}</h4>
+        <p>Active Session</p>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="filters-container">
+    <h4 class="mb-3"><i class="fas fa-filter"></i> Filter Students</h4>
+    <div class="filter-row">
+        <div class="filter-group">
+            <label class="form-label">Class</label>
+            <select class="form-control" id="filterClass">
+                <option value="">All Classes</option>
+                {% for class in classes %}
+                <option value="{{ class.id }}">{{ class.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label class="form-label">Status</label>
+            <select class="form-control" id="filterStatus">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="graduated">Graduated</option>
+                <option value="transferred">Transferred</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label class="form-label">Gender</label>
+            <select class="form-control" id="filterGender">
+                <option value="">All Genders</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label class="form-label">Search</label>
+            <div class="input-group">
+                <input type="text" class="form-control" id="searchInput" placeholder="Search by name or admission number...">
+                <button class="btn btn-secondary" id="searchBtn">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <button class="btn btn-secondary" id="resetFiltersBtn">
+                <i class="fas fa-redo"></i> Reset Filters
+            </button>
+        </div>
+        <button class="btn btn-primary" id="addStudentBtn">
+            <i class="fas fa-plus"></i> Add New Student
+        </button>
+    </div>
+</div>
+
+<!-- Students List -->
+<div class="admin-card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-list"></i> All Students 
+            <span class="badge bg-secondary ms-2" id="studentCount">{{ students|length }}</span>
+        </h3>
+        <div class="action-buttons">
+            <button class="btn btn-outline-secondary" id="exportBtn">
+                <i class="fas fa-download"></i> Export
+            </button>
+            <button class="btn btn-outline-secondary" id="printBtn">
+                <i class="fas fa-print"></i> Print
+            </button>
+        </div>
+    </div>
+    
+    {% if students %}
+    <div id="studentsList">
+        {% for student in students %}
+        <div class="student-card" data-class="{{ student.current_class_id }}" 
+             data-status="{{ student.academic_status }}" 
+             data-gender="{{ student.gender }}">
+            <div class="student-header">
+                <div class="student-info">
+                    <div class="student-avatar">
+                        {{ student.first_name[0] }}{{ student.last_name[0] }}
+                    </div>
+                    <div class="student-details">
+                        <h4>
+                            {{ student.first_name }} {{ student.last_name }}
+                            {% if student.middle_name %}
+                            {{ student.middle_name }}
+                            {% endif %}
+                        </h4>
+                        <div class="student-id">{{ student.admission_number }}</div>
+                        <div class="class-section">
+                            {% if student.classroom %}
+                            <span class="student-class-info">
+                                <i class="fas fa-chalkboard"></i> 
+                                <strong>Class:</strong> {{ student.classroom.name }}
+                                {% if student.classroom.level %}
+                                <span class="class-level">({{ student.classroom.level }})</span>
+                                {% endif %}
+                                {% if student.classroom.section %}
+                                <span class="class-section">Section {{ student.classroom.section }}</span>
+                                {% endif %}
+                            </span>
+                            {% else %}
+                            <span class="text-warning">
+                                <i class="fas fa-exclamation-triangle"></i> Not assigned to any class
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="status-section">
+                            <span class="status-badge status-{{ student.academic_status }}">
+                                <i class="fas fa-{{ 'check-circle' if student.is_active else 'times-circle' }}"></i>
+                                {{ student.academic_status|title }}
+                            </span>
+                            {% if student.classroom and student.classroom.form_teacher %}
+                            <span class="form-teacher-info">
+                                <i class="fas fa-user-tie"></i> Form Teacher: 
+                                {{ student.classroom.form_teacher.first_name }} {{ student.classroom.form_teacher.last_name }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-sm btn-secondary view-student-btn" 
+                            data-id="{{ student.id }}"
+                            title="View Profile">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-primary edit-student-btn" 
+                            data-id="{{ student.id }}"
+                            title="Edit Student">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger delete-student-btn" 
+                            data-id="{{ student.id }}"
+                            data-name="{{ student.first_name }} {{ student.last_name }}"
+                            title="Delete Student">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="student-meta">
+                <div class="meta-item">
+                    <i class="fas fa-{{ 'mars' if student.gender == 'male' else 'venus' }}"></i>
+                    <span>{{ student.gender|title if student.gender else 'Not specified' }}</span>
+                </div>
+                
+                {% if student.classroom %}
+                <div class="meta-item class-meta">
+                    <i class="fas fa-school"></i>
+                    <span>
+                        {{ student.classroom.name }}
+                        {% if student.classroom.room_number %}
+                        (Room {{ student.classroom.room_number }})
+                        {% endif %}
+                    </span>
+                </div>
+                {% endif %}
+                
+                {% if student.date_of_birth %}
+                <div class="meta-item">
+                    <i class="fas fa-birthday-cake"></i>
+                    <span>{{ student.date_of_birth.strftime('%d %b %Y') }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="meta-item">
+                    <i class="fas fa-calendar"></i>
+                    <span>Enrolled: {{ student.enrollment_date.strftime('%d %b %Y') }}</span>
+                </div>
+                
+                {% if student.parent_name %}
+                <div class="meta-item">
+                    <i class="fas fa-user-friends"></i>
+                    <span>Parent: {{ student.parent_name }}</span>
+                    {% if student.parent_phone %}
+                    <span class="parent-contact">({{ student.parent_phone }})</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Class Summary -->
+    <div class="class-summary">
+        <h5><i class="fas fa-chart-bar"></i> Class Distribution</h5>
+        <div class="class-distribution">
+            {% set class_counts = {} %}
+            {% for student in students %}
+                {% if student.classroom %}
+                    {% set class_name = student.classroom.name %}
+                    {% if class_name not in class_counts %}
+                        {% set _ = class_counts.update({class_name: 0}) %}
+                    {% endif %}
+                    {% set _ = class_counts.update({class_name: class_counts[class_name] + 1}) %}
+                {% endif %}
+            {% endfor %}
+            
+            {% for class_name, count in class_counts.items() %}
+            <div class="class-distribution-item">
+                <span class="class-name">{{ class_name }}</span>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar" 
+                         style="width: {{ (count / students|length) * 100 }}%;"
+                         role="progressbar" 
+                         aria-valuenow="{{ count }}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="{{ students|length }}">
+                    </div>
+                </div>
+                <span class="class-count">{{ count }} student{{ 's' if count != 1 else '' }}</span>
+            </div>
+            {% endfor %}
+            
+            {% set unassigned = students|selectattr('classroom', 'none')|list|length %}
+            {% if unassigned > 0 %}
+            <div class="class-distribution-item unassigned">
+                <span class="class-name">Unassigned</span>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-warning" 
+                         style="width: {{ (unassigned / students|length) * 100 }}%;"
+                         role="progressbar" 
+                         aria-valuenow="{{ unassigned }}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="{{ students|length }}">
+                    </div>
+                </div>
+                <span class="class-count">{{ unassigned }} student{{ 's' if unassigned != 1 else '' }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Pagination -->
+    <div class="pagination" id="pagination">
+        <!-- Pagination will be generated by JavaScript -->
+    </div>
+    
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="fas fa-users-slash"></i>
+        </div>
+        <h4>No Students Found</h4>
+        <p>No students are registered in the system yet.</p>
+        <button class="btn btn-primary mt-2" id="addFirstStudentBtn">
+            <i class="fas fa-plus"></i> Add First Student
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add/Edit Student Modal -->
+<div class="modal-overlay" id="studentModal">
+    <div class="modal">
+        <div class="card-header">
+            <h3 class="card-title" id="modalTitle">
+                <i class="fas fa-user-plus"></i> Add New Student
+            </h3>
+            <button class="btn btn-secondary btn-sm" id="closeModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form id="studentForm">
+            <input type="hidden" name="student_id" id="studentId">
+            
+            <div class="form-section">
+                <h4 class="form-section-title">Basic Information</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Admission Number *</label>
+                        <input type="text" name="admission_number" class="form-control" required
+                               placeholder="e.g., STU2024001">
+                        <div class="form-text" id="admissionNumberFeedback"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Enrollment Date *</label>
+                        <input type="date" name="enrollment_date" class="form-control" required
+                               value="{{ today }}">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">First Name *</label>
+                        <input type="text" name="first_name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Name *</label>
+                        <input type="text" name="last_name" class="form-control" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Middle Name (Optional)</label>
+                        <input type="text" name="middle_name" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Date of Birth *</label>
+                        <input type="date" name="dob" class="form-control" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Gender *</label>
+                        <select name="gender" class="form-control" required>
+                            <option value="">Select Gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Class *</label>
+                        <select name="class_id" class="form-control" required>
+                            <option value="">Select Class</option>
+                            {% for class in classes %}
+                            <option value="{{ class.id }}">{{ class.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h4 class="form-section-title">Contact Information</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Email Address (Optional)</label>
+                        <input type="email" name="email" class="form-control"
+                               placeholder="student@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Address</label>
+                        <textarea name="address" class="form-control" rows="2"
+                                  placeholder="Residential address..."></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h4 class="form-section-title">Parent/Guardian Information</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Parent/Guardian Name *</label>
+                        <input type="text" name="parent_name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Relationship (Optional)</label>
+                        <input type="text" name="parent_relationship" class="form-control"
+                               placeholder="e.g., Father, Mother, Guardian">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Parent Phone *</label>
+                        <input type="tel" name="parent_phone" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Parent Email (Optional)</label>
+                        <input type="email" name="parent_email" class="form-control"
+                               placeholder="parent@example.com">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Parent Occupation (Optional)</label>
+                        <input type="text" name="parent_occupation" class="form-control"
+                               placeholder="e.g., Engineer, Teacher, Business">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h4 class="form-section-title">Additional Information</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Academic Status *</label>
+                        <select name="academic_status" class="form-control" required>
+                            <option value="active" selected>Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="graduated">Graduated</option>
+                            <option value="transferred">Transferred</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Medical Information (Optional)</label>
+                        <textarea name="medical_info" class="form-control" rows="2"
+                                  placeholder="Any medical conditions or allergies..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Previous School (Optional)</label>
+                        <input type="text" name="previous_school" class="form-control"
+                               placeholder="Name of previous school attended">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Remarks (Optional)</label>
+                        <textarea name="remarks" class="form-control" rows="2"
+                                  placeholder="Additional notes..."></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <button type="button" class="btn btn-secondary" id="cancelBtn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <i class="fas fa-save"></i> Save Student
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay confirmation-modal" id="deleteModal">
+    <div class="modal">
+        <div class="confirmation-content">
+            <div class="confirmation-icon" style="color: var(--admin-danger);">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h4>Delete Student</h4>
+            <p id="deleteMessage">Are you sure you want to delete this student?</p>
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Warning:</strong> This action cannot be undone. All student records, grades, and attendance will be permanently deleted.
+            </div>
+            
+            <div class="confirmation-actions">
+                <button type="button" class="btn btn-secondary" id="cancelDeleteBtn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Stats Summary */
+    .stats-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.875rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-item {
+        background: var(--admin-card);
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+        border: 1px solid var(--admin-border);
+    }
+    
+    .stat-item h4 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--admin-primary);
+        margin-bottom: 0.375rem;
+    }
+    
+    .stat-item p {
+        font-size: 0.8rem;
+        color: var(--admin-text-light);
+        margin: 0;
+    }
+    
+    /* Student Card */
+    .student-card {
+        background: var(--admin-card);
+        border-radius: 8px;
+        padding: 1rem;
+        border: 1px solid var(--admin-border);
+        margin-bottom: 0.875rem;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .student-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    
+    .student-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.875rem;
+    }
+    
+    .student-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .student-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--admin-primary), var(--admin-secondary));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1rem;
+        font-weight: bold;
+        flex-shrink: 0;
+    }
+    
+    .student-details h4 {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+    }
+    
+    .student-id {
+        font-size: 0.8rem;
+        color: var(--admin-text-light);
+        margin: 0.2rem 0;
+    }
+    
+    .student-class {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.2rem;
+        padding: 0.2rem 0.5rem;
+        background: #dbeafe;
+        color: #1e40af;
+        border-radius: 16px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.2rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 16px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-left: 0.375rem;
+    }
+    
+    .status-active {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .status-inactive {
+        background: #fecaca;
+        color: #991b1b;
+    }
+    
+    .student-meta {
+        display: flex;
+        gap: 1.25rem;
+        font-size: 0.8rem;
+        color: var(--admin-text-light);
+        margin-top: 0.625rem;
+        flex-wrap: wrap;
+    }
+    
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+    
+    /* Filters */
+    .filters-container {
+        background: var(--admin-card);
+        border-radius: 8px;
+        padding: 1rem;
+        border: 1px solid var(--admin-border);
+        margin-bottom: 1.25rem;
+    }
+    
+    .filter-row {
+        display: flex;
+        gap: 0.875rem;
+        margin-bottom: 0.875rem;
+        flex-wrap: wrap;
+    }
+    
+    .filter-group {
+        flex: 1;
+        min-width: 180px;
+    }
+    
+    .form-label {
+        font-size: 0.8rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    /* Action buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.375rem;
+    }
+    
+    .action-buttons .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
+    
+    /* Modal styles */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+    
+    .modal-overlay.active {
+        display: flex;
+    }
+    
+    .modal {
+        background: var(--admin-card);
+        border-radius: 8px;
+        width: 100%;
+        max-width: 600px;
+        max-height: 85vh;
+        overflow-y: auto;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+        border: 1px solid var(--admin-border);
+    }
+    
+    .modal .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid var(--admin-border);
+    }
+    
+    .modal .card-title {
+        margin: 0;
+        font-size: 1.125rem;
+    }
+    
+    .modal form {
+        padding: 1rem;
+    }
+    
+    .form-row {
+        display: flex;
+        gap: 0.875rem;
+        margin-bottom: 0.875rem;
+    }
+    
+    .form-row .form-group {
+        flex: 1;
+        margin-bottom: 0;
+    }
+    
+    .form-section {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.875rem;
+        padding-bottom: 0.375rem;
+        border-bottom: 1px solid var(--admin-border);
+        color: var(--admin-primary);
+    }
+    
+    .form-control {
+        font-size: 0.85rem;
+        padding: 0.375rem 0.5rem;
+    }
+    
+    /* Confirmation Modal */
+    .confirmation-modal .modal {
+        max-width: 400px;
+    }
+    
+    .confirmation-content {
+        text-align: center;
+        padding: 1.5rem;
+    }
+    
+    .confirmation-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.875rem;
+    }
+    
+    .confirmation-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+        margin-top: 1.25rem;
+    }
+    
+    /* Toast notifications */
+    .toast-container {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        z-index: 9999;
+    }
+    
+    .toast {
+        background: var(--admin-card);
+        border-radius: 6px;
+        padding: 0.75rem;
+        margin-bottom: 0.375rem;
+        border: 1px solid var(--admin-border);
+        min-width: 280px;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        animation: slideIn 0.25s ease;
+    }
+    
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    .toast-success {
+        border-left: 3px solid #10b981;
+    }
+    
+    .toast-error {
+        border-left: 3px solid #ef4444;
+    }
+    
+    .toast-info {
+        border-left: 3px solid #3b82f6;
+    }
+    
+    .toast-body {
+        flex: 1;
+        font-size: 0.85rem;
+    }
+    
+    .toast-close {
+        background: none;
+        border: none;
+        color: var(--admin-text-light);
+        cursor: pointer;
+        font-size: 0.9rem;
+        padding: 0.2rem;
+    }
+    
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 2rem 1rem;
+        color: var(--admin-text-light);
+    }
+    
+    .empty-state-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.875rem;
+        color: var(--admin-border);
+    }
+    
+    /* Pagination */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 0.375rem;
+        margin-top: 1.5rem;
+    }
+    
+    .pagination-btn {
+        padding: 0.375rem 0.75rem;
+        border: 1px solid var(--admin-border);
+        background: var(--admin-card);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.85rem;
+    }
+    
+    .pagination-btn:hover:not(:disabled) {
+        background: var(--admin-primary-light);
+        border-color: var(--admin-primary);
+    }
+    
+    .pagination-btn.active {
+        background: var(--admin-primary);
+        color: white;
+        border-color: var(--admin-primary);
+    }
+    
+    .pagination-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+        .stats-summary {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+        
+        .stat-item {
+            padding: 0.875rem;
+        }
+        
+        .stat-item h4 {
+            font-size: 1.25rem;
+        }
+        
+        .filter-row {
+            gap: 0.5rem;
+        }
+        
+        .filter-group {
+            min-width: 100%;
+        }
+        
+        .student-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.875rem;
+        }
+        
+        .student-info {
+            width: 100%;
+        }
+        
+        .action-buttons {
+            width: 100%;
+            justify-content: flex-start;
+        }
+        
+        .student-meta {
+            gap: 0.75rem;
+        }
+        
+        .modal {
+            max-height: 90vh;
+        }
+        
+        .modal .card-header {
+            padding: 0.875rem;
+        }
+        
+        .modal form {
+            padding: 0.875rem;
+        }
+        
+        .form-row {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .toast {
+            min-width: 240px;
+            font-size: 0.8rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .stats-summary {
+            grid-template-columns: 1fr;
+        }
+        
+        .student-meta {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .confirmation-modal .modal {
+            max-width: 300px;
+        }
+        
+        .confirmation-content {
+            padding: 1rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Elements
+        const studentModal = document.getElementById('studentModal');
+        const deleteModal = document.getElementById('deleteModal');
+        const studentForm = document.getElementById('studentForm');
+        const studentsList = document.getElementById('studentsList');
+        
+        // State variables
+        let studentToDelete = null;
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        
+        // Get today's date for enrollment date field
+        const today = new Date().toISOString().split('T')[0];
+        const enrollmentDateInput = document.querySelector('input[name="enrollment_date"]');
+        if (enrollmentDateInput && !enrollmentDateInput.value) {
+            enrollmentDateInput.value = today;
+        }
+        
+        // Open modal for adding new student
+        function openAddModal() {
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-user-plus"></i> Add New Student';
+            studentForm.reset();
+            document.getElementById('studentId').value = '';
+            
+            // Set default values
+            document.querySelector('input[name="enrollment_date"]').value = today;
+            document.querySelector('select[name="academic_status"]').value = 'active';
+            
+            studentModal.classList.add('active');
+        }
+        
+        // Open modal for editing student
+        function openEditModal(studentId) {
+            fetch(`/admin/students/${studentId}/data`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to fetch student data');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit"></i> Edit Student';
+                        document.getElementById('studentId').value = data.student.id;
+                        
+                        // Fill form fields
+                        const student = data.student;
+                        
+                        // Basic Information
+                        document.querySelector('input[name="admission_number"]').value = student.admission_number;
+                        document.querySelector('input[name="enrollment_date"]').value = student.enrollment_date;
+                        document.querySelector('input[name="first_name"]').value = student.first_name;
+                        document.querySelector('input[name="last_name"]').value = student.last_name;
+                        document.querySelector('input[name="middle_name"]').value = student.middle_name || '';
+                        document.querySelector('input[name="dob"]').value = student.dob || '';
+                        document.querySelector('select[name="gender"]').value = student.gender || '';
+                        document.querySelector('select[name="class_id"]').value = student.current_class_id || '';
+                        
+                        // Contact Information
+                        document.querySelector('input[name="email"]').value = student.email || '';
+                        document.querySelector('textarea[name="address"]').value = student.address || '';
+                        
+                        // Parent Information
+                        document.querySelector('input[name="parent_name"]').value = student.parent_name || '';
+                        document.querySelector('input[name="parent_phone"]').value = student.parent_phone || '';
+                        document.querySelector('input[name="parent_email"]').value = student.parent_email || '';
+                        
+                        // Additional Information
+                        document.querySelector('select[name="academic_status"]').value = student.academic_status || 'active';
+                        
+                        studentModal.classList.add('active');
+                    } else {
+                        throw new Error(data.message);
+                    }
+                })
+                .catch(error => {
+                    showAlert('danger', `Error: ${error.message}`);
+                });
+        }
+        
+        // Show alert message
+        function showAlert(type, message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                ${message}
+            `;
+            
+            const flashMessages = document.querySelector('.flash-messages');
+            if (!flashMessages) {
+                const container = document.createElement('div');
+                container.className = 'flash-messages';
+                document.querySelector('.admin-content').prepend(container);
+            }
+            
+            document.querySelector('.flash-messages').prepend(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.style.opacity = '0';
+                alertDiv.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => alertDiv.remove(), 500);
+            }, 5000);
+        }
+        
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            const toastContainer = document.querySelector('.toast-container') || (() => {
+                const container = document.createElement('div');
+                container.className = 'toast-container';
+                document.body.appendChild(container);
+                return container;
+            })();
+            
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            
+            const icon = type === 'success' ? 'check-circle' : 
+                         type === 'error' ? 'exclamation-circle' : 'info-circle';
+            
+            toast.innerHTML = `
+                <div class="toast-body">
+                    <i class="fas fa-${icon}"></i> ${message}
+                </div>
+                <button class="toast-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Remove toast on close click
+            toast.querySelector('.toast-close').addEventListener('click', () => {
+                toast.remove();
+            });
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, 5000);
+        }
+        
+        // Validate admission number on input
+        const admissionNumberInput = document.querySelector('input[name="admission_number"]');
+        if (admissionNumberInput) {
+            admissionNumberInput.addEventListener('blur', function() {
+                const admissionNumber = this.value;
+                const studentId = document.getElementById('studentId').value;
+                
+                if (admissionNumber.trim() === '') return;
+                
+                fetch('/admin/students/validate-admission-number', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        admission_number: admissionNumber,
+                        exclude_student_id: studentId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const feedback = document.getElementById('admissionNumberFeedback');
+                    if (data.exists) {
+                        feedback.textContent = 'Admission number already exists';
+                        feedback.className = 'form-text text-danger';
+                        this.classList.add('is-invalid');
+                    } else {
+                        feedback.textContent = 'Admission number is available';
+                        feedback.className = 'form-text text-success';
+                        this.classList.remove('is-invalid');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        }
+        
+        // Handle form submission
+        studentForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            const originalDisabled = submitBtn.disabled;
+            
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            submitBtn.disabled = true;
+            
+            try {
+                const formData = new FormData(studentForm);
+                const isEdit = !!formData.get('student_id');
+                const endpoint = isEdit ? '/admin/students/update' : '/admin/students/add';
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    studentModal.classList.remove('active');
+                    
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                showToast(`Error: ${error.message}`, 'error');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = originalDisabled;
+            }
+        });
+        
+        // Handle student deletion
+        function handleDeleteStudent(studentId, studentName) {
+            studentToDelete = studentId;
+            document.getElementById('deleteMessage').textContent = 
+                `Are you sure you want to delete "${studentName}"? This action cannot be undone.`;
+            deleteModal.classList.add('active');
+        }
+        
+        // Filter students
+        function filterStudents() {
+            const classFilter = document.getElementById('filterClass').value;
+            const statusFilter = document.getElementById('filterStatus').value;
+            const genderFilter = document.getElementById('filterGender').value;
+            const searchFilter = document.getElementById('searchInput').value.toLowerCase();
+            
+            const studentCards = document.querySelectorAll('.student-card');
+            let visibleCount = 0;
+            
+            studentCards.forEach(card => {
+                const classMatch = !classFilter || card.dataset.class === classFilter;
+                const statusMatch = !statusFilter || card.dataset.status === statusFilter;
+                const genderMatch = !genderFilter || card.dataset.gender === genderFilter;
+                const text = card.textContent.toLowerCase();
+                const searchMatch = !searchFilter || text.includes(searchFilter);
+                
+                if (classMatch && statusMatch && genderMatch && searchMatch) {
+                    card.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            // Update student count
+            document.getElementById('studentCount').textContent = visibleCount;
+            
+            // Update pagination
+            updatePagination(visibleCount);
+        }
+        
+        // Update pagination
+        function updatePagination(totalItems) {
+            const paginationDiv = document.getElementById('pagination');
+            if (!paginationDiv) return;
+            
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            
+            let paginationHTML = '';
+            
+            // Previous button
+            paginationHTML += `
+                <button class="pagination-btn" ${currentPage === 1 ? 'disabled' : ''} 
+                        onclick="changePage(${currentPage - 1})">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            `;
+            
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                paginationHTML += `
+                    <button class="pagination-btn ${currentPage === i ? 'active' : ''}" 
+                            onclick="changePage(${i})">
+                        ${i}
+                    </button>
+                `;
+            }
+            
+            // Next button
+            paginationHTML += `
+                <button class="pagination-btn" ${currentPage === totalPages ? 'disabled' : ''} 
+                        onclick="changePage(${currentPage + 1})">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            `;
+            
+            paginationDiv.innerHTML = paginationHTML;
+        }
+        
+        // Change page function (needs to be global for onclick)
+        window.changePage = function(page) {
+            currentPage = page;
+            // Implement pagination logic here
+            // For now, just update the UI
+            updatePagination(document.querySelectorAll('.student-card[style*="display: block"]').length);
+        };
+        
+        // Event listeners for buttons
+        document.getElementById('addStudentBtn')?.addEventListener('click', openAddModal);
+        
+        const addFirstStudentBtn = document.getElementById('addFirstStudentBtn');
+        if (addFirstStudentBtn) {
+            addFirstStudentBtn.addEventListener('click', openAddModal);
+        }
+        
+        document.querySelectorAll('.edit-student-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const studentId = this.getAttribute('data-id');
+                openEditModal(studentId);
+            });
+        });
+        
+        document.querySelectorAll('.delete-student-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const studentId = this.getAttribute('data-id');
+                const studentName = this.getAttribute('data-name');
+                handleDeleteStudent(studentId, studentName);
+            });
+        });
+        
+        // View student profile
+        document.querySelectorAll('.view-student-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const studentId = this.getAttribute('data-id');
+                window.location.href = `/admin/students/${studentId}/profile`;
+            });
+        });
+        
+        // Filter event listeners
+        document.getElementById('filterClass')?.addEventListener('change', filterStudents);
+        document.getElementById('filterStatus')?.addEventListener('change', filterStudents);
+        document.getElementById('filterGender')?.addEventListener('change', filterStudents);
+        document.getElementById('searchInput')?.addEventListener('input', filterStudents);
+        document.getElementById('searchBtn')?.addEventListener('click', filterStudents);
+        document.getElementById('resetFiltersBtn')?.addEventListener('click', function() {
+            document.getElementById('filterClass').value = '';
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterGender').value = '';
+            document.getElementById('searchInput').value = '';
+            filterStudents();
+        });
+        
+        // Export and Print buttons
+        document.getElementById('exportBtn')?.addEventListener('click', function() {
+            // Implement export functionality
+            showToast('Export functionality coming soon!', 'info');
+        });
+        
+        document.getElementById('printBtn')?.addEventListener('click', function() {
+            window.print();
+        });
+        
+        // Modal close buttons
+        document.getElementById('closeModal')?.addEventListener('click', () => studentModal.classList.remove('active'));
+        document.getElementById('cancelBtn')?.addEventListener('click', () => studentModal.classList.remove('active'));
+        document.getElementById('cancelDeleteBtn')?.addEventListener('click', () => deleteModal.classList.remove('active'));
+        
+        // Confirm delete
+        document.getElementById('confirmDeleteBtn')?.addEventListener('click', async function() {
+            const deleteBtn = this;
+            const originalText = deleteBtn.innerHTML;
+            
+            deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+            deleteBtn.disabled = true;
+            
+            try {
+                const response = await fetch(`/admin/students/delete/${studentToDelete}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    deleteModal.classList.remove('active');
+                    
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                showToast(`Error: ${error.message}`, 'error');
+                deleteBtn.innerHTML = originalText;
+                deleteBtn.disabled = false;
+            }
+        });
+        
+        // Close modals when clicking outside
+        [studentModal, deleteModal].forEach(modal => {
+            modal?.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+        
+        // Initialize filters
+        filterStudents();
+    });
+</script>
+{% endblock %}

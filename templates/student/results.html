@@ -1,0 +1,101 @@
+{% extends "student/student_base.html" %}
+
+{% block title %}Exam Results - Student Portal{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1><i class="fas fa-chart-line me-2"></i>Exam Results</h1>
+            <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if results %}
+<div class="row">
+    <div class="col-12">
+        <div class="student-card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-primary">
+                            <tr>
+                                <th>Subject</th>
+                                <th>Exam Score</th>
+                                <th>CA Score</th>
+                                <th>Total Score</th>
+                                <th>Grade</th>
+                                <th>Remark</th>
+                                <th>Position</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in results %}
+                            <tr>
+                                <td>
+                                    <strong>{{ result.subject.name if result.subject else 'N/A' }}</strong>
+                                </td>
+                                <td>{{ result.exam_score|default('N/A') }}</td>
+                                <td>{{ result.ca_score|default('N/A') }}</td>
+                                <td>
+                                    <strong>{{ result.total_score|default('N/A') }}</strong>
+                                </td>
+                                <td>
+                                    {% if result.grade %}
+                                    <span class="badge 
+                                        {% if result.grade in ['A', 'A+', 'A-'] %}bg-success
+                                        {% elif result.grade in ['B', 'B+', 'B-'] %}bg-info
+                                        {% elif result.grade in ['C', 'C+', 'C-'] %}bg-primary
+                                        {% elif result.grade in ['D', 'D+', 'D-'] %}bg-warning
+                                        {% else %}bg-danger{% endif %}">
+                                        {{ result.grade }}
+                                    </span>
+                                    {% else %}
+                                    N/A
+                                    {% endif %}
+                                </td>
+                                <td>{{ result.remark|default('N/A') }}</td>
+                                <td>
+                                    {% if result.position_in_class %}
+                                    <span class="badge bg-secondary">
+                                        {{ result.position_in_class }}<sup>th</sup>
+                                    </span>
+                                    {% else %}
+                                    N/A
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if result.entered_by %}
+                                    Recently Added
+                                    {% else %}
+                                    N/A
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="student-card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-chart-bar fa-4x text-muted mb-4"></i>
+                <h3 class="text-muted">No Results Available</h3>
+                <p class="text-muted">You haven't taken any exams yet, or results are not published.</p>
+                <p class="text-muted small">Complete some exams to see your results here.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

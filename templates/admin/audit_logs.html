@@ -1,0 +1,630 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Audit Logs{% endblock %}
+
+{% block page_title %}
+<h1><i class="fas fa-history"></i> Audit Logs</h1>
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="separator">/</span>
+<span>Audit Logs</span>
+{% endblock %}
+
+{% block content %}
+<!-- Filters Card -->
+<div class="admin-card filters-card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-filter"></i> Filter Logs</h3>
+        <button class="btn btn-secondary btn-sm" onclick="exportLogs()">
+            <i class="fas fa-download"></i> Export
+        </button>
+    </div>
+    
+    <form id="filterForm" class="filter-form" method="GET">
+        <div class="filter-group">
+            <label class="filter-label">Action Type</label>
+            <select name="action_type" class="form-control" onchange="this.form.submit()">
+                <option value="">All Actions</option>
+                <option value="create" {% if request.args.get('action_type') == 'create' %}selected{% endif %}>Create</option>
+                <option value="update" {% if request.args.get('action_type') == 'update' %}selected{% endif %}>Update</option>
+                <option value="delete" {% if request.args.get('action_type') == 'delete' %}selected{% endif %}>Delete</option>
+                <option value="login" {% if request.args.get('action_type') == 'login' %}selected{% endif %}>Login</option>
+                <option value="logout" {% if request.args.get('action_type') == 'logout' %}selected{% endif %}>Logout</option>
+                <option value="system" {% if request.args.get('action_type') == 'system' %}selected{% endif %}>System</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label class="filter-label">User</label>
+            <select name="user_id" class="form-control" onchange="this.form.submit()">
+                <option value="">All Users</option>
+                <!-- User options would be populated from server -->
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label class="filter-label">Date From</label>
+            <input type="date" name="date_from" class="form-control" 
+                   value="{{ request.args.get('date_from', '') }}"
+                   onchange="this.form.submit()">
+        </div>
+        
+        <div class="filter-group">
+            <label class="filter-label">Date To</label>
+            <input type="date" name="date_to" class="form-control" 
+                   value="{{ request.args.get('date_to', '') }}"
+                   onchange="this.form.submit()">
+        </div>
+        
+        <div class="filter-group">
+            <label class="filter-label">Table Name</label>
+            <input type="text" name="table_name" class="form-control" 
+                   value="{{ request.args.get('table_name', '') }}"
+                   placeholder="e.g., users, students"
+                   onchange="this.form.submit()">
+        </div>
+    </form>
+</div>
+
+<!-- Audit Logs List -->
+<div class="logs-container">
+    {% if logs.items %}
+        {% for log in logs.items %}
+        <div class="log-item">
+            <div class="log-header">
+                <div>
+                    <div class="log-action">
+                        <span class="action-badge badge-{{ get_action_type(log.action) }}">
+                            {{ log.action }}
+                        </span>
+                    </div>
+                    <div class="log-user">
+                        {% if log.user %}
+                        <div class="user-avatar">
+                            {{ log.user.username[0].upper() if log.user.username else '?' }}
+                        </div>
+                        <span>{{ log.user.username if log.user.username else 'System' }}</span>
+                        {% else %}
+                        <div class="user-avatar">?</div>
+                        <span>Unknown User</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="log-timestamp">
+                    {{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+                </div>
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">Table:</span>
+                <span class="detail-value">{{ log.table_name or 'N/A' }}</span>
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">Record ID:</span>
+                <span class="detail-value">{{ log.record_id or 'N/A' }}</span>
+            </div>
+            
+            {% if log.ip_address %}
+            <div class="detail-row">
+                <span class="detail-label">IP Address:</span>
+                <span class="detail-value">
+                    <span class="log-ip">{{ log.ip_address }}</span>
+                </span>
+            </div>
+            {% endif %}
+            
+            {% if log.details %}
+            <div class="log-details">
+                <div class="detail-row">
+                    <span class="detail-label">Details:</span>
+                    <div class="detail-value">
+                        <div class="json-view">
+                            {{ log.details|tojson|safe }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="d-flex justify-content-end gap-2 mt-2">
+                <button class="btn btn-sm btn-info" onclick="viewLogDetails('{{ log.id }}')">
+                    <i class="fas fa-eye"></i> View Details
+                </button>
+                {% if log.old_values or log.new_values %}
+                <button class="btn btn-sm btn-warning" onclick="viewChanges('{{ log.id }}')">
+                    <i class="fas fa-exchange-alt"></i> View Changes
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <i class="fas fa-history"></i>
+            <h3>No Audit Logs Found</h3>
+            <p>No audit logs match your current filters.</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Pagination -->
+{% if logs.pages > 1 %}
+<div class="pagination">
+    {% if logs.has_prev %}
+    <a href="{{ url_for('admin.audit_logs', page=logs.prev_num, **request.args) }}" class="page-link">
+        <i class="fas fa-chevron-left"></i>
+    </a>
+    {% else %}
+    <span class="page-link disabled">
+        <i class="fas fa-chevron-left"></i>
+    </span>
+    {% endif %}
+    
+    {% for page_num in logs.iter_pages(left_edge=2, left_current=2, right_current=2, right_edge=2) %}
+        {% if page_num %}
+            {% if page_num == logs.page %}
+            <span class="page-link active">{{ page_num }}</span>
+            {% else %}
+            <a href="{{ url_for('admin.audit_logs', page=page_num, **request.args) }}" class="page-link">
+                {{ page_num }}
+            </a>
+            {% endif %}
+        {% else %}
+            <span class="page-link disabled">...</span>
+        {% endif %}
+    {% endfor %}
+    
+    {% if logs.has_next %}
+    <a href="{{ url_for('admin.audit_logs', page=logs.next_num, **request.args) }}" class="page-link">
+        <i class="fas fa-chevron-right"></i>
+    </a>
+    {% else %}
+    <span class="page-link disabled">
+        <i class="fas fa-chevron-right"></i>
+    </span>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Log Details Modal -->
+<div class="modal-overlay" id="detailsModal">
+    <div class="modal">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-info-circle"></i> Log Details</h3>
+            <button class="btn btn-secondary btn-sm" onclick="closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="modal-body">
+            <div id="detailsContent">
+                <!-- Details will be loaded here -->
+            </div>
+        </div>
+        
+        <div class="admin-card">
+            <div class="d-flex justify-content-end">
+                <button class="btn btn-secondary" onclick="closeModal()">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Changes Modal -->
+<div class="modal-overlay" id="changesModal">
+    <div class="modal">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-exchange-alt"></i> Changes</h3>
+            <button class="btn btn-secondary btn-sm" onclick="closeChangesModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="modal-body">
+            <div id="changesContent">
+                <!-- Changes will be loaded here -->
+            </div>
+        </div>
+        
+        <div class="admin-card">
+            <div class="d-flex justify-content-end">
+                <button class="btn btn-secondary" onclick="closeChangesModal()">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .filters-card {
+        margin-bottom: 2rem;
+    }
+    
+    .filter-form {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        align-items: end;
+    }
+    
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .filter-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        color: var(--admin-text);
+    }
+    
+    .logs-container {
+        background: white;
+        border-radius: var(--admin-radius);
+        overflow: hidden;
+        box-shadow: var(--admin-shadow);
+    }
+    
+    .log-item {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--admin-border);
+        transition: var(--admin-transition);
+    }
+    
+    .log-item:hover {
+        background: var(--admin-light);
+    }
+    
+    .log-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+    }
+    
+    .log-action {
+        font-weight: 600;
+        color: var(--admin-text);
+        font-size: 1rem;
+    }
+    
+    .log-user {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--admin-text-light);
+        font-size: 0.875rem;
+    }
+    
+    .user-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--admin-primary);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .log-timestamp {
+        color: var(--admin-text-light);
+        font-size: 0.875rem;
+        white-space: nowrap;
+    }
+    
+    .log-details {
+        margin-top: 0.75rem;
+    }
+    
+    .detail-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .detail-label {
+        font-weight: 500;
+        color: var(--admin-text);
+        min-width: 100px;
+    }
+    
+    .detail-value {
+        color: var(--admin-text-light);
+        flex: 1;
+    }
+    
+    .json-view {
+        background: var(--admin-light);
+        padding: 0.75rem;
+        border-radius: var(--admin-radius);
+        font-family: 'Courier New', monospace;
+        font-size: 0.8rem;
+        max-height: 200px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+    }
+    
+    .action-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .badge-create { background: #d1fae5; color: #065f46; }
+    .badge-update { background: #dbeafe; color: #1e40af; }
+    .badge-delete { background: #fee2e2; color: #991b1b; }
+    .badge-login { background: #fef3c7; color: #92400e; }
+    .badge-logout { background: #e0e7ff; color: #3730a3; }
+    .badge-system { background: #f3f4f6; color: #374151; }
+    
+    .log-ip {
+        background: var(--admin-light);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.8rem;
+        color: var(--admin-text-light);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: var(--admin-text-light);
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: var(--admin-border);
+    }
+    
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 2rem;
+        padding: 1rem;
+        background: white;
+        border-radius: var(--admin-radius);
+        box-shadow: var(--admin-shadow);
+    }
+    
+    .page-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: var(--admin-radius);
+        background: white;
+        border: 1px solid var(--admin-border);
+        color: var(--admin-text);
+        text-decoration: none;
+        font-weight: 500;
+        transition: var(--admin-transition);
+    }
+    
+    .page-link:hover {
+        background: var(--admin-light);
+        border-color: var(--admin-primary);
+    }
+    
+    .page-link.active {
+        background: var(--admin-primary);
+        color: white;
+        border-color: var(--admin-primary);
+    }
+    
+    .page-link.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .modal-content {
+        max-width: 800px;
+        max-height: 80vh;
+        overflow: hidden;
+    }
+    
+    .modal-body {
+        max-height: calc(80vh - 120px);
+        overflow-y: auto;
+    }
+    
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .detail-card {
+        background: var(--admin-light);
+        padding: 1rem;
+        border-radius: var(--admin-radius);
+    }
+    
+    .detail-card .label {
+        font-size: 0.75rem;
+        color: var(--admin-text-light);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.25rem;
+    }
+    
+    .detail-card .value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--admin-text);
+        word-break: break-all;
+    }
+    
+    .diff-container {
+        margin-top: 1.5rem;
+    }
+    
+    .diff-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--admin-text);
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--admin-border);
+    }
+    
+    .diff-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .diff-column {
+        flex: 1;
+    }
+    
+    .diff-column h4 {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--admin-text);
+        margin-bottom: 0.5rem;
+    }
+    
+    .diff-column.old .json-view {
+        border-left: 4px solid var(--admin-danger);
+    }
+    
+    .diff-column.new .json-view {
+        border-left: 4px solid var(--admin-success);
+    }
+    
+    @media (max-width: 768px) {
+        .filter-form {
+            grid-template-columns: 1fr;
+        }
+        
+        .log-header {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .detail-row {
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .detail-label {
+            min-width: auto;
+        }
+        
+        .diff-row {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<script>
+    // Helper function to get action type for badge
+    function getActionType(action) {
+        if (!action) return 'system';
+        
+        const actionLower = action.toLowerCase();
+        if (actionLower.includes('create') || actionLower.includes('add') || actionLower.includes('insert')) {
+            return 'create';
+        } else if (actionLower.includes('update') || actionLower.includes('edit') || actionLower.includes('modify')) {
+            return 'update';
+        } else if (actionLower.includes('delete') || actionLower.includes('remove') || actionLower.includes('archive')) {
+            return 'delete';
+        } else if (actionLower.includes('login') || actionLower.includes('signin')) {
+            return 'login';
+        } else if (actionLower.includes('logout') || actionLower.includes('signout')) {
+            return 'logout';
+        } else {
+            return 'system';
+        }
+    }
+    
+    function viewLogDetails(logId) {
+        fetch(`/admin/audit-log-details/${logId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('detailsContent').innerHTML = data.html;
+                    document.getElementById('detailsModal').classList.add('active');
+                } else {
+                    alert('Error loading details: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+    }
+    
+    function viewChanges(logId) {
+        fetch(`/admin/audit-log-changes/${logId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('changesContent').innerHTML = data.html;
+                    document.getElementById('changesModal').classList.add('active');
+                } else {
+                    alert('Error loading changes: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+    }
+    
+    function closeModal() {
+        document.getElementById('detailsModal').classList.remove('active');
+    }
+    
+    function closeChangesModal() {
+        document.getElementById('changesModal').classList.remove('active');
+    }
+    
+    function exportLogs() {
+        // Build export URL with current filters
+        const params = new URLSearchParams(window.location.search);
+        params.append('export', 'csv');
+        
+        window.location.href = '{{ url_for("admin.audit_logs") }}?' + params.toString();
+    }
+    
+    // Auto-submit form when date inputs change
+    document.querySelectorAll('input[type="date"]').forEach(input => {
+        input.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+    
+    // Format JSON in details view
+    function formatJSON(json) {
+        try {
+            const obj = JSON.parse(json);
+            return JSON.stringify(obj, null, 2);
+        } catch (e) {
+            return json;
+        }
+    }
+</script>
+{% endblock %}

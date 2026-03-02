@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<!-- templates/teacher/comments.html -->
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}Subject Teacher Comments - {{ teacher.user.username }}{% endblock %}
+
+{% block page_title %}
+<h1><i class="fas fa-comment-alt"></i> Subject Teacher Comments</h1>
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="separator">/</span>
+<a href="{{ url_for('teacher.dashboard') }}">Dashboard</a>
+<span class="separator">/</span>
+<span>Subject Comments</span>
+{% endblock %}
+
+{% block content %}
+<div class="comments-container">
+    <div class="comments-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="mb-1"><i class="fas fa-chalkboard-teacher"></i> Subject Teacher Comments</h3>
+                <p class="mb-0 opacity-90">Enter comments for students in your assigned subjects</p>
+            </div>
+            <div class="text-white">
+                <i class="fas fa-book"></i> {{ subject_students|length }} subjects
+            </div>
+        </div>
+    </div>
+    
+    <div class="comments-body">
+        <!-- Current Term Info -->
+        <div class="term-info">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1">{{ current_term.name }} - Term {{ current_term.term_number }}</h5>
+                    <p class="mb-0 text-muted small">
+                        Academic Year: {{ current_term.session.name }} | 
+                        Teacher: {{ teacher.user.username }}
+                    </p>
+                </div>
+                <div class="badge bg-primary">
+                    <i class="fas fa-calendar-alt"></i> Active Term
+                </div>
+            </div>
+        </div>
+        
+        {% if subject_students %}
+        <!-- Subject Selection -->
+        <div class="subject-selector">
+            <h5 class="mb-3">Select Subject</h5>
+            <div class="row g-3">
+                {% for subject_id, data in subject_students.items() %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="subject-card {% if loop.first %}active{% endif %}" 
+                         data-subject-id="{{ subject_id }}">
+                        <div class="d-flex align-items-center">
+                            <div class="subject-icon">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div class="subject-details">
+                                <div class="subject-name">{{ data.subject.name }}</div>
+                                <div class="subject-class">{{ data.classroom.name }}</div>
+                            </div>
+                            <div class="student-count">
+                                <i class="fas fa-users"></i> {{ data.students|length }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Comments Sections for each subject -->
+        {% for subject_id, data in subject_students.items() %}
+        <div class="comments-section {% if loop.first %}active{% endif %}" 
+             id="commentsSection-{{ subject_id }}"
+             data-subject-id="{{ subject_id }}"
+             data-class-id="{{ data.classroom.id }}">
+            <div class="section-header">
+                <div>
+                    <h4 class="section-title mb-1">{{ data.subject.name }} - {{ data.classroom.name }}</h4>
+                    <p class="text-muted mb-0 small">
+                        Subject Code: {{ data.subject.code }} | 
+                        Level: {{ data.classroom.level }} | 
+                        Section: {{ data.classroom.section }}
+                    </p>
+                </div>
+                <div class="stats-badge">
+                    <i class="fas fa-users"></i> {{ data.students|length }} Students
+                </div>
+            </div>
+            
+            <!-- Student Comments Grid -->
+            <div class="student-comments-grid">
+                {% for student in data.students %}
+                <div class="student-card" data-student-id="{{ student.id }}">
+                    <div class="student-info">
+                        <div>
+                            <div class="student-name">
+                                {{ student.first_name }} {{ student.last_name }}
+                            </div>
+                            <div class="text-muted small mt-1">
+                                Gender: {{ student.gender or 'N/A' }} | 
+                                Admission: {{ student.admission_number }}
+                            </div>
+                        </div>
+                        <div class="student-admission">{{ student.admission_number }}</div>
+                    </div>
+                    
+                    <textarea 
+                        class="comment-textarea" 
+                        id="comment_{{ subject_id }}_{{ student.id }}"
+                        placeholder="Enter your comment for {{ student.first_name }}. Focus on subject-specific performance, strengths, and areas for improvement."
+                        maxlength="800"
+                        data-student-id="{{ student.id }}"
+                        data-subject-id="{{ subject_id }}"
+                    >{{ student.existing_comment }}</textarea>
+                    
+                    <div class="char-count" id="charCount_{{ subject_id }}_{{ student.id }}">
+                        <span id="currentCount_{{ subject_id }}_{{ student.id }}">0</span>/800 characters
+                    </div>
+                    
+                    <div class="comment-actions">
+                        <button 
+                            type="button" 
+                            class="save-btn" 
+                            data-student-id="{{ student.id }}"
+                            data-subject-id="{{ subject_id }}"
+                            id="saveBtn_{{ subject_id }}_{{ student.id }}"
+                        >
+                            <i class="fas fa-save"></i> Save Comment
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Subject-specific actions -->
+            <div class="global-actions">
+                <div class="progress-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalStudents-{{ subject_id }}">{{ data.students|length }}</div>
+                        <div class="stat-label">Total</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="commentedStudents-{{ subject_id }}">0</div>
+                        <div class="stat-label">Commented</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="remainingStudents-{{ subject_id }}">0</div>
+                        <div class="stat-label">Remaining</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="completionRate-{{ subject_id }}">0%</div>
+                        <div class="stat-label">Completion</div>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button type="button" class="btn btn-outline-secondary" 
+                            onclick="window.commentsApp.clearSubjectComments('{{ subject_id }}')">
+                        <i class="fas fa-eraser"></i> Clear All
+                    </button>
+                    <button type="button" class="btn btn-primary" 
+                            onclick="window.commentsApp.saveAllSubjectComments('{{ subject_id }}')">
+                        <i class="fas fa-save"></i> Save All
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-book"></i>
+            </div>
+            <h4>No Subjects Assigned</h4>
+            <p class="text-muted">
+                You are not assigned to teach any subjects in the current term.
+                Please contact the administrator to get subject assignments.
+            </p>
+            <a href="{{ url_for('teacher.dashboard') }}" class="btn btn-primary mt-2">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<style>
+    .comments-container {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .comments-header {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .comments-body {
+        padding: 1.5rem;
+    }
+    
+    .term-info {
+        background: #f0f9ff;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #bae6fd;
+    }
+    
+    .subject-selector {
+        margin-bottom: 1.5rem;
+    }
+    
+    .subject-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .subject-card:hover {
+        border-color: #6366f1;
+        background: #f1f5f9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+    }
+    
+    .subject-card.active {
+        border-color: #6366f1;
+        background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+    }
+    
+    .subject-icon {
+        width: 40px;
+        height: 40px;
+        background: #6366f1;
+        color: white;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        margin-right: 0.75rem;
+    }
+    
+    .subject-details {
+        flex: 1;
+    }
+    
+    .subject-name {
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+    
+    .subject-class {
+        font-size: 0.85rem;
+        color: #64748b;
+    }
+    
+    .student-count {
+        background: #e2e8f0;
+        color: #475569;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .comments-section {
+        display: none;
+    }
+    
+    .comments-section.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1e293b;
+    }
+    
+    .stats-badge {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
+    .student-comments-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .student-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1.25rem;
+        transition: all 0.2s ease;
+    }
+    
+    .student-card:hover {
+        border-color: #6366f1;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+    }
+    
+    .student-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    
+    .student-name {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 1.05rem;
+    }
+    
+    .student-admission {
+        font-size: 0.8rem;
+        color: #64748b;
+        background: #f1f5f9;
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+    }
+    
+    .comment-textarea {
+        width: 100%;
+        min-height: 120px;
+        padding: 0.75rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        resize: vertical;
+        font-family: inherit;
+        transition: all 0.2s ease;
+    }
+    
+    .comment-textarea:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+    
+    .comment-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 0.75rem;
+        gap: 0.5rem;
+    }
+    
+    .save-btn {
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    
+    .save-btn:hover {
+        background: #059669;
+    }
+    
+    .save-btn.saving {
+        background: #64748b;
+        cursor: not-allowed;
+    }
+    
+    .save-btn.saved {
+        background: #3b82f6;
+    }
+    
+    .char-count {
+        font-size: 0.75rem;
+        color: #64748b;
+        text-align: right;
+        margin-top: 0.25rem;
+    }
+    
+    .char-count.warning {
+        color: #f59e0b;
+    }
+    
+    .char-count.error {
+        color: #ef4444;
+    }
+    
+    .global-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e2e8f0;
+    }
+    
+    .progress-stats {
+        display: flex;
+        gap: 1.5rem;
+    }
+    
+    .stat-item {
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #6366f1;
+        margin-bottom: 0.25rem;
+    }
+    
+    .stat-label {
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 0.75rem;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+    }
+    
+    .empty-state-icon {
+        font-size: 3rem;
+        color: #cbd5e1;
+        margin-bottom: 1rem;
+    }
+    
+    /* Toast notifications */
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+    
+    .toast {
+        background: white;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-left: 4px solid #3b82f6;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-width: 300px;
+        animation: slideIn 0.3s ease;
+    }
+    
+    .toast.success {
+        border-left-color: #10b981;
+    }
+    
+    .toast.error {
+        border-left-color: #ef4444;
+    }
+    
+    .toast.warning {
+        border-left-color: #f59e0b;
+    }
+    
+    .toast.info {
+        border-left-color: #3b82f6;
+    }
+    
+    .toast-icon {
+        font-size: 1.25rem;
+    }
+    
+    .toast-content {
+        flex: 1;
+    }
+    
+    .toast-close {
+        background: none;
+        border: none;
+        color: #64748b;
+        cursor: pointer;
+        padding: 0.25rem;
+    }
+    
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .student-comments-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .global-actions {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: stretch;
+        }
+        
+        .progress-stats {
+            justify-content: space-between;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .action-buttons button {
+            width: 100%;
+        }
+        
+        .toast {
+            min-width: 250px;
+        }
+    }
+</style>
+
+<script>
+    // Subject Teacher Comments Application
+    class SubjectTeacherComments {
+        constructor() {
+            this.savedComments = new Set();
+            this.currentSubjectId = null;
+            this.currentClassId = null;
+            this.autoSaveInterval = null;
+            this.init();
+        }
+        
+        init() {
+            this.bindEvents();
+            this.initializeCharacterCounts();
+            this.updateAllStats();
+            this.startAutoSaveReminder();
+            
+            // Set first subject as active
+            const firstSubject = document.querySelector('.subject-card');
+            if (firstSubject) {
+                this.currentSubjectId = firstSubject.dataset.subjectId;
+            }
+        }
+        
+        bindEvents() {
+            // Bind subject selection
+            document.querySelectorAll('.subject-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    const subjectId = e.currentTarget.dataset.subjectId;
+                    this.switchSubject(subjectId);
+                });
+            });
+            
+            // Bind save buttons
+            document.querySelectorAll('.save-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const studentId = e.currentTarget.dataset.studentId;
+                    const subjectId = e.currentTarget.dataset.subjectId;
+                    this.saveComment(studentId, subjectId);
+                });
+            });
+            
+            // Bind textarea input events
+            document.querySelectorAll('.comment-textarea').forEach(textarea => {
+                textarea.addEventListener('input', (e) => {
+                    const studentId = e.target.dataset.studentId;
+                    const subjectId = e.target.dataset.subjectId;
+                    this.updateCharCount(studentId, subjectId);
+                });
+                
+                // Initialize on load
+                const studentId = textarea.dataset.studentId;
+                const subjectId = textarea.dataset.subjectId;
+                this.updateCharCount(studentId, subjectId);
+            });
+            
+            // Handle beforeunload to warn about unsaved changes
+            window.addEventListener('beforeunload', (e) => {
+                if (this.hasUnsavedComments()) {
+                    e.preventDefault();
+                    e.returnValue = 'You have unsaved comments. Are you sure you want to leave?';
+                }
+            });
+        }
+        
+        switchSubject(subjectId) {
+            // Update active subject card
+            document.querySelectorAll('.subject-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            document.querySelector(`.subject-card[data-subject-id="${subjectId}"]`).classList.add('active');
+            
+            // Update active comments section
+            document.querySelectorAll('.comments-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(`commentsSection-${subjectId}`).classList.add('active');
+            
+            // Update current subject
+            this.currentSubjectId = subjectId;
+            const section = document.getElementById(`commentsSection-${subjectId}`);
+            this.currentClassId = section.dataset.classId;
+            
+            // Update stats for this subject
+            this.updateSubjectStats(subjectId);
+            
+            this.showToast(`Switched to ${document.querySelector(`.subject-card[data-subject-id="${subjectId}"] .subject-name`).textContent}`, 'info');
+        }
+        
+        initializeCharacterCounts() {
+            {% for subject_id, data in subject_students.items() %}
+                {% for student in data.students %}
+                this.updateCharCount('{{ student.id }}', '{{ subject_id }}');
+                {% endfor %}
+            {% endfor %}
+        }
+        
+        updateCharCount(studentId, subjectId) {
+            const textarea = document.getElementById(`comment_${subjectId}_${studentId}`);
+            const charCount = document.getElementById(`charCount_${subjectId}_${studentId}`);
+            const currentCount = document.getElementById(`currentCount_${subjectId}_${studentId}`);
+            
+            if (!textarea || !charCount || !currentCount) return;
+            
+            const count = textarea.value.length;
+            currentCount.textContent = count;
+            
+            // Update styling based on count
+            charCount.className = 'char-count';
+            if (count > 700) {
+                charCount.classList.add('warning');
+            }
+            if (count > 780) {
+                charCount.classList.add('error');
+            }
+        }
+        
+        async saveComment(studentId, subjectId) {
+            const textarea = document.getElementById(`comment_${subjectId}_${studentId}`);
+            const saveBtn = document.getElementById(`saveBtn_${subjectId}_${studentId}`);
+            const comment = textarea.value.trim();
+            
+            if (!comment) {
+                this.showToast('Please enter a comment before saving', 'warning');
+                return;
+            }
+            
+            // Save button state
+            const originalText = saveBtn.innerHTML;
+            const originalClass = saveBtn.className;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            saveBtn.classList.add('saving');
+            saveBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/teacher/save-subject-comment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        student_id: studentId,
+                        subject_id: subjectId,
+                        comment: comment
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Update button state
+                    saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved';
+                    saveBtn.classList.remove('saving');
+                    saveBtn.classList.add('saved');
+                    this.savedComments.add(`${subjectId}_${studentId}`);
+                    
+                    // Update stats
+                    this.updateSubjectStats(subjectId);
+                    
+                    // Reset button after 2 seconds
+                    setTimeout(() => {
+                        saveBtn.innerHTML = originalText;
+                        saveBtn.className = originalClass;
+                        saveBtn.disabled = false;
+                    }, 2000);
+                    
+                    this.showToast('Comment saved successfully!', 'success');
+                } else {
+                    throw new Error(result.message || 'Failed to save comment');
+                }
+            } catch (error) {
+                console.error('Error saving comment:', error);
+                
+                saveBtn.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error';
+                saveBtn.classList.remove('saving');
+                saveBtn.classList.add('error');
+                
+                this.showToast(`Error: ${error.message}`, 'error');
+                
+                // Reset button after 3 seconds
+                setTimeout(() => {
+                    saveBtn.innerHTML = originalText;
+                    saveBtn.className = originalClass;
+                    saveBtn.disabled = false;
+                }, 3000);
+            }
+        }
+        
+        async saveAllSubjectComments(subjectId) {
+            const section = document.getElementById(`commentsSection-${subjectId}`);
+            const studentCards = section.querySelectorAll('.student-card');
+            let hasComments = false;
+            
+            // Check if any comments exist
+            for (const card of studentCards) {
+                const studentId = card.dataset.studentId;
+                const textarea = document.getElementById(`comment_${subjectId}_${studentId}`);
+                if (textarea.value.trim()) {
+                    hasComments = true;
+                    break;
+                }
+            }
+            
+            if (!hasComments) {
+                if (!confirm('No comments entered. Save empty comments?')) {
+                    return;
+                }
+            }
+            
+            const subjectName = document.querySelector(`.subject-card[data-subject-id="${subjectId}"] .subject-name`).textContent;
+            if (!confirm(`Save all comments for ${subjectName}?`)) {
+                return;
+            }
+            
+            try {
+                // Save all comments sequentially
+                for (const card of studentCards) {
+                    const studentId = card.dataset.studentId;
+                    const textarea = document.getElementById(`comment_${subjectId}_${studentId}`);
+                    const comment = textarea.value.trim();
+                    
+                    if (comment) {
+                        await this.saveCommentDirect(studentId, subjectId, comment);
+                    }
+                }
+                
+                this.showToast(`All comments for ${subjectName} saved successfully!`, 'success');
+                this.updateSubjectStats(subjectId);
+            } catch (error) {
+                this.showToast(`Error saving comments: ${error.message}`, 'error');
+            }
+        }
+        
+        async saveCommentDirect(studentId, subjectId, comment) {
+            try {
+                const response = await fetch('/teacher/save-subject-comment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        student_id: studentId,
+                        subject_id: subjectId,
+                        comment: comment
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    this.savedComments.add(`${subjectId}_${studentId}`);
+                    return true;
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                console.error(`Error saving comment for student ${studentId}:`, error);
+                throw error;
+            }
+        }
+        
+        clearSubjectComments(subjectId) {
+            const subjectName = document.querySelector(`.subject-card[data-subject-id="${subjectId}"] .subject-name`).textContent;
+            
+            if (!confirm(`Clear all comments for ${subjectName}? This action cannot be undone.`)) {
+                return;
+            }
+            
+            const section = document.getElementById(`commentsSection-${subjectId}`);
+            const textareas = section.querySelectorAll('.comment-textarea');
+            textareas.forEach(textarea => {
+                textarea.value = '';
+                const studentId = textarea.dataset.studentId;
+                this.updateCharCount(studentId, subjectId);
+            });
+            
+            // Clear saved comments tracking for this subject
+            this.savedComments.forEach(key => {
+                if (key.startsWith(`${subjectId}_`)) {
+                    this.savedComments.delete(key);
+                }
+            });
+            
+            this.updateSubjectStats(subjectId);
+            this.showToast(`All comments for ${subjectName} cleared`, 'warning');
+        }
+        
+        updateSubjectStats(subjectId) {
+            const section = document.getElementById(`commentsSection-${subjectId}`);
+            const textareas = section.querySelectorAll('.comment-textarea');
+            let commentedCount = 0;
+            
+            // Count comments with content
+            textareas.forEach(textarea => {
+                if (textarea.value.trim()) {
+                    commentedCount++;
+                }
+            });
+            
+            const totalStudents = textareas.length;
+            const remainingCount = totalStudents - commentedCount;
+            const completionRate = totalStudents > 0 ? Math.round((commentedCount / totalStudents) * 100) : 0;
+            
+            // Update display
+            document.getElementById(`totalStudents-${subjectId}`).textContent = totalStudents;
+            document.getElementById(`commentedStudents-${subjectId}`).textContent = commentedCount;
+            document.getElementById(`remainingStudents-${subjectId}`).textContent = remainingCount;
+            document.getElementById(`completionRate-${subjectId}`).textContent = completionRate + '%';
+        }
+        
+        updateAllStats() {
+            {% for subject_id, data in subject_students.items() %}
+            this.updateSubjectStats('{{ subject_id }}');
+            {% endfor %}
+        }
+        
+        hasUnsavedComments() {
+            let unsavedCount = 0;
+            
+            document.querySelectorAll('.comment-textarea').forEach(textarea => {
+                const studentId = textarea.dataset.studentId;
+                const subjectId = textarea.dataset.subjectId;
+                const hasContent = textarea.value.trim();
+                const isSaved = this.savedComments.has(`${subjectId}_${studentId}`);
+                
+                if (hasContent && !isSaved) {
+                    unsavedCount++;
+                }
+            });
+            
+            return unsavedCount > 0;
+        }
+        
+        startAutoSaveReminder() {
+            // Remind to save every 2 minutes
+            this.autoSaveInterval = setInterval(() => {
+                if (this.hasUnsavedComments()) {
+                    this.showToast('You have unsaved comments. Remember to save!', 'info');
+                }
+            }, 120000); // 2 minutes
+        }
+        
+        showToast(message, type = 'info') {
+            const toastContainer = document.getElementById('toastContainer');
+            const toastId = 'toast-' + Date.now();
+            
+            const iconMap = {
+                'success': 'check-circle',
+                'error': 'exclamation-circle',
+                'warning': 'exclamation-triangle',
+                'info': 'info-circle'
+            };
+            
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.id = toastId;
+            toast.innerHTML = `
+                <div class="toast-icon">
+                    <i class="fas fa-${iconMap[type] || 'info-circle'}"></i>
+                </div>
+                <div class="toast-content">${message}</div>
+                <button class="toast-close" onclick="document.getElementById('${toastId}').remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                const toastElement = document.getElementById(toastId);
+                if (toastElement) {
+                    toastElement.remove();
+                }
+            }, 5000);
+        }
+    }
+    
+    // Initialize the application when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        window.commentsApp = new SubjectTeacherComments();
+    });
+</script>
+{% endblock %}

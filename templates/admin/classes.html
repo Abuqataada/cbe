@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<!-- templates/admin/classes.html -->
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Manage Classes - Admin Panel{% endblock %}
+
+{% block page_title %}
+<h1><i class="fas fa-chalkboard-teacher"></i> Manage Classes</h1>
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="separator">/</span>
+<span>Manage Classes</span>
+{% endblock %}
+
+{% block content %}
+<!-- Stats Summary -->
+<div class="stats-summary">
+    <div class="stat-item">
+        <h4>{{ classes|length }}</h4>
+        <p>Total Classes</p>
+    </div>
+    <div class="stat-item">
+        <h4>{{ total_students }}</h4>
+        <p>Total Students</p>
+    </div>
+    <div class="stat-item">
+        <h4>{{ teachers|length }}</h4>
+        <p>Form Teachers</p>
+    </div>
+    <div class="stat-item">
+        <h4>{{ active_session.name if active_session else 'No Session' }}</h4>
+        <p>Active Session</p>
+    </div>
+</div>
+
+<!-- Classes List -->
+<div class="admin-card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-list"></i> All Classes</h3>
+        <button class="btn btn-primary" id="addClassBtn">
+            <i class="fas fa-plus"></i> Add New Class
+        </button>
+    </div>
+    
+    {% if classes %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+        {% for class in classes %}
+        <div class="class-card">
+            <div class="class-header">
+                <div class="class-title">
+                    <h4 class="mb-0">{{ class.name }}</h4>
+                    {% if class.level %}
+                    <span class="class-badge badge-primary">
+                        <i class="fas fa-layer-group"></i> {{ class.level }}
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-sm btn-secondary edit-class-btn" 
+                            data-id="{{ class.id }}"
+                            title="Edit Class">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger delete-class-btn" 
+                            data-id="{{ class.id }}"
+                            data-name="{{ class.name }}"
+                            title="Delete Class">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            
+            {% if class.form_teacher %}
+            <div class="teacher-info">
+                <i class="fas fa-user-tie text-muted"></i>
+                <span>Form Teacher: {{ class.form_teacher.first_name }} {{ class.form_teacher.last_name }}</span>
+            </div>
+            {% endif %}
+            
+            {% if class.academic_session %}
+            <div class="session-info">
+                <i class="fas fa-calendar-alt text-muted"></i>
+                <span>Session: {{ class.academic_session.name }}</span>
+            </div>
+            {% endif %}
+            
+            <div class="class-stats">
+                <div class="stat-box">
+                    <div class="stat-value">{{ class.class_students|length }}</div>
+                    <div class="stat-label">Students</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">{{ class.max_students if class.max_students else 40 }}</div>
+                    <div class="stat-label">Capacity</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">{{ class.room_number if class.room_number else 'N/A' }}</div>
+                    <div class="stat-label">Room</div>
+                </div>
+            </div>
+            
+            <div class="mt-3">
+                <a href="{{ url_for('admin.manage_students') }}?class_id={{ class.id }}" 
+                   class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-users"></i> View Students
+                </a>
+                <a href="{{ url_for('admin.manage_subject_assignments') }}?class_id={{ class.id }}" 
+                   class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-book"></i> Subjects
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-4">
+        <i class="fas fa-chalkboard-teacher text-muted mb-2" style="font-size: 2rem;"></i>
+        <p class="text-muted">No classes found for the current academic session</p>
+        <button class="btn btn-primary mt-2" id="addFirstClassBtn">
+            <i class="fas fa-plus"></i> Add First Class
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add/Edit Class Modal -->
+<div class="modal-overlay" id="classModal">
+    <div class="modal">
+        <div class="card-header">
+            <h3 class="card-title" id="modalTitle">
+                <i class="fas fa-chalkboard"></i> Add New Class
+            </h3>
+            <button class="btn btn-secondary btn-sm" id="closeModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form id="classForm">
+            <input type="hidden" name="class_id" id="classId">
+            
+            <div class="form-group">
+                <label class="form-label">Academic Session *</label>
+                <select name="academic_session_id" class="form-control" required>
+                    <option value="">Select Academic Session</option>
+                    {% for session in sessions %}
+                    <option value="{{ session.id }}" 
+                            {% if session.is_active %}selected{% endif %}>
+                        {{ session.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <small class="text-muted">Select the academic session for this class</small>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Class Name *</label>
+                    <input type="text" name="name" class="form-control" required 
+                           placeholder="e.g., Primary 1">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Level *</label>
+                    <select name="level" class="form-control" required>
+                        <option value="">Select Level</option>
+                        <option value="Nursery">Nursery</option>
+                        <option value="Primary">Primary</option>
+                        <option value="Junior Secondary">Junior Secondary</option>
+                        <option value="Senior Secondary">Senior Secondary</option>
+                        <option value="Placement">Placement</option>
+                        <option value="Recruitment">Recruitment</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Section (Optional)</label>
+                    <input type="text" name="section" class="form-control" 
+                           placeholder="e.g., A, B, C">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Maximum Students *</label>
+                    <input type="number" name="max_students" class="form-control" required 
+                           min="10" max="100" value="40">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Room Number (Optional)</label>
+                    <input type="text" name="room_number" class="form-control" 
+                           placeholder="e.g., Room 101">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Form Teacher (Optional)</label>
+                    <select name="form_teacher_id" class="form-control">
+                        <option value="">Select Form Teacher</option>
+                        {% for teacher in teachers %}
+                        <option value="{{ teacher.id }}">
+                            {{ teacher.first_name }} {{ teacher.last_name }} 
+                            ({{ teacher.staff_id }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <button type="button" class="btn btn-secondary" id="cancelBtn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <i class="fas fa-save"></i> Save Class
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay confirmation-modal" id="deleteModal">
+    <div class="modal">
+        <div class="confirmation-content">
+            <div class="confirmation-icon" style="color: var(--admin-danger);">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h4>Delete Class</h4>
+            <p id="deleteMessage">Are you sure you want to delete this class?</p>
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Warning:</strong> This action cannot be undone. All students in this class will need to be reassigned.
+            </div>
+            
+            <div class="confirmation-actions">
+                <button type="button" class="btn btn-secondary" id="cancelDeleteBtn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Stats Summary - Compact and Mobile Friendly */
+    .stats-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-item {
+        background: var(--admin-card);
+        border-radius: 8px;
+        padding: 0.75rem;
+        text-align: center;
+        border: 1px solid var(--admin-border);
+        transition: transform 0.2s ease;
+    }
+    
+    .stat-item:hover {
+        transform: translateY(-2px);
+    }
+    
+    .stat-item h4 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--admin-primary);
+        margin-bottom: 0.2rem;
+        line-height: 1.2;
+    }
+    
+    .stat-item p {
+        font-size: 0.75rem;
+        color: var(--admin-text-light);
+        margin: 0;
+    }
+    
+    /* Class Card - Mobile Optimized */
+    .class-card {
+        background: var(--admin-card);
+        border-radius: 10px;
+        padding: 1rem;
+        border: 1px solid var(--admin-border);
+        margin-bottom: 0.75rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .class-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-color: var(--admin-primary-light);
+    }
+    
+    .class-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .class-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .class-title h4 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--admin-text);
+        line-height: 1.3;
+    }
+    
+    .class-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.2rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    
+    .badge-primary {
+        background: linear-gradient(135deg, #dbeafe, #3b82f6);
+        color: white;
+    }
+    
+    .badge-secondary {
+        background: linear-gradient(135deg, #e2e8f0, #94a3b8);
+        color: white;
+    }
+    
+    /* Class Info Section */
+    .teacher-info, .session-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        color: var(--admin-text-light);
+        margin-bottom: 0.4rem;
+        padding: 0.3rem 0;
+    }
+    
+    .teacher-info i, .session-info i {
+        font-size: 0.9rem;
+        min-width: 16px;
+    }
+    
+    /* Class Stats Grid */
+    .class-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+        margin: 0.75rem 0;
+        padding: 0.5rem 0;
+        border-top: 1px solid var(--admin-border-light);
+        border-bottom: 1px solid var(--admin-border-light);
+    }
+    
+    .stat-box {
+        text-align: center;
+        padding: 0.5rem;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 6px;
+        transition: background-color 0.2s ease;
+    }
+    
+    .stat-box:hover {
+        background: rgba(255, 255, 255, 0.08);
+    }
+    
+    .stat-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--admin-primary);
+        line-height: 1.2;
+    }
+    
+    .stat-label {
+        font-size: 0.7rem;
+        color: var(--admin-text-light);
+        margin-top: 0.2rem;
+    }
+    
+    /* Action Buttons */
+    .class-actions {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        margin-top: 0.75rem;
+    }
+    
+    .class-actions .btn {
+        flex: 1;
+        min-width: 120px;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        white-space: nowrap;
+    }
+    
+    /* Action Buttons on Header */
+    .action-buttons {
+        display: flex;
+        gap: 0.3rem;
+    }
+    
+    .action-buttons .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        min-width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Grid Layout */
+    .grid {
+        display: grid;
+        gap: 0.75rem;
+    }
+    
+    /* Modal Styles - Mobile Optimized */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem;
+        backdrop-filter: blur(4px);
+    }
+    
+    .modal-overlay.active {
+        display: flex;
+        animation: fadeIn 0.2s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .modal {
+        background: var(--admin-card);
+        border-radius: 12px;
+        width: 100%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--admin-border);
+        animation: slideUp 0.3s ease;
+    }
+    
+    @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    
+    .modal .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid var(--admin-border);
+        position: sticky;
+        top: 0;
+        background: var(--admin-card);
+        z-index: 1;
+    }
+    
+    .modal .card-title {
+        margin: 0;
+        font-size: 1.1rem;
+        color: var(--admin-text);
+    }
+    
+    .modal form {
+        padding: 1rem;
+    }
+    
+    /* Form Styles */
+    .form-group {
+        margin-bottom: 0.75rem;
+    }
+    
+    .form-group label {
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-bottom: 0.3rem;
+        color: var(--admin-text);
+        display: block;
+    }
+    
+    .form-group .form-control {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+        border: 1px solid var(--admin-border);
+        border-radius: 6px;
+        background: var(--admin-bg);
+        color: var(--admin-text);
+        transition: border-color 0.2s ease;
+    }
+    
+    .form-group .form-control:focus {
+        outline: none;
+        border-color: var(--admin-primary);
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    }
+    
+    .form-row {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .form-row .form-group {
+        flex: 1;
+        margin-bottom: 0;
+    }
+    
+    small.text-muted {
+        font-size: 0.75rem;
+        color: var(--admin-text-light);
+        display: block;
+        margin-top: 0.2rem;
+    }
+    
+    /* Confirmation Modal */
+    .confirmation-modal .modal {
+        max-width: 400px;
+    }
+    
+    .confirmation-content {
+        text-align: center;
+        padding: 1.5rem 1rem;
+    }
+    
+    .confirmation-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        opacity: 0.9;
+    }
+    
+    .confirmation-content h4 {
+        font-size: 1.2rem;
+        margin-bottom: 0.75rem;
+        color: var(--admin-text);
+    }
+    
+    .confirmation-content p {
+        font-size: 0.95rem;
+        color: var(--admin-text-light);
+        margin-bottom: 1rem;
+        line-height: 1.4;
+    }
+    
+    .alert {
+        padding: 0.75rem;
+        font-size: 0.85rem;
+        border-radius: 6px;
+        margin-bottom: 1rem;
+        background: rgba(254, 226, 226, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        color: var(--admin-text);
+    }
+    
+    .alert i {
+        margin-right: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .confirmation-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+        margin-top: 1rem;
+    }
+    
+    .confirmation-actions .btn {
+        padding: 0.5rem 1.25rem;
+        font-size: 0.9rem;
+        min-width: 100px;
+    }
+    
+    /* Empty State */
+    .text-center.py-4 {
+        padding: 2rem 1rem;
+        text-align: center;
+    }
+    
+    .text-center.py-4 i {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        color: var(--admin-border);
+        opacity: 0.5;
+    }
+    
+    .text-center.py-4 p {
+        font-size: 0.95rem;
+        color: var(--admin-text-light);
+        margin-bottom: 1rem;
+    }
+    
+    .text-center.py-4 .btn {
+        padding: 0.5rem 1.5rem;
+        font-size: 0.9rem;
+    }
+    
+    /* Admin Card Header */
+    .admin-card .card-header {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 1rem;
+        border-bottom: 1px solid var(--admin-border);
+    }
+    
+    .admin-card .card-title {
+        font-size: 1.1rem;
+        margin: 0;
+        color: var(--admin-text);
+    }
+    
+    .admin-card .card-header .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    /* Responsive Breakpoints */
+    @media (min-width: 640px) {
+        .stats-summary {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .admin-card .card-header {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .admin-card .card-header .btn {
+            width: auto;
+        }
+        
+        .class-actions .btn {
+            flex: none;
+        }
+    }
+    
+    @media (min-width: 768px) {
+        .stats-summary {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        
+        .grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        
+        .form-row {
+            flex-direction: row;
+        }
+        
+        .class-header {
+            flex-wrap: nowrap;
+        }
+    }
+    
+    @media (max-width: 639px) {
+        .grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-row {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .class-stats {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.4rem;
+        }
+        
+        .class-actions {
+            flex-direction: column;
+        }
+        
+        .class-actions .btn {
+            min-width: 100%;
+        }
+        
+        .action-buttons {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+        }
+        
+        .class-title {
+            padding-right: 50px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .stats-summary {
+            grid-template-columns: 1fr;
+            gap: 0.4rem;
+        }
+        
+        .stat-item {
+            padding: 0.6rem;
+        }
+        
+        .stat-item h4 {
+            font-size: 1.1rem;
+        }
+        
+        .class-card {
+            padding: 0.75rem;
+        }
+        
+        .class-stats {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.3rem;
+            padding: 0.4rem 0;
+        }
+        
+        .stat-box {
+            padding: 0.4rem;
+        }
+        
+        .stat-value {
+            font-size: 1.1rem;
+        }
+        
+        .stat-label {
+            font-size: 0.65rem;
+        }
+        
+        .teacher-info, .session-info {
+            font-size: 0.8rem;
+        }
+        
+        .modal {
+            max-width: 95%;
+        }
+        
+        .confirmation-actions {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .confirmation-actions .btn {
+            min-width: 100%;
+        }
+    }
+    
+    /* Touch-friendly improvements */
+    .btn {
+        touch-action: manipulation;
+        user-select: none;
+    }
+    
+    .form-control, select, input {
+        font-size: 16px; /* Prevents iOS zoom on focus */
+    }
+    
+    /* Scrollbar styling */
+    .modal::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .modal::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    .modal::-webkit-scrollbar-thumb {
+        background: var(--admin-border);
+        border-radius: 3px;
+    }
+    
+    .modal::-webkit-scrollbar-thumb:hover {
+        background: var(--admin-text-light);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Elements
+        const classModal = document.getElementById('classModal');
+        const deleteModal = document.getElementById('deleteModal');
+        const classForm = document.getElementById('classForm');
+        
+        // State variables
+        let classToDelete = null;
+        
+        // Open modal for adding new class
+        function openAddModal() {
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-chalkboard"></i> Add New Class';
+            classForm.reset();
+            document.getElementById('classId').value = '';
+            
+            // Select active session by default
+            const activeSession = document.querySelector('select[name="academic_session_id"] option[selected]');
+            if (activeSession) {
+                activeSession.selected = true;
+            }
+            
+            classModal.classList.add('active');
+        }
+        
+        // Open modal for editing class
+        function openEditModal(classId) {
+            fetch(`/admin/classes/${classId}/data`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to fetch class data');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit"></i> Edit Class';
+                        document.getElementById('classId').value = data.class.id;
+                        
+                        // Fill form fields
+                        document.querySelector('select[name="academic_session_id"]').value = data.class.academic_session_id;
+                        document.querySelector('input[name="name"]').value = data.class.name;
+                        document.querySelector('select[name="level"]').value = data.class.level;
+                        document.querySelector('input[name="section"]').value = data.class.section || '';
+                        document.querySelector('input[name="max_students"]').value = data.class.max_students || 40;
+                        document.querySelector('input[name="room_number"]').value = data.class.room_number || '';
+                        document.querySelector('select[name="form_teacher_id"]').value = data.class.form_teacher_id || '';
+                        
+                        classModal.classList.add('active');
+                    } else {
+                        throw new Error(data.message);
+                    }
+                })
+                .catch(error => {
+                    showAlert('danger', `Error: ${error.message}`);
+                });
+        }
+        
+        // Show alert message
+        function showAlert(type, message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                ${message}
+            `;
+            
+            const flashMessages = document.querySelector('.flash-messages');
+            if (!flashMessages) {
+                const container = document.createElement('div');
+                container.className = 'flash-messages';
+                document.querySelector('.admin-content').prepend(container);
+            }
+            
+            document.querySelector('.flash-messages').prepend(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.style.opacity = '0';
+                alertDiv.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => alertDiv.remove(), 500);
+            }, 5000);
+        }
+        
+        // Handle form submission
+        classForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            const originalDisabled = submitBtn.disabled;
+            
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            submitBtn.disabled = true;
+            
+            try {
+                const formData = new FormData(classForm);
+                const isEdit = !!formData.get('class_id');
+                const endpoint = isEdit ? '/admin/classes/update' : '/admin/classes/add';
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('success', data.message);
+                    classModal.classList.remove('active');
+                    
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                showAlert('danger', `Error: ${error.message}`);
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = originalDisabled;
+            }
+        });
+        
+        // Handle class deletion
+        function handleDeleteClass(classId, className) {
+            classToDelete = classId;
+            document.getElementById('deleteMessage').textContent = 
+                `Are you sure you want to delete "${className}"? This action cannot be undone.`;
+            deleteModal.classList.add('active');
+        }
+        
+        // Event listeners for buttons
+        document.getElementById('addClassBtn')?.addEventListener('click', openAddModal);
+        
+        const addFirstClassBtn = document.getElementById('addFirstClassBtn');
+        if (addFirstClassBtn) {
+            addFirstClassBtn.addEventListener('click', openAddModal);
+        }
+        
+        document.querySelectorAll('.edit-class-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const classId = this.getAttribute('data-id');
+                openEditModal(classId);
+            });
+        });
+        
+        document.querySelectorAll('.delete-class-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const classId = this.getAttribute('data-id');
+                const className = this.getAttribute('data-name');
+                handleDeleteClass(classId, className);
+            });
+        });
+        
+        // Modal close buttons
+        document.getElementById('closeModal')?.addEventListener('click', () => classModal.classList.remove('active'));
+        document.getElementById('cancelBtn')?.addEventListener('click', () => classModal.classList.remove('active'));
+        document.getElementById('cancelDeleteBtn')?.addEventListener('click', () => deleteModal.classList.remove('active'));
+        
+        // Confirm delete
+        document.getElementById('confirmDeleteBtn')?.addEventListener('click', async function() {
+            const deleteBtn = this;
+            const originalText = deleteBtn.innerHTML;
+            
+            deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+            deleteBtn.disabled = true;
+            
+            try {
+                const response = await fetch(`/admin/classes/delete/${classToDelete}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('success', data.message);
+                    deleteModal.classList.remove('active');
+                    
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                showAlert('danger', `Error: ${error.message}`);
+                deleteBtn.innerHTML = originalText;
+                deleteBtn.disabled = false;
+            }
+        });
+        
+        // Close modals when clicking outside
+        [classModal, deleteModal].forEach(modal => {
+            modal?.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

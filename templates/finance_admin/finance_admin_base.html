@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Finance Admin Dashboard - ARNDALE{% endblock %}</title>
+    
+    <!-- Modern CSS Reset (Local) -->
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/normalize.css') }}">
+
+    <!-- Local Fonts (Inter only) -->
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fonts/fonts.css') }}">
+
+    <!-- Bootstrap Icons (Local) -->
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.css') }}">
+
+    <!-- Font Awesome (Local) -->
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+        
+    <!-- Admin CSS -->
+    <style>
+        :root {
+            --admin-primary: #2563eb;      /* Blue for admin */
+            --admin-primary-dark: #1d4ed8;
+            --admin-primary-light: #dbeafe;
+            --admin-secondary: #475569;
+            --admin-success: #10b981;
+        --admin-warning: #f59e0b;
+            --admin-danger: #ef4444;
+            --admin-info: #0ea5e9;
+            --admin-light: #f8fafc;
+            --admin-dark: #1e293b;
+            --admin-sidebar: #1e293b;
+            --admin-sidebar-hover: #334155;
+            --admin-sidebar-active: #2563eb;
+            --admin-header: #ffffff;
+            --admin-content: #f1f5f9;
+            --admin-card: #ffffff;
+            --admin-border: #e2e8f0;
+            --admin-text: #334155;
+            --admin-text-light: #64748b;
+            --admin-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            --admin-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --admin-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --admin-radius: 8px;
+            --admin-radius-lg: 12px;
+            --admin-transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--admin-content);
+            color: var(--admin-text);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .admin-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styles */
+        .admin-sidebar {
+            width: 260px;
+            background: var(--admin-sidebar);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transition: var(--admin-transition);
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--admin-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            color: white;
+        }
+
+        .logo-text {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .sidebar-menu {
+            padding: 1rem 0;
+        }
+
+        .menu-title {
+            padding: 0.75rem 1.5rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 600;
+        }
+
+        .menu-list {
+            list-style: none;
+        }
+
+        .menu-item {
+            margin-bottom: 0.25rem;
+        }
+
+        .menu-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: var(--admin-transition);
+            border-left: 3px solid transparent;
+        }
+
+        .menu-link:hover {
+            background: var(--admin-sidebar-hover);
+            color: white;
+            border-left-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .menu-link.active {
+            background: rgba(37, 99, 235, 0.1);
+            color: white;
+            border-left-color: var(--admin-primary);
+        }
+
+        .menu-link i {
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .menu-badge {
+            margin-left: auto;
+            background: var(--admin-primary);
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .sidebar-footer {
+            padding: 1.5rem;
+            margin-top: auto;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--admin-primary) 0%, var(--admin-primary-dark) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .user-info h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 0.1rem;
+        }
+
+        .user-info p {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Main Content Area */
+        .admin-main {
+            flex: 1;
+            margin-left: 260px;
+            transition: var(--admin-transition);
+        }
+
+        /* Header Styles */
+        .admin-header {
+            background: var(--admin-header);
+            border-bottom: 1px solid var(--admin-border);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--admin-shadow);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            color: var(--admin-text);
+            font-size: 1.25rem;
+            cursor: pointer;
+            display: none;
+            padding: 0.5rem;
+            border-radius: var(--admin-radius);
+            transition: var(--admin-transition);
+        }
+
+        .sidebar-toggle:hover {
+            background: var(--admin-light);
+        }
+
+        .header-title h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--admin-text);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .header-title h1 i {
+            color: var(--admin-primary);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .notification-btn {
+            background: none;
+            border: none;
+            color: var(--admin-text);
+            font-size: 1.25rem;
+            cursor: pointer;
+            position: relative;
+            padding: 0.5rem;
+            border-radius: var(--admin-radius);
+            transition: var(--admin-transition);
+        }
+
+        .notification-btn:hover {
+            background: var(--admin-light);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--admin-danger);
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.1rem 0.3rem;
+            border-radius: 50%;
+            min-width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--admin-light);
+            border: 1px solid var(--admin-border);
+            border-radius: var(--admin-radius);
+            color: var(--admin-text);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--admin-transition);
+        }
+
+        .logout-btn:hover {
+            background: var(--admin-primary);
+            color: white;
+            border-color: var(--admin-primary);
+        }
+
+        /* Content Styles */
+        .admin-content {
+            padding: 2rem;
+            min-height: calc(100vh - 80px);
+        }
+
+        /* Content Header */
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--admin-text-light);
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb a {
+            color: var(--admin-text-light);
+            text-decoration: none;
+            transition: var(--admin-transition);
+        }
+
+        .breadcrumb a:hover {
+            color: var(--admin-primary);
+        }
+
+        .breadcrumb .separator {
+            color: var(--admin-text-light);
+        }
+
+        /* Cards */
+        .admin-card {
+            background: var(--admin-card);
+            border-radius: var(--admin-radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--admin-shadow);
+            border: 1px solid var(--admin-border);
+            margin-bottom: 1.5rem;
+            transition: var(--admin-transition);
+        }
+
+        .admin-card:hover {
+            box-shadow: var(--admin-shadow-md);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--admin-border);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--admin-text);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .card-title i {
+            color: var(--admin-primary);
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--admin-radius);
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--admin-transition);
+            border: none;
+            font-size: 0.95rem;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--admin-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--admin-primary-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--admin-shadow-md);
+        }
+
+        .btn-secondary {
+            background: var(--admin-light);
+            color: var(--admin-text);
+            border: 1px solid var(--admin-border);
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-success {
+            background: var(--admin-success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--admin-danger);
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-icon {
+            padding: 0.5rem;
+            width: 36px;
+            height: 36px;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--admin-radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--admin-shadow);
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            transition: var(--admin-transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--admin-shadow-md);
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: var(--admin-radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .stat-icon.primary { background: var(--admin-primary); }
+        .stat-icon.success { background: var(--admin-success); }
+        .stat-icon.warning { background: var(--admin-warning); }
+        .stat-icon.info { background: var(--admin-info); }
+        .stat-icon.purple { background: #8b5cf6; }
+
+        .stat-content h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            color: var(--admin-text);
+        }
+
+        .stat-content p {
+            color: var(--admin-text-light);
+            font-size: 0.9rem;
+        }
+
+        .stat-trend {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+
+        .stat-trend.up {
+            color: var(--admin-success);
+        }
+
+        .stat-trend.down {
+            color: var(--admin-danger);
+        }
+
+        /* Tables */
+        .table-responsive {
+            overflow-x: auto;
+            border-radius: var(--admin-radius);
+            box-shadow: var(--admin-shadow);
+            background: white;
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .admin-table th {
+            background: var(--admin-light);
+            color: var(--admin-text);
+            font-weight: 600;
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 2px solid var(--admin-border);
+        }
+
+        .admin-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--admin-border);
+        }
+
+        .admin-table tbody tr {
+            transition: var(--admin-transition);
+        }
+
+        .admin-table tbody tr:hover {
+            background: var(--admin-light);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
+        .badge-primary { background: var(--admin-primary-light); color: #1e40af; }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--admin-text);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--admin-border);
+            border-radius: var(--admin-radius);
+            font-size: 1rem;
+            transition: var(--admin-transition);
+            background: white;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--admin-primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: var(--admin-radius);
+            margin-bottom: 1.5rem;
+            border-left: 4px solid;
+            animation: slideIn 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            border-color: var(--admin-success);
+            color: #065f46;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            border-color: var(--admin-warning);
+            color: #92400e;
+        }
+
+        .alert-danger {
+            background: #fee2e2;
+            border-color: var(--admin-danger);
+            color: #991b1b;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            border-color: var(--admin-info);
+            color: #1e40af;
+        }
+
+        .alert-primary {
+            background: var(--admin-primary-light);
+            border-color: var(--admin-primary);
+            color: #1e40af;
+        }
+
+        /* Grid System */
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: -0.75rem;
+        }
+
+        .col {
+            padding: 0.75rem;
+        }
+
+        .col-12 { flex: 0 0 100%; max-width: 100%; }
+        .col-6 { flex: 0 0 50%; max-width: 50%; }
+        .col-4 { flex: 0 0 33.333%; max-width: 33.333%; }
+        .col-3 { flex: 0 0 25%; max-width: 25%; }
+
+        /* Utility Classes */
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-primary { color: var(--admin-primary); }
+        .text-success { color: var(--admin-success); }
+        .text-danger { color: var(--admin-danger); }
+        .text-warning { color: var(--admin-warning); }
+        .text-muted { color: var(--admin-text-light); }
+        .mb-0 { margin-bottom: 0; }
+        .mb-1 { margin-bottom: 0.5rem; }
+        .mb-2 { margin-bottom: 1rem; }
+        .mb-3 { margin-bottom: 1.5rem; }
+        .mb-4 { margin-bottom: 2rem; }
+        .mt-1 { margin-top: 0.5rem; }
+        .mt-2 { margin-top: 1rem; }
+        .mt-3 { margin-top: 1.5rem; }
+        .mt-4 { margin-top: 2rem; }
+        .p-0 { padding: 0; }
+        .p-1 { padding: 0.5rem; }
+        .p-2 { padding: 1rem; }
+        .p-3 { padding: 1.5rem; }
+        .p-4 { padding: 2rem; }
+        .d-none { display: none; }
+        .d-flex { display: flex; }
+        .d-block { display: block; }
+        .align-items-center { align-items: center; }
+        .justify-content-between { justify-content: space-between; }
+        .justify-content-center { justify-content: center; }
+        .flex-wrap { flex-wrap: wrap; }
+        .gap-1 { gap: 0.5rem; }
+        .gap-2 { gap: 1rem; }
+        .gap-3 { gap: 1.5rem; }
+        .shadow { box-shadow: var(--admin-shadow); }
+        .shadow-lg { box-shadow: var(--admin-shadow-lg); }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 1024px) {
+            .admin-sidebar {
+                width: 240px;
+            }
+            
+            .admin-main {
+                margin-left: 240px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar-toggle {
+                display: block;
+            }
+            
+            .admin-sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .admin-sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .admin-main {
+                margin-left: 0;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .admin-content {
+                padding: 1.5rem;
+            }
+            
+            .content-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .col-6, .col-4, .col-3 {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .admin-header {
+                padding: 1rem;
+            }
+            
+            .admin-content {
+                padding: 1rem;
+            }
+            
+            .stat-card {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .header-actions {
+                gap: 0.5rem;
+            }
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--admin-border);
+            border-top-color: var(--admin-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: var(--admin-radius-lg);
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--admin-shadow-lg);
+        }
+
+        .menu-item.has-submenu {
+            position: relative;
+        }
+
+        .menu-item.has-submenu .menu-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .submenu-icon {
+            margin-left: auto;
+            font-size: 0.8rem;
+            transition: transform 0.3s ease;
+        }
+
+        .menu-item.has-submenu.open .submenu-icon {
+            transform: rotate(90deg);
+        }
+
+        .submenu {
+            display: none;
+            list-style: none;
+            padding-left: 2rem;
+            margin: 0.5rem 0;
+        }
+
+        .menu-item.has-submenu.open .submenu {
+            display: block;
+        }
+
+        .submenu .menu-item .menu-link {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .submenu .menu-badge {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+        }
+
+        /* Active states */
+        .menu-item.has-submenu.active > .menu-link {
+            background: rgba(63, 81, 181, 0.1);
+            color: #3f51b5;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div class="logo-text">ARNDALE Admin</div>
+                </div>
+            </div>
+            
+            <nav class="sidebar-menu">
+                <div class="menu-title">Main</div>
+                <ul class="menu-list">
+                    <li class="menu-item">
+                        <a href="{{ url_for('admin.dashboard') }}" class="menu-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="menu-title">Management</div>
+                <ul class="menu-list">
+                    <li class="menu-item">
+                        <a href="{{ url_for('admin.manage_students') }}" class="menu-link {% if request.endpoint == 'admin.manage_students' %}active{% endif %}">
+                            <i class="fas fa-users"></i>
+                            <span>Students</span>
+                            <span class="menu-badge" id="studentCount">0</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{ url_for('admin.manage_teachers') }}" class="menu-link {% if request.endpoint == 'admin.manage_teachers' %}active{% endif %}">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                            <span>Teachers</span>
+                            <span class="menu-badge" id="teacherCount">0</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{ url_for('admin.manage_users') }}" class="menu-link {% if request.endpoint == 'admin.manage_users' %}active{% endif %}">
+                            <i class="fas fa-user-friends"></i>
+                            <span>Users</span>
+                            <span class="menu-badge" id="userCount">0</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="menu-title">Accounting & Finance</div>
+                <ul class="menu-list">
+                    <!-- Dashboard -->
+                    <li class="menu-item">
+                        <a href="{{ url_for('finance.dashboard') }}" class="menu-link {% if request.endpoint.startswith('finance.dashboard') %}active{% endif %}">
+                            <i class="fas fa-chart-pie"></i>
+                            <span>Finance Dashboard</span>
+                            <span class="menu-badge" id="pendingPayments">0</span>
+                        </a>
+                    </li>
+                    
+                    <!-- Fee Management -->
+                    <li class="menu-item has-submenu {% if request.endpoint.startswith('finance.fees') %}active open{% endif %}">
+                        <a href="#" class="menu-link submenu-toggle">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <span>Fee Management</span>
+                            <i class="fas fa-chevron-right submenu-icon"></i>
+                        </a>
+                        <ul class="submenu">
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.fee_structure') }}" class="menu-link {% if request.endpoint == 'finance.fee_structure' %}active{% endif %}">
+                                    <i class="fas fa-tags"></i>
+                                    <span>Fee Structures</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.fee_types') }}" class="menu-link {% if request.endpoint == 'finance.fee_types' %}active{% endif %}">
+                                    <i class="fas fa-list"></i>
+                                    <span>Fee Types</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.assign_fees') }}" class="menu-link {% if request.endpoint == 'finance.assign_fees' %}active{% endif %}">
+                                    <i class="fas fa-user-plus"></i>
+                                    <span>Assign Fees</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.collect_fees') }}" class="menu-link {% if request.endpoint == 'finance.collect_fees' %}active{% endif %}">
+                                    <i class="fas fa-hand-holding-usd"></i>
+                                    <span>Collect Fees</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.fee_defaulters') }}" class="menu-link {% if request.endpoint == 'finance.fee_defaulters' %}active{% endif %}">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <span>Fee Defaulters</span>
+                                    <span class="menu-badge" id="defaulterCount">0</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.concessions') }}" class="menu-link {% if request.endpoint == 'finance.concessions' %}active{% endif %}">
+                                    <i class="fas fa-percentage"></i>
+                                    <span>Concessions & Scholarships</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.refunds') }}" class="menu-link {% if request.endpoint == 'finance.refunds' %}active{% endif %}">
+                                    <i class="fas fa-undo-alt"></i>
+                                    <span>Refunds & Adjustments</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Expense Management -->
+                    <li class="menu-item has-submenu {% if request.endpoint.startswith('finance.expenses') %}active open{% endif %}">
+                        <a href="#" class="menu-link submenu-toggle">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span>Expense Management</span>
+                            <i class="fas fa-chevron-right submenu-icon"></i>
+                        </a>
+                        <ul class="submenu">
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.expense_categories') }}" class="menu-link {% if request.endpoint == 'finance.expense_categories' %}active{% endif %}">
+                                    <i class="fas fa-folder"></i>
+                                    <span>Expense Categories</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.record_expense') }}" class="menu-link {% if request.endpoint == 'finance.record_expense' %}active{% endif %}">
+                                    <i class="fas fa-plus-circle"></i>
+                                    <span>Record Expense</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.manage_expenses') }}" class="menu-link {% if request.endpoint == 'finance.manage_expenses' %}active{% endif %}">
+                                    <i class="fas fa-edit"></i>
+                                    <span>Manage Expenses</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.vendors') }}" class="menu-link {% if request.endpoint == 'finance.vendors' %}active{% endif %}">
+                                    <i class="fas fa-truck"></i>
+                                    <span>Vendors</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Payroll Management -->
+                    <li class="menu-item has-submenu {% if request.endpoint.startswith('finance.payroll') %}active open{% endif %}">
+                        <a href="#" class="menu-link submenu-toggle">
+                            <i class="fas fa-wallet"></i>
+                            <span>Payroll Management</span>
+                            <i class="fas fa-chevron-right submenu-icon"></i>
+                        </a>
+                        <ul class="submenu">
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.employee_salary') }}" class="menu-link {% if request.endpoint == 'finance.employee_salary' %}active{% endif %}">
+                                    <i class="fas fa-user-tie"></i>
+                                    <span>Employee Salary Setup</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.salary_structure') }}" class="menu-link {% if request.endpoint == 'finance.salary_structure' %}active{% endif %}">
+                                    <i class="fas fa-cubes"></i>
+                                    <span>Salary Structure</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.process_payroll') }}" class="menu-link {% if request.endpoint == 'finance.process_payroll' %}active{% endif %}">
+                                    <i class="fas fa-cogs"></i>
+                                    <span>Process Payroll</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.salary_history') }}" class="menu-link {% if request.endpoint == 'finance.salary_history' %}active{% endif %}">
+                                    <i class="fas fa-history"></i>
+                                    <span>Salary History</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.allowances_deductions') }}" class="menu-link {% if request.endpoint == 'finance.allowances_deductions' %}active{% endif %}">
+                                    <i class="fas fa-calculator"></i>
+                                    <span>Allowances & Deductions</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Accounts & Banking -->
+                    <li class="menu-item has-submenu {% if request.endpoint.startswith('finance.accounts') %}active open{% endif %}">
+                        <a href="#" class="menu-link submenu-toggle">
+                            <i class="fas fa-university"></i>
+                            <span>Accounts & Banking</span>
+                            <i class="fas fa-chevron-right submenu-icon"></i>
+                        </a>
+                        <ul class="submenu">
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.chart_of_accounts') }}" class="menu-link {% if request.endpoint == 'finance.chart_of_accounts' %}active{% endif %}">
+                                    <i class="fas fa-sitemap"></i>
+                                    <span>Chart of Accounts</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.bank_accounts') }}" class="menu-link {% if request.endpoint == 'finance.bank_accounts' %}active{% endif %}">
+                                    <i class="fas fa-credit-card"></i>
+                                    <span>Bank Accounts</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.journal_entries') }}" class="menu-link {% if request.endpoint == 'finance.journal_entries' %}active{% endif %}">
+                                    <i class="fas fa-journal-whills"></i>
+                                    <span>Journal Entries</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.reconciliations') }}" class="menu-link {% if request.endpoint == 'finance.reconciliations' %}active{% endif %}">
+                                    <i class="fas fa-balance-scale"></i>
+                                    <span>Reconciliations</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Financial Reports -->
+                    <li class="menu-item has-submenu {% if request.endpoint.startswith('finance.reports') %}active open{% endif %}">
+                        <a href="#" class="menu-link submenu-toggle">
+                            <i class="fas fa-file-invoice"></i>
+                            <span>Financial Reports</span>
+                            <i class="fas fa-chevron-right submenu-icon"></i>
+                        </a>
+                        <ul class="submenu">
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.income_statement') }}" class="menu-link {% if request.endpoint == 'finance.income_statement' %}active{% endif %}">
+                                    <i class="fas fa-chart-bar"></i>
+                                    <span>Income Statement</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.balance_sheet') }}" class="menu-link {% if request.endpoint == 'finance.balance_sheet' %}active{% endif %}">
+                                    <i class="fas fa-balance-scale"></i>
+                                    <span>Balance Sheet</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.cash_flow') }}" class="menu-link {% if request.endpoint == 'finance.cash_flow' %}active{% endif %}">
+                                    <i class="fas fa-exchange-alt"></i>
+                                    <span>Cash Flow Statement</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.fee_collection_report') }}" class="menu-link {% if request.endpoint == 'finance.fee_collection_report' %}active{% endif %}">
+                                    <i class="fas fa-money-check-alt"></i>
+                                    <span>Fee Collection Report</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.expense_report') }}" class="menu-link {% if request.endpoint == 'finance.expense_report' %}active{% endif %}">
+                                    <i class="fas fa-file-invoice-dollar"></i>
+                                    <span>Expense Report</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.payroll_report') }}" class="menu-link {% if request.endpoint == 'finance.payroll_report' %}active{% endif %}">
+                                    <i class="fas fa-users-cog"></i>
+                                    <span>Payroll Report</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.tax_report') }}" class="menu-link {% if request.endpoint == 'finance.tax_report' %}active{% endif %}">
+                                    <i class="fas fa-percent"></i>
+                                    <span>Tax Reports</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.audit_trail') }}" class="menu-link {% if request.endpoint == 'finance.audit_trail' %}active{% endif %}">
+                                    <i class="fas fa-history"></i>
+                                    <span>Financial Audit Trail</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Budgeting -->
+                    <li class="menu-item has-submenu {% if request.endpoint.startswith('finance.budget') %}active open{% endif %}">
+                        <a href="#" class="menu-link submenu-toggle">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Budget Management</span>
+                            <i class="fas fa-chevron-right submenu-icon"></i>
+                        </a>
+                        <ul class="submenu">
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.annual_budget') }}" class="menu-link {% if request.endpoint == 'finance.annual_budget' %}active{% endif %}">
+                                    <i class="fas fa-calendar"></i>
+                                    <span>Annual Budget</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.budget_allocation') }}" class="menu-link {% if request.endpoint == 'finance.budget_allocation' %}active{% endif %}">
+                                    <i class="fas fa-tasks"></i>
+                                    <span>Budget Allocation</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.budget_variance') }}" class="menu-link {% if request.endpoint == 'finance.budget_variance' %}active{% endif %}">
+                                    <i class="fas fa-chart-line"></i>
+                                    <span>Budget vs Actual</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Fee Payment Portal -->
+                    <li class="menu-item">
+                        <a href="{{ url_for('finance.online_payments') }}" class="menu-link {% if request.endpoint == 'finance.online_payments' %}active{% endif %}">
+                            <i class="fas fa-globe"></i>
+                            <span>Online Payment Gateway</span>
+                            <span class="menu-badge" id="onlinePayments">0</span>
+                        </a>
+                    </li>
+                    
+                    <!-- Invoices & Receipts -->
+                    <li class="menu-item has-submenu {% if request.endpoint.startswith('finance.invoices') %}active open{% endif %}">
+                        <a href="#" class="menu-link submenu-toggle">
+                            <i class="fas fa-file-invoice"></i>
+                            <span>Invoices & Receipts</span>
+                            <i class="fas fa-chevron-right submenu-icon"></i>
+                        </a>
+                        <ul class="submenu">
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.invoice_templates') }}" class="menu-link {% if request.endpoint == 'finance.invoice_templates' %}active{% endif %}">
+                                    <i class="fas fa-file-alt"></i>
+                                    <span>Invoice Templates</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.generate_invoices') }}" class="menu-link {% if request.endpoint == 'finance.generate_invoices' %}active{% endif %}">
+                                    <i class="fas fa-file-invoice"></i>
+                                    <span>Generate Invoices</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.bulk_invoicing') }}" class="menu-link {% if request.endpoint == 'finance.bulk_invoicing' %}active{% endif %}">
+                                    <i class="fas fa-layer-group"></i>
+                                    <span>Bulk Invoicing</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.receipts') }}" class="menu-link {% if request.endpoint == 'finance.receipts' %}active{% endif %}">
+                                    <i class="fas fa-receipt"></i>
+                                    <span>Payment Receipts</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Transport & Hostel Fees -->
+                    <li class="menu-item has-submenu">
+                        <a href="#" class="menu-link submenu-toggle">
+                            <i class="fas fa-bus"></i>
+                            <span>Additional Fees</span>
+                            <i class="fas fa-chevron-right submenu-icon"></i>
+                        </a>
+                        <ul class="submenu">
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.transport_fees') }}" class="menu-link {% if request.endpoint == 'finance.transport_fees' %}active{% endif %}">
+                                    <i class="fas fa-bus"></i>
+                                    <span>Transport Fees</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.hostel_fees') }}" class="menu-link {% if request.endpoint == 'finance.hostel_fees' %}active{% endif %}">
+                                    <i class="fas fa-hotel"></i>
+                                    <span>Hostel Fees</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.library_fees') }}" class="menu-link {% if request.endpoint == 'finance.library_fees' %}active{% endif %}">
+                                    <i class="fas fa-book"></i>
+                                    <span>Library Fees</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.lab_fees') }}" class="menu-link {% if request.endpoint == 'finance.lab_fees' %}active{% endif %}">
+                                    <i class="fas fa-flask"></i>
+                                    <span>Laboratory Fees</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.sports_fees') }}" class="menu-link {% if request.endpoint == 'finance.sports_fees' %}active{% endif %}">
+                                    <i class="fas fa-futbol"></i>
+                                    <span>Sports Fees</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Asset Management -->
+                    <li class="menu-item has-submenu">
+                        <a href="#" class="menu-link submenu-toggle">
+                            <i class="fas fa-cubes"></i>
+                            <span>Asset Management</span>
+                            <i class="fas fa-chevron-right submenu-icon"></i>
+                        </a>
+                        <ul class="submenu">
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.asset_registry') }}" class="menu-link {% if request.endpoint == 'finance.asset_registry' %}active{% endif %}">
+                                    <i class="fas fa-boxes"></i>
+                                    <span>Asset Registry</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.depreciation') }}" class="menu-link {% if request.endpoint == 'finance.depreciation' %}active{% endif %}">
+                                    <i class="fas fa-chart-line"></i>
+                                    <span>Depreciation</span>
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="{{ url_for('finance.asset_disposal') }}" class="menu-link {% if request.endpoint == 'finance.asset_disposal' %}active{% endif %}">
+                                    <i class="fas fa-trash"></i>
+                                    <span>Asset Disposal</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Settings -->
+                    <li class="menu-item">
+                        <a href="{{ url_for('finance.accounting_settings') }}" class="menu-link {% if request.endpoint == 'finance.accounting_settings' %}active{% endif %}">
+                            <i class="fas fa-cog"></i>
+                            <span>Accounting Settings</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar">
+                        {{ current_user.username[0].upper() }}
+                    </div>
+                    <div class="user-info">
+                        <h4>{{ current_user.username }}</h4>
+                        <p>Administrator</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Header -->
+            <header class="admin-header">
+                <div class="header-content">
+                    <div class="header-left">
+                        <button class="sidebar-toggle" id="sidebarToggle">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <div class="header-title">
+                            {% block page_title %}
+                            <h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
+                            {% endblock %}
+                        </div>
+                    </div>
+                    
+                    <div class="header-actions">
+                        <button class="notification-btn" id="notificationBtn">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-badge">3</span>
+                        </button>
+                        <a href="{{ url_for('auth.logout') }}" class="logout-btn">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Logout
+                        </a>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Content Area -->
+            <div class="admin-content">
+                <!-- Breadcrumb -->
+                <div class="breadcrumb">
+                    <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+                    {% block breadcrumb %}{% endblock %}
+                </div>
+                
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="flash-messages">
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }}">
+                                    <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+                
+                <!-- Page Content -->
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+    
+    <!-- Notification Modal -->
+    <div class="modal-overlay" id="notificationModal">
+        <div class="modal">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-bell"></i> Notifications</h3>
+                <button class="btn btn-secondary btn-sm" id="closeNotificationModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="admin-card">
+                <p>No new notifications.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script>
+        // Toggle Sidebar
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.getElementById('adminSidebar').classList.toggle('active');
+        });
+        
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('adminSidebar');
+            const toggleBtn = document.getElementById('sidebarToggle');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(event.target) && 
+                !toggleBtn.contains(event.target) &&
+                sidebar.classList.contains('active')) {
+                sidebar.classList.remove('active');
+            }
+        });
+        
+        // Notification Modal
+        const notificationBtn = document.getElementById('notificationBtn');
+        const notificationModal = document.getElementById('notificationModal');
+        const closeNotificationModal = document.getElementById('closeNotificationModal');
+        
+        if (notificationBtn && notificationModal && closeNotificationModal) {
+            notificationBtn.addEventListener('click', function() {
+                notificationModal.classList.add('active');
+            });
+            
+            closeNotificationModal.addEventListener('click', function() {
+                notificationModal.classList.remove('active');
+            });
+            
+            // Close modal when clicking outside
+            notificationModal.addEventListener('click', function(event) {
+                if (event.target === notificationModal) {
+                    notificationModal.classList.remove('active');
+                }
+            });
+        }
+        
+        // Auto-dismiss alerts after 5 seconds
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                alert.style.opacity = '0';
+                alert.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => alert.remove(), 500);
+            });
+        }, 5000);
+        
+        // Fetch dashboard stats
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fetch real stats from API
+            fetch('/admin/dashboard/stats')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('studentCount').textContent = data.stats.total_students || '0';
+                        document.getElementById('teacherCount').textContent = data.stats.total_teachers || '0';
+                        document.getElementById('userCount').textContent = data.stats.total_users || '0';
+                        document.getElementById('pendingApprovals').textContent = data.stats.pending_approvals || '0';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching stats:', error);
+                    document.getElementById('studentCount').textContent = '0';
+                    document.getElementById('teacherCount').textContent = '0';
+                    document.getElementById('userCount').textContent = '0';
+                });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle submenu toggles
+            const submenuToggles = document.querySelectorAll('.submenu-toggle');
+            
+            submenuToggles.forEach(toggle => {
+                toggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const parentItem = this.closest('.has-submenu');
+                    
+                    // Close other submenus at same level (optional)
+                    // const siblings = parentItem.parentElement.children;
+                    // for(let sibling of siblings) {
+                    //     if(sibling !== parentItem && sibling.classList.contains('has-submenu')) {
+                    //         sibling.classList.remove('open');
+                    //     }
+                    // }
+                    
+                    parentItem.classList.toggle('open');
+                    
+                    // Save state to localStorage if needed
+                    const menuText = parentItem.querySelector('span')?.textContent || '';
+                    localStorage.setItem('submenu_' + menuText, parentItem.classList.contains('open'));
+                });
+            });
+            
+            // Restore submenu states
+            const submenus = document.querySelectorAll('.has-submenu');
+            submenus.forEach(menu => {
+                const menuText = menu.querySelector('span')?.textContent || '';
+                const isOpen = localStorage.getItem('submenu_' + menuText) === 'true';
+                if (isOpen) {
+                    menu.classList.add('open');
+                }
+            });
+            
+            // Update finance dashboard stats
+            function updateFinanceStats() {
+                fetch('/api/finance/dashboard-stats')
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('pendingPayments').textContent = data.pendingPayments || 0;
+                        document.getElementById('defaulterCount').textContent = data.defaulterCount || 0;
+                        document.getElementById('onlinePayments').textContent = data.onlinePayments || 0;
+                    })
+                    .catch(error => console.error('Error fetching finance stats:', error));
+            }
+            
+            // Update every 30 seconds
+            updateFinanceStats();
+            setInterval(updateFinanceStats, 30000);
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

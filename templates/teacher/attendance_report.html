@@ -1,0 +1,596 @@
+<!-- templates/teacher/attendance_report.html -->
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}Attendance Report - {{ teacher.user.username }}{% endblock %}
+
+{% block page_title %}
+<h1><i class="fas fa-chart-bar"></i> Attendance Report</h1>
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="separator">/</span>
+<a href="{{ url_for('teacher.dashboard') }}">Dashboard</a>
+<span class="separator">/</span>
+<a href="{{ url_for('teacher.attendance') }}">Attendance</a>
+<span class="separator">/</span>
+<span>Report</span>
+{% endblock %}
+
+{% block content %}
+<div class="report-container">
+    <div class="report-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="mb-1"><i class="fas fa-chart-bar"></i> Attendance Report</h3>
+                <p class="mb-0 opacity-90">Detailed attendance analysis for {{ teacher.form_class.name }}</p>
+            </div>
+            <div class="text-white">
+                <i class="fas fa-calendar-alt"></i> {{ start_date.strftime('%d/%m/%Y') }} - {{ end_date.strftime('%d/%m/%Y') }}
+            </div>
+        </div>
+    </div>
+    
+    <div class="report-body">
+        <!-- Form Class Info -->
+        <div class="form-class-info">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1">Form Class: {{ teacher.form_class.name }}</h5>
+                    <p class="mb-0 text-muted small">
+                        Level: {{ teacher.form_class.level }} | 
+                        Section: {{ teacher.form_class.section }} | 
+                        Teacher: {{ teacher.user.username }}
+                    </p>
+                </div>
+                <div>
+                    <div class="term-badge">
+                        <i class="fas fa-calendar-alt"></i> {{ current_term.name }} - Term {{ current_term.term_number }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Date Filter -->
+        <div class="date-filter">
+            <h5 class="mb-2">Date Range</h5>
+            <form method="GET" action="{{ url_for('teacher.attendance_report') }}" class="filter-form">
+                <div class="form-group">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" name="start_date" class="form-control" value="{{ start_date.strftime('%Y-%m-%d') }}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">End Date</label>
+                    <input type="date" name="end_date" class="form-control" value="{{ end_date.strftime('%Y-%m-%d') }}" max="{{ today.strftime('%Y-%m-%d') if today else '' }}">
+                </div>
+                <div>
+                    <button type="submit" class="btn-filter">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Summary Statistics -->
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="summary-value">{{ total_students }}</div>
+                <div class="summary-label">Total Students</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value">{{ total_school_days }}</div>
+                <div class="summary-label">School Days</div>
+            </div>
+            <div class="summary-card summary-highlight">
+                <div class="summary-value">{{ average_attendance }}%</div>
+                <div class="summary-label">Avg. Attendance</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value">{{ total_present }}</div>
+                <div class="summary-label">Total Present</div>
+            </div>
+        </div>
+        
+        <!-- Attendance Table -->
+        <div class="attendance-table-container">
+            {% if student_attendance %}
+            <table class="attendance-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Student</th>
+                        <th>Admission No.</th>
+                        <th>Present</th>
+                        <th>Absent</th>
+                        <th>Late</th>
+                        <th>Excused</th>
+                        <th>Days Missed</th>
+                        <th>Attendance Rate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in student_attendance %}
+                    {% set student = item.student %}
+                    {% set index = loop.index %}
+                    <tr>
+                        <td>{{ index }}</td>
+                        <td>
+                            <div class="student-name-cell">
+                                <div class="student-avatar">
+                                    {{ student.first_name[0] }}{{ student.last_name[0] }}
+                                </div>
+                                <div>
+                                    <div>{{ student.first_name }} {{ student.last_name }}</div>
+                                    <small class="text-muted">{{ student.gender or 'N/A' }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ student.admission_number }}</td>
+                        <td>
+                            <span class="attendance-badge badge-present">{{ item.present }}</span>
+                        </td>
+                        <td>
+                            <span class="attendance-badge badge-absent">{{ item.absent }}</span>
+                        </td>
+                        <td>
+                            <span class="attendance-badge badge-late">{{ item.late }}</span>
+                        </td>
+                        <td>
+                            <span class="attendance-badge badge-excused">{{ item.excused }}</span>
+                        </td>
+                        <td>{{ item.days_missed }}</td>
+                        <td class="attendance-rate-cell {% if item.attendance_rate >= 80 %}rate-high{% elif item.attendance_rate >= 60 %}rate-medium{% else %}rate-low{% endif %}">
+                            {{ item.attendance_rate }}%
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-data">
+                <div class="no-data-icon">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h4>No Attendance Data</h4>
+                <p class="text-muted">
+                    No attendance records found for the selected date range.
+                    Try selecting a different date range.
+                </p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <div>
+                <a href="{{ url_for('teacher.attendance') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-calendar-check"></i> Mark Attendance
+                </a>
+                <a href="{{ url_for('teacher.attendance_calendar') }}" class="btn btn-outline-secondary ms-2">
+                    <i class="fas fa-calendar-alt"></i> View Calendar
+                </a>
+            </div>
+            {% if student_attendance %}
+            <button class="btn-export" id="exportReportBtn">
+                <i class="fas fa-download"></i> Export Report
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .report-container {
+        background: white;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1.25rem;
+        box-shadow: 0 1px 5px rgba(0, 0, 0, 0.03);
+    }
+    
+    .report-header {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        color: white;
+        padding: 0.875rem 1.25rem;
+        border-radius: 10px 10px 0 0;
+    }
+    
+    .report-body {
+        padding: 1.25rem;
+    }
+    
+    .date-filter {
+        background: #f0f9ff;
+        border-radius: 6px;
+        padding: 0.875rem;
+        margin-bottom: 1.25rem;
+        border: 1px solid #bae6fd;
+    }
+    
+    .filter-form {
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-end;
+        flex-wrap: wrap;
+    }
+    
+    .form-group {
+        flex: 1;
+        min-width: 150px;
+    }
+    
+    .form-label {
+        display: block;
+        margin-bottom: 0.25rem;
+        font-size: 0.8rem;
+        color: #475569;
+        font-weight: 500;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 0.375rem 0.5rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 5px;
+        font-size: 0.85rem;
+    }
+    
+    .btn-filter {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 0.375rem 0.875rem;
+        border-radius: 5px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+    
+    .btn-filter:hover {
+        background: #2563eb;
+    }
+    
+    .summary-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.875rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .summary-card {
+        background: #f8fafc;
+        border-radius: 6px;
+        padding: 0.875rem;
+        border: 1px solid #e2e8f0;
+        text-align: center;
+    }
+    
+    .summary-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+    }
+    
+    .summary-label {
+        font-size: 0.75rem;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .summary-highlight {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+    
+    .summary-highlight .summary-label {
+        color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .attendance-table-container {
+        overflow-x: auto;
+        margin-bottom: 1.5rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+    }
+    
+    .attendance-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+    
+    .attendance-table th {
+        background: #f1f5f9;
+        padding: 0.625rem 0.75rem;
+        text-align: left;
+        font-weight: 600;
+        color: #475569;
+        border-bottom: 2px solid #cbd5e1;
+        white-space: nowrap;
+    }
+    
+    .attendance-table td {
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+    }
+    
+    .attendance-table tr:hover {
+        background: #f8fafc;
+    }
+    
+    .student-name-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .student-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 0.75rem;
+    }
+    
+    .attendance-badge {
+        padding: 0.2rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+    
+    .badge-present {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .badge-absent {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    
+    .badge-late {
+        background: #fef3c7;
+        color: #92400e;
+    }
+    
+    .badge-excused {
+        background: #ede9fe;
+        color: #5b21b6;
+    }
+    
+    .attendance-rate-cell {
+        font-weight: 600;
+    }
+    
+    .rate-high {
+        color: #10b981;
+    }
+    
+    .rate-medium {
+        color: #f59e0b;
+    }
+    
+    .rate-low {
+        color: #ef4444;
+    }
+    
+    .action-buttons {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1.5rem;
+        padding-top: 0.875rem;
+        border-top: 1px solid #e2e8f0;
+    }
+    
+    .btn-export {
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+    
+    .btn-export:hover {
+        background: #059669;
+    }
+    
+    .no-data {
+        text-align: center;
+        padding: 2rem;
+        color: #94a3b8;
+    }
+    
+    .no-data-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.875rem;
+        color: #cbd5e1;
+    }
+    
+    @media (max-width: 768px) {
+        .filter-form {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .form-group {
+            min-width: 100%;
+        }
+        
+        .btn-filter {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .summary-cards {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .attendance-table {
+            font-size: 0.8rem;
+        }
+        
+        .attendance-table th,
+        .attendance-table td {
+            padding: 0.375rem 0.5rem;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .action-buttons a,
+        .action-buttons button {
+            width: 100%;
+            text-align: center;
+        }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Export report functionality
+    const exportBtn = document.getElementById('exportReportBtn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', function() {
+            const startDate = document.querySelector('input[name="start_date"]').value;
+            const endDate = document.querySelector('input[name="end_date"]').value;
+            
+            // Show loading state
+            const originalText = exportBtn.innerHTML;
+            exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting...';
+            exportBtn.disabled = true;
+            
+            // Make export request
+            fetch(`/teacher/export-attendance?start_date=${startDate}&end_date=${endDate}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Export failed');
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    // Create download link
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `attendance_report_${startDate}_${endDate}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    
+                    // Show success message
+                    showToast('Report exported successfully!', 'success');
+                })
+                .catch(error => {
+                    console.error('Export error:', error);
+                    showToast('Error exporting report', 'error');
+                })
+                .finally(() => {
+                    // Reset button
+                    exportBtn.innerHTML = originalText;
+                    exportBtn.disabled = false;
+                });
+        });
+    }
+    
+    // Toast notification function
+    function showToast(message, type = 'info') {
+        const toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container';
+        toastContainer.style.position = 'fixed';
+        toastContainer.style.top = '15px';
+        toastContainer.style.right = '15px';
+        toastContainer.style.zIndex = '9999';
+        
+        const toastId = 'toast-' + Date.now();
+        const iconMap = {
+            'success': 'check-circle',
+            'error': 'exclamation-circle',
+            'warning': 'exclamation-triangle',
+            'info': 'info-circle'
+        };
+        
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.id = toastId;
+        toast.innerHTML = `
+            <div class="toast-icon">
+                <i class="fas fa-${iconMap[type] || 'info-circle'}"></i>
+            </div>
+            <div class="toast-content">${message}</div>
+            <button class="toast-close" onclick="document.getElementById('${toastId}').remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        // Add styles for toast
+        toast.style.background = 'white';
+        toast.style.borderRadius = '6px';
+        toast.style.padding = '0.75rem';
+        toast.style.marginBottom = '0.375rem';
+        toast.style.boxShadow = '0 3px 8px rgba(0, 0, 0, 0.12)';
+        toast.style.borderLeft = '3px solid #3b82f6';
+        toast.style.display = 'flex';
+        toast.style.alignItems = 'center';
+        toast.style.gap = '0.625rem';
+        toast.style.minWidth = '280px';
+        toast.style.animation = 'slideIn 0.25s ease';
+        
+        if (type === 'success') toast.style.borderLeftColor = '#10b981';
+        else if (type === 'error') toast.style.borderLeftColor = '#ef4444';
+        else if (type === 'warning') toast.style.borderLeftColor = '#f59e0b';
+        
+        // Add close button styles
+        const closeBtn = toast.querySelector('.toast-close');
+        closeBtn.style.background = 'none';
+        closeBtn.style.border = 'none';
+        closeBtn.style.color = '#64748b';
+        closeBtn.style.cursor = 'pointer';
+        closeBtn.style.padding = '0.2rem';
+        closeBtn.style.fontSize = '0.8rem';
+        
+        // Add animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Add to container
+        if (!document.querySelector('.toast-container')) {
+            document.body.appendChild(toastContainer);
+        }
+        document.querySelector('.toast-container').appendChild(toast);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            const toastElement = document.getElementById(toastId);
+            if (toastElement) {
+                toastElement.remove();
+            }
+        }, 5000);
+    }
+});
+</script>
+{% endblock %}

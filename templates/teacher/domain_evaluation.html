@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<!-- templates/teacher/domain_evaluation.html -->
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}Domain Evaluation - {{ teacher.user.username }}{% endblock %}
+
+{% block page_title %}
+<h1><i class="fas fa-chart-bar"></i> Domain Evaluation</h1>
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="separator">/</span>
+<a href="{{ url_for('teacher.dashboard') }}">Dashboard</a>
+<span class="separator">/</span>
+<span>Domain Evaluation</span>
+{% endblock %}
+
+{% block content %}
+<div class="evaluation-container">
+    <div class="evaluation-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="mb-1"><i class="fas fa-chart-bar"></i> Domain Evaluation</h3>
+                <p class="mb-0 opacity-90">Evaluate students' performance across learning domains</p>
+            </div>
+            <div class="text-white">
+                <i class="fas fa-users"></i> {{ students|length }} students
+            </div>
+        </div>
+    </div>
+    
+    <div class="evaluation-body">
+        <!-- Form Class and Term Info -->
+        <div class="form-class-info">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1">Form Class: {{ teacher.form_class.name }}</h5>
+                    <p class="mb-0 text-muted small">
+                        Level: {{ teacher.form_class.level }} | 
+                        Section: {{ teacher.form_class.section }} | 
+                        Teacher: {{ teacher.user.username }}
+                    </p>
+                </div>
+                <div>
+                    <div class="term-badge">
+                        <i class="fas fa-calendar-alt"></i> {{ current_term.name }} - Term {{ current_term.term_number }}
+                    </div>
+                    <div class="text-muted mt-1 small text-end">
+                        Academic Year: {{ current_term.session.name }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Domain Tabs -->
+        <div class="domain-tabs">
+            {% for domain in domain_types %}
+            <div class="domain-tab {% if loop.first %}active{% endif %}" data-domain="{{ domain|lower }}">
+                <i class="fas fa-{% if domain == 'Affective' %}heart{% elif domain == 'Psychomotor' %}running{% else %}brain{% endif %}"></i>
+                {{ domain }} Domain
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Domain Content -->
+        {% for domain in domain_types %}
+        <div class="domain-content {% if loop.first %}active{% endif %}" id="domain-{{ domain|lower }}">
+            <!-- Domain Description -->
+            <div class="domain-description">
+                <h5 class="mb-2">{{ domain }} Domain</h5>
+                <p class="mb-0 text-muted">
+                    {% if domain == 'Affective' %}
+                    Evaluate students' attitudes, values, emotions, and social skills. This domain focuses on feelings, emotions, and the ability to interact with others.
+                    {% elif domain == 'Psychomotor' %}
+                    Assess students' physical coordination, motor skills, and ability to perform tasks. This domain focuses on manual and physical skills.
+                    {% else %}
+                    Measure students' intellectual abilities, knowledge, and thinking skills. This domain focuses on mental skills and knowledge acquisition.
+                    {% endif %}
+                </p>
+            </div>
+            
+            <!-- Evaluation Criteria -->
+            <div class="criteria-section">
+                <h5 class="mb-3">Evaluation Criteria</h5>
+                <div class="criteria-list" id="criteria-{{ domain|lower }}">
+                    {% set criteria_data = [
+                        {'id': 'A1', 'title': 'Participation & Engagement', 'desc': 'Active participation in class activities and discussions'},
+                        {'id': 'A2', 'title': 'Attitude Towards Learning', 'desc': 'Positive attitude, enthusiasm, and interest in learning'},
+                        {'id': 'A3', 'title': 'Cooperation & Teamwork', 'desc': 'Ability to work well with others and contribute to group activities'},
+                        {'id': 'A4', 'title': 'Respect & Courtesy', 'desc': 'Respectful behavior towards teachers and peers'},
+                        {'id': 'A5', 'title': 'Responsibility & Organization', 'desc': 'Taking responsibility for actions and staying organized'},
+                    ] if domain == 'Affective' else [
+                        {'id': 'P1', 'title': 'Manual Dexterity', 'desc': 'Skill in using hands and fingers to manipulate objects'},
+                        {'id': 'P2', 'title': 'Coordination & Balance', 'desc': 'Body coordination, balance, and motor skills'},
+                        {'id': 'P3', 'title': 'Physical Fitness', 'desc': 'Overall physical health, strength, and endurance'},
+                        {'id': 'P4', 'title': 'Skill Performance', 'desc': 'Ability to perform specific physical tasks or sports'},
+                        {'id': 'P5', 'title': 'Artistic Expression', 'desc': 'Creative expression through physical movement or art'},
+                    ] if domain == 'Psychomotor' else [
+                        {'id': 'C1', 'title': 'Knowledge Acquisition', 'desc': 'Ability to acquire and retain information'},
+                        {'id': 'C2', 'title': 'Problem Solving', 'desc': 'Logical thinking and ability to solve problems'},
+                        {'id': 'C3', 'title': 'Critical Thinking', 'desc': 'Analyzing information and making reasoned judgments'},
+                        {'id': 'C4', 'title': 'Creativity & Innovation', 'desc': 'Generating new ideas and creative solutions'},
+                        {'id': 'C5', 'title': 'Communication Skills', 'desc': 'Ability to express ideas clearly and effectively'},
+                    ] %}
+                    
+                    {% for criteria in criteria_data %}
+                    <div class="criteria-card">
+                        <div class="criteria-header">
+                            <div class="criteria-title">{{ criteria.title }}</div>
+                            <div class="criteria-id">{{ criteria.id }}</div>
+                        </div>
+                        <div class="criteria-description">
+                            {{ criteria.desc }}
+                        </div>
+                        <div class="rating-colors">
+                            <div class="rating-color rating-1"></div>
+                            <div class="rating-color rating-2"></div>
+                            <div class="rating-color rating-3"></div>
+                            <div class="rating-color rating-4"></div>
+                            <div class="rating-color rating-5"></div>
+                        </div>
+                        <div class="rating-scale">
+                            <small class="text-muted d-flex justify-content-between mb-2">
+                                <span>Poor (1)</span>
+                                <span>Fair (2)</span>
+                                <span>Good (3)</span>
+                                <span>Very Good (4)</span>
+                                <span>Excellent (5)</span>
+                            </small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Student Evaluation Section -->
+            <div class="student-evaluation-section">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Student Evaluations</h5>
+                    <div class="badge bg-primary">
+                        <i class="fas fa-user-graduate"></i> {{ students|length }} Students
+                    </div>
+                </div>
+                
+                {% if students %}
+                <div class="student-list">
+                    {% for student in students %}
+                    <div class="student-evaluation-card" data-student-id="{{ student.id }}">
+                        <div class="student-info">
+                            <div>
+                                <div class="student-name">
+                                    {{ student.first_name }} {{ student.last_name }}
+                                </div>
+                                <div class="text-muted small mt-1">
+                                    Gender: {{ student.gender or 'N/A' }} | 
+                                    DOB: {% if student.date_of_birth %}{{ student.date_of_birth.strftime('%d/%m/%Y') }}{% else %}N/A{% endif %}
+                                </div>
+                            </div>
+                            <div class="student-admission">{{ student.admission_number }}</div>
+                        </div>
+                        
+                        <!-- Existing evaluation data -->
+                        {% set existing_eval = existing_evaluations[student.id][domain] if student.id in existing_evaluations and domain in existing_evaluations[student.id] else None %}
+                        
+                        <!-- Evaluation for each criteria -->
+                        {% for criteria in criteria_data %}
+                        <div class="mb-3">
+                            <label class="form-label small text-muted mb-1">{{ criteria.title }}</label>
+                            <div class="rating-options">
+                                {% for i in range(1, 6) %}
+                                <div class="rating-option">
+                                    <input type="radio" 
+                                           id="{{ domain|lower }}_{{ criteria.id }}_{{ student.id }}_{{ i }}"
+                                           name="{{ domain|lower }}_{{ criteria.id }}_{{ student.id }}"
+                                           value="{{ i }}"
+                                           class="rating-input"
+                                           {% if existing_eval and existing_eval.evaluation_data and criteria.id in existing_eval.evaluation_data and existing_eval.evaluation_data[criteria.id]|int == i %}checked{% endif %}>
+                                    <label for="{{ domain|lower }}_{{ criteria.id }}_{{ student.id }}_{{ i }}" 
+                                           class="rating-label">
+                                        {{ i }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        <!-- Comments -->
+                        <div class="comments-section">
+                            <label class="form-label small text-muted mb-1">Overall Comments</label>
+                            <textarea class="comments-textarea"
+                                      id="comments-{{ domain|lower }}-{{ student.id }}"
+                                      placeholder="Enter overall comments for {{ student.first_name }} in the {{ domain }} domain..."
+                                      maxlength="500">{{ existing_eval.comments if existing_eval else '' }}</textarea>
+                        </div>
+                        
+                        <!-- Save Button -->
+                        <button type="button" 
+                                class="save-btn"
+                                data-student-id="{{ student.id }}"
+                                data-domain="{{ domain|lower }}">
+                            <i class="fas fa-save"></i> Save Evaluation
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> No students found in this form class.
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Progress Summary -->
+            <div class="progress-summary">
+                <div class="summary-item">
+                    <div class="summary-value" id="totalEvaluated-{{ domain|lower }}">0</div>
+                    <div class="summary-label">Evaluated</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="averageScore-{{ domain|lower }}">0.0</div>
+                    <div class="summary-label">Average Score</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="completionRate-{{ domain|lower }}">0%</div>
+                    <div class="summary-label">Completion</div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <!-- Global Actions -->
+        {% if students %}
+        <div class="action-buttons">
+            <button type="button" class="btn btn-outline-secondary" id="clearAllBtn">
+                <i class="fas fa-eraser"></i> Clear All
+            </button>
+            <button type="button" class="btn btn-primary" id="saveAllBtn">
+                <i class="fas fa-save"></i> Save All Evaluations
+            </button>
+            <button type="button" class="btn btn-success" id="exportBtn">
+                <i class="fas fa-download"></i> Export Evaluations
+            </button>
+        </div>
+        {% endif %}
+        
+        {% if not students %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-user-graduate"></i>
+            </div>
+            <h4>No Students in Form Class</h4>
+            <p class="text-muted">
+                There are no active students assigned to your form class.
+                Please contact the administrator if this is incorrect.
+            </p>
+            <a href="{{ url_for('teacher.dashboard') }}" class="btn btn-primary mt-2">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<style>
+    .evaluation-container {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .evaluation-header {
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .evaluation-body {
+        padding: 1.5rem;
+    }
+    
+    .form-class-info {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #bae6fd;
+    }
+    
+    .term-badge {
+        background: #10b981;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .domain-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 0.75rem;
+        flex-wrap: wrap;
+    }
+    
+    .domain-tab {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 0.75rem 1.25rem;
+        font-weight: 500;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .domain-tab:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+    }
+    
+    .domain-tab.active {
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        color: white;
+        border-color: transparent;
+    }
+    
+    .domain-content {
+        display: none;
+    }
+    
+    .domain-content.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .domain-description {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .criteria-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .criteria-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1.25rem;
+        transition: all 0.2s ease;
+    }
+    
+    .criteria-card:hover {
+        border-color: #8b5cf6;
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.1);
+    }
+    
+    .criteria-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    
+    .criteria-title {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 1.05rem;
+    }
+    
+    .criteria-id {
+        font-size: 0.8rem;
+        color: #64748b;
+        background: #f1f5f9;
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+    }
+    
+    .criteria-description {
+        font-size: 0.9rem;
+        color: #64748b;
+        margin-bottom: 1rem;
+        line-height: 1.5;
+    }
+    
+    .student-evaluation-section {
+        margin-top: 1.5rem;
+    }
+    
+    .student-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem;
+    }
+    
+    .student-evaluation-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1.25rem;
+        transition: all 0.2s ease;
+    }
+    
+    .student-evaluation-card:hover {
+        border-color: #8b5cf6;
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.1);
+    }
+    
+    .student-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    
+    .student-name {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 1.05rem;
+    }
+    
+    .student-admission {
+        font-size: 0.8rem;
+        color: #64748b;
+        background: #f1f5f9;
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+    }
+    
+    .rating-options {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+        flex-wrap: wrap;
+    }
+    
+    .rating-option {
+        flex: 1;
+        min-width: 80px;
+    }
+    
+    .rating-input {
+        display: none;
+    }
+    
+    .rating-label {
+        display: block;
+        text-align: center;
+        padding: 0.5rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
+    .rating-input:checked + .rating-label {
+        background: #8b5cf6;
+        color: white;
+        border-color: #8b5cf6;
+    }
+    
+    .rating-label:hover {
+        border-color: #8b5cf6;
+        background: #f5f3ff;
+    }
+    
+    .rating-colors {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+    
+    .rating-color {
+        width: 20px;
+        height: 5px;
+        border-radius: 2px;
+    }
+    
+    .rating-1 { background: #ef4444; } /* Poor */
+    .rating-2 { background: #f97316; } /* Fair */
+    .rating-3 { background: #f59e0b; } /* Good */
+    .rating-4 { background: #10b981; } /* Very Good */
+    .rating-5 { background: #3b82f6; } /* Excellent */
+    
+    .comments-section {
+        margin-top: 1rem;
+    }
+    
+    .comments-textarea {
+        width: 100%;
+        min-height: 80px;
+        padding: 0.75rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        resize: vertical;
+        font-family: inherit;
+        transition: all 0.2s ease;
+    }
+    
+    .comments-textarea:focus {
+        outline: none;
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    }
+    
+    .save-btn {
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-top: 0.75rem;
+    }
+    
+    .save-btn:hover {
+        background: #059669;
+    }
+    
+    .save-btn.saving {
+        background: #64748b;
+        cursor: not-allowed;
+    }
+    
+    .save-btn.saved {
+        background: #3b82f6;
+    }
+    
+    .action-buttons {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e2e8f0;
+    }
+    
+    .progress-summary {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .summary-item {
+        text-align: center;
+        flex: 1;
+    }
+    
+    .summary-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #8b5cf6;
+        margin-bottom: 0.25rem;
+    }
+    
+    .summary-label {
+        font-size: 0.85rem;
+        color: #64748b;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+    }
+    
+    .empty-state-icon {
+        font-size: 3rem;
+        color: #cbd5e1;
+        margin-bottom: 1rem;
+    }
+    
+    /* Toast notifications */
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+    
+    .toast {
+        background: white;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-left: 4px solid #3b82f6;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-width: 300px;
+        animation: slideIn 0.3s ease;
+    }
+    
+    .toast.success {
+        border-left-color: #10b981;
+    }
+    
+    .toast.error {
+        border-left-color: #ef4444;
+    }
+    
+    .toast.warning {
+        border-left-color: #f59e0b;
+    }
+    
+    .toast.info {
+        border-left-color: #3b82f6;
+    }
+    
+    .toast-icon {
+        font-size: 1.25rem;
+    }
+    
+    .toast-content {
+        flex: 1;
+    }
+    
+    .toast-close {
+        background: none;
+        border: none;
+        color: #64748b;
+        cursor: pointer;
+        padding: 0.25rem;
+    }
+    
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .criteria-list,
+        .student-list {
+            grid-template-columns: 1fr;
+        }
+        
+        .domain-tabs {
+            flex-direction: column;
+        }
+        
+        .rating-options {
+            flex-direction: column;
+        }
+        
+        .rating-option {
+            min-width: 100%;
+        }
+        
+        .progress-summary {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .action-buttons button {
+            width: 100%;
+        }
+        
+        .toast {
+            min-width: 250px;
+        }
+    }
+</style>
+
+<script>
+    // Domain Evaluation Application
+    class DomainEvaluationApp {
+        constructor() {
+            this.savedEvaluations = new Set();
+            this.currentDomain = 'affective';
+            this.init();
+        }
+        
+        init() {
+            this.bindEvents();
+            this.loadExistingEvaluations();
+            this.startAutoSaveReminder();
+        }
+        
+        bindEvents() {
+            // Bind domain tab switching
+            document.querySelectorAll('.domain-tab').forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    const domain = e.currentTarget.dataset.domain;
+                    this.switchDomain(domain);
+                });
+            });
+            
+            // Bind save buttons
+            document.querySelectorAll('.save-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const studentId = e.currentTarget.dataset.studentId;
+                    const domain = e.currentTarget.dataset.domain;
+                    this.saveEvaluation(studentId, domain);
+                });
+            });
+            
+            // Bind global action buttons
+            document.getElementById('clearAllBtn')?.addEventListener('click', () => this.clearAllEvaluations());
+            document.getElementById('saveAllBtn')?.addEventListener('click', () => this.saveAllEvaluations());
+            document.getElementById('exportBtn')?.addEventListener('click', () => this.exportEvaluations());
+            
+            // Handle beforeunload to warn about unsaved changes
+            window.addEventListener('beforeunload', (e) => {
+                if (this.hasUnsavedEvaluations()) {
+                    e.preventDefault();
+                    e.returnValue = 'You have unsaved evaluations. Are you sure you want to leave?';
+                }
+            });
+        }
+        
+        loadExistingEvaluations() {
+            // Load existing evaluations from the page data
+            {% for student in students %}
+                {% for domain in domain_types %}
+                    {% set existing_eval = existing_evaluations[student.id][domain] if student.id in existing_evaluations and domain in existing_evaluations[student.id] else None %}
+                    {% if existing_eval %}
+                        this.savedEvaluations.add('{{ domain|lower }}_{{ student.id }}');
+                    {% endif %}
+                {% endfor %}
+            {% endfor %}
+            
+            // Update stats after loading
+            this.updateAllStats();
+        }
+        
+        switchDomain(domain) {
+            // Update active tab
+            document.querySelectorAll('.domain-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            const activeTab = document.querySelector(`.domain-tab[data-domain="${domain}"]`);
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
+            
+            // Update active content
+            document.querySelectorAll('.domain-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            const activeContent = document.getElementById(`domain-${domain}`);
+            if (activeContent) {
+                activeContent.classList.add('active');
+            }
+            
+            // Update current domain
+            this.currentDomain = domain;
+            
+            // Update stats for this domain
+            this.updateDomainStats(domain);
+            
+            this.showToast(`Switched to ${domain.charAt(0).toUpperCase() + domain.slice(1)} Domain`, 'info');
+        }
+        
+        async saveEvaluation(studentId, domain) {
+            const saveBtn = document.querySelector(`.save-btn[data-student-id="${studentId}"][data-domain="${domain}"]`);
+            if (!saveBtn) {
+                this.showToast('Could not find save button for this student', 'error');
+                return;
+            }
+            
+            const commentsEl = document.getElementById(`comments-${domain}-${studentId}`);
+            if (!commentsEl) {
+                this.showToast('Could not find comments field', 'error');
+                return;
+            }
+            
+            const comments = commentsEl.value.trim();
+            
+            // Collect all ratings for this student and domain
+            const evaluationData = {};
+            
+            // Get all criteria IDs from the domain
+            const criteriaCards = document.querySelectorAll(`#domain-${domain} .criteria-card`);
+            const criteriaIds = [];
+            
+            criteriaCards.forEach(card => {
+                const criteriaIdElement = card.querySelector('.criteria-id');
+                if (criteriaIdElement) {
+                    criteriaIds.push(criteriaIdElement.textContent.trim());
+                }
+            });
+            
+            let evaluatedCriteria = 0;
+            
+            // Check each criteria
+            criteriaIds.forEach(criteriaId => {
+                const inputName = `${domain}_${criteriaId}_${studentId}`;
+                const checkedInput = document.querySelector(`input[name="${inputName}"]:checked`);
+                
+                if (checkedInput) {
+                    evaluationData[criteriaId] = parseInt(checkedInput.value);
+                    evaluatedCriteria++;
+                }
+            });
+            
+            // Check if all criteria are evaluated
+            if (evaluatedCriteria < criteriaIds.length) {
+                this.showToast(`Please evaluate all criteria for this student (${evaluatedCriteria}/${criteriaIds.length})`, 'warning');
+                return;
+            }
+            
+            // Calculate average score
+            const scores = Object.values(evaluationData);
+            const averageScore = scores.length > 0 ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : 0;
+            
+            // Save button state
+            const originalText = saveBtn.innerHTML;
+            const originalClass = saveBtn.className;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            saveBtn.classList.add('saving');
+            saveBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/teacher/save-domain-evaluation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        student_id: studentId,
+                        domain_type: domain.charAt(0).toUpperCase() + domain.slice(1),
+                        evaluation_data: evaluationData,
+                        average_score: parseFloat(averageScore),
+                        comments: comments,
+                        total_criteria: criteriaIds.length,
+                        evaluated_criteria: evaluatedCriteria
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Update button state
+                    saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved';
+                    saveBtn.classList.remove('saving');
+                    saveBtn.classList.add('saved');
+                    this.savedEvaluations.add(`${domain}_${studentId}`);
+                    
+                    // Update stats
+                    this.updateDomainStats(domain);
+                    
+                    // Reset button after 2 seconds
+                    setTimeout(() => {
+                        saveBtn.innerHTML = originalText;
+                        saveBtn.className = originalClass;
+                        saveBtn.disabled = false;
+                    }, 2000);
+                    
+                    this.showToast(result.message || 'Evaluation saved successfully!', 'success');
+                } else {
+                    throw new Error(result.message || 'Failed to save evaluation');
+                }
+            } catch (error) {
+                console.error('Error saving evaluation:', error);
+                
+                saveBtn.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error';
+                saveBtn.classList.remove('saving');
+                
+                this.showToast(`Error: ${error.message}`, 'error');
+                
+                // Reset button after 3 seconds
+                setTimeout(() => {
+                    saveBtn.innerHTML = originalText;
+                    saveBtn.className = originalClass;
+                    saveBtn.disabled = false;
+                }, 3000);
+            }
+        }
+        
+        async saveAllEvaluations() {
+            const currentDomain = this.currentDomain;
+            const students = document.querySelectorAll(`#domain-${currentDomain} .student-evaluation-card`);
+            
+            let totalToSave = 0;
+            let savedCount = 0;
+            
+            // Count evaluations that need saving
+            students.forEach(card => {
+                const studentId = card.dataset.studentId;
+                const key = `${currentDomain}_${studentId}`;
+                if (!this.savedEvaluations.has(key)) {
+                    totalToSave++;
+                }
+            });
+            
+            if (totalToSave === 0) {
+                this.showToast('All evaluations are already saved!', 'info');
+                return;
+            }
+            
+            if (!confirm(`Save ${totalToSave} unsaved evaluations for ${currentDomain} domain?`)) {
+                return;
+            }
+            
+            // Save all evaluations
+            for (const card of students) {
+                const studentId = card.dataset.studentId;
+                const key = `${currentDomain}_${studentId}`;
+                
+                if (!this.savedEvaluations.has(key)) {
+                    try {
+                        await this.saveEvaluation(studentId, currentDomain);
+                        savedCount++;
+                    } catch (error) {
+                        console.error(`Failed to save evaluation for student ${studentId}:`, error);
+                    }
+                }
+            }
+            
+            if (savedCount === totalToSave) {
+                this.showToast(`Successfully saved all ${savedCount} evaluations!`, 'success');
+            } else {
+                this.showToast(`Saved ${savedCount} out of ${totalToSave} evaluations. Some may have failed.`, savedCount > 0 ? 'warning' : 'error');
+            }
+        }
+        
+        clearAllEvaluations() {
+            const currentDomain = this.currentDomain;
+            const domainName = currentDomain.charAt(0).toUpperCase() + currentDomain.slice(1);
+            
+            if (!confirm(`Clear all evaluations for ${domainName} domain? This action cannot be undone.`)) {
+                return;
+            }
+            
+            // Clear all rating inputs
+            document.querySelectorAll(`#domain-${currentDomain} input[type="radio"]`).forEach(input => {
+                input.checked = false;
+            });
+            
+            // Clear all comments
+            document.querySelectorAll(`#domain-${currentDomain} .comments-textarea`).forEach(textarea => {
+                textarea.value = '';
+            });
+            
+            // Clear saved evaluations tracking
+            const students = document.querySelectorAll(`#domain-${currentDomain} .student-evaluation-card`);
+            students.forEach(card => {
+                const studentId = card.dataset.studentId;
+                const key = `${currentDomain}_${studentId}`;
+                this.savedEvaluations.delete(key);
+            });
+            
+            this.updateDomainStats(currentDomain);
+            this.showToast(`All evaluations for ${domainName} domain cleared`, 'warning');
+        }
+        
+        updateDomainStats(domain) {
+            const students = document.querySelectorAll(`#domain-${domain} .student-evaluation-card`);
+            let evaluatedCount = 0;
+            let totalScore = 0;
+            let totalStudents = students.length;
+            
+            students.forEach(card => {
+                const studentId = card.dataset.studentId;
+                const key = `${domain}_${studentId}`;
+                
+                if (this.savedEvaluations.has(key)) {
+                    evaluatedCount++;
+                    
+                    // Calculate average score for this student
+                    let studentScore = 0;
+                    let criteriaCount = 0;
+                    
+                    // Get all checked inputs for this student
+                    card.querySelectorAll('input[type="radio"]:checked').forEach(input => {
+                        studentScore += parseInt(input.value);
+                        criteriaCount++;
+                    });
+                    
+                    if (criteriaCount > 0) {
+                        totalScore += studentScore / criteriaCount;
+                    }
+                }
+            });
+            
+            const averageScore = evaluatedCount > 0 ? (totalScore / evaluatedCount).toFixed(1) : 0;
+            const completionRate = totalStudents > 0 ? Math.round((evaluatedCount / totalStudents) * 100) : 0;
+            
+            // Update display
+            const totalEvaluatedEl = document.getElementById(`totalEvaluated-${domain}`);
+            const averageScoreEl = document.getElementById(`averageScore-${domain}`);
+            const completionRateEl = document.getElementById(`completionRate-${domain}`);
+            
+            if (totalEvaluatedEl) totalEvaluatedEl.textContent = evaluatedCount;
+            if (averageScoreEl) averageScoreEl.textContent = averageScore;
+            if (completionRateEl) completionRateEl.textContent = completionRate + '%';
+        }
+        
+        updateAllStats() {
+            // Update all domain stats
+            document.querySelectorAll('.domain-tab').forEach(tab => {
+                const domain = tab.dataset.domain;
+                this.updateDomainStats(domain);
+            });
+        }
+        
+        hasUnsavedEvaluations() {
+            const currentDomain = this.currentDomain;
+            let unsavedCount = 0;
+            
+            document.querySelectorAll(`#domain-${currentDomain} .student-evaluation-card`).forEach(card => {
+                const studentId = card.dataset.studentId;
+                const key = `${currentDomain}_${studentId}`;
+                
+                // Check if any rating is selected
+                let hasRating = false;
+                card.querySelectorAll('input[type="radio"]:checked').forEach(() => {
+                    hasRating = true;
+                });
+                
+                // Check if comments exist
+                const commentsEl = card.querySelector('.comments-textarea');
+                const hasComments = commentsEl && commentsEl.value.trim() !== '';
+                
+                if ((hasRating || hasComments) && !this.savedEvaluations.has(key)) {
+                    unsavedCount++;
+                }
+            });
+            
+            return unsavedCount > 0;
+        }
+        
+        async exportEvaluations() {
+            try {
+                const response = await fetch('/teacher/export-domain-evaluations');
+                
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Create CSV
+                    let csv = 'Student Name,Admission Number,Domain,Average Score,Comments,Last Updated\n';
+                    
+                    result.evaluations.forEach(record => {
+                        const escapedComments = record.comments ? record.comments.replace(/"/g, '""') : '';
+                        const updatedDate = record.updated_at ? new Date(record.updated_at).toLocaleDateString() : 
+                                            record.created_at ? new Date(record.created_at).toLocaleDateString() : 'N/A';
+                        csv += `"${record.student_name}","${record.admission_number}","${record.domain_type}","${record.average_score}","${escapedComments}","${updatedDate}"\n`;
+                    });
+                    
+                    // Create and download file
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `domain_evaluations_${result.form_class.replace(/ /g, '_')}_Term${result.term}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    
+                    this.showToast('Evaluations exported successfully!', 'success');
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                console.error('Error exporting evaluations:', error);
+                this.showToast(`Error exporting evaluations: ${error.message}`, 'error');
+            }
+        }
+        
+        startAutoSaveReminder() {
+            // Remind to save every 3 minutes
+            setInterval(() => {
+                if (this.hasUnsavedEvaluations()) {
+                    this.showToast('You have unsaved evaluations. Remember to save!', 'info');
+                }
+            }, 180000); // 3 minutes
+        }
+        
+        showToast(message, type = 'info') {
+            const toastContainer = document.getElementById('toastContainer');
+            if (!toastContainer) return;
+            
+            const toastId = 'toast-' + Date.now();
+            
+            const iconMap = {
+                'success': 'check-circle',
+                'error': 'exclamation-circle',
+                'warning': 'exclamation-triangle',
+                'info': 'info-circle'
+            };
+            
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.id = toastId;
+            toast.innerHTML = `
+                <div class="toast-icon">
+                    <i class="fas fa-${iconMap[type] || 'info-circle'}"></i>
+                </div>
+                <div class="toast-content">${message}</div>
+                <button class="toast-close" onclick="document.getElementById('${toastId}').remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                const toastElement = document.getElementById(toastId);
+                if (toastElement) {
+                    toastElement.remove();
+                }
+            }, 5000);
+        }
+    }
+    
+    // Initialize the application when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        window.domainEvaluationApp = new DomainEvaluationApp();
+    });
+</script>
+{% endblock %}

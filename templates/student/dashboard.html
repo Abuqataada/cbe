@@ -1,0 +1,209 @@
+{% extends "student/student_base.html" %}
+
+{% block title %}Student Dashboard - ARNDALE CBT{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Student Information Card -->
+    <div class="col-lg-4 mb-4">
+        <div class="student-card">
+            <div class="card-header">
+                <h5><i class="fas fa-user-graduate"></i> Student Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="student-info-box">
+                    <div class="info-item">
+                        <div class="info-label"><i class="fas fa-id-badge me-2"></i>Admission Number</div>
+                        <div class="info-value">{{ student.admission_number }}</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label"><i class="fas fa-user me-2"></i>Full Name</div>
+                        <div class="info-value">{{ student.first_name }} {{ student.last_name }}</div>
+                    </div>
+                    
+                    {% if student.middle_name %}
+                    <div class="info-item">
+                        <div class="info-label"><i class="fas fa-user me-2"></i>Middle Name</div>
+                        <div class="info-value">{{ student.middle_name }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="info-item">
+                        <div class="info-label"><i class="fas fa-graduation-cap me-2"></i>Current Class</div>
+                        <div class="info-value">{{ student.classroom.name if student.classroom else 'Not Assigned' }}</div>
+                    </div>
+                    
+                    {% if student.gender %}
+                    <div class="info-item">
+                        <div class="info-label"><i class="fas fa-venus-mars me-2"></i>Gender</div>
+                        <div class="info-value">{{ student.gender|title }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="info-item">
+                        <div class="info-label"><i class="fas fa-calendar-alt me-2"></i>Last Login</div>
+                        <div class="info-value">
+                            {% if current_user.last_login %}
+                                {{ current_user.last_login.strftime('%Y-%m-%d %H:%M') }}
+                            {% else %}
+                                First Login
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Available Exams Card -->
+    <div class="col-lg-8 mb-4">
+        <div class="student-card">
+            <div class="card-header">
+                <h5><i class="fas fa-file-alt"></i> Available Exams</h5>
+            </div>
+            <div class="card-body">
+                {% if available_exams %}
+                <div class="row">
+                    {% for exam in available_exams %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card exam-card h-100">
+                            <div class="card-body">
+                                <span class="exam-status 
+                                    {% if exam.status == 'active' %}status-active
+                                    {% elif exam.status == 'scheduled' %}status-upcoming
+                                    {% else %}status-completed{% endif %}">
+                                    {{ exam.status|title }}
+                                </span>
+                                
+                                <h6 class="card-title">{{ exam.name }}</h6>
+                                <p class="card-text text-muted mb-2">{{ exam.subject.name }}</p>
+                                
+                                <div class="exam-details">
+                                    <div class="detail-item">
+                                        <i class="fas fa-clock"></i>
+                                        <span>{{ exam.duration_minutes }} minutes</span>
+                                    </div>
+                                    
+                                    <div class="detail-item">
+                                        <i class="fas fa-calendar"></i>
+                                        <span>
+                                            {% if exam.scheduled_start %}
+                                                {{ exam.scheduled_start.strftime('%d %b %Y, %H:%M') }}
+                                            {% else %}
+                                                Flexible Timing
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="detail-item">
+                                        <i class="fas fa-star"></i>
+                                        <span>{{ exam.total_marks }} total marks</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    {% if exam.status == 'active' %}
+                                    <a href="{{ url_for('student.take_exam', exam_id=exam.id) }}" 
+                                    class="action-btn btn-start-exam w-100">
+                                        <i class="fas fa-play me-2"></i> Start Exam
+                                    </a>
+                                    {% elif exam.status == 'scheduled' %}
+                                    <button class="action-btn btn-view-details w-100" disabled>
+                                        <i class="fas fa-clock me-2"></i> Starts Soon
+                                    </button>
+                                    {% else %}
+                                    <a href="{{ url_for('student.view_exam_result', exam_id=exam.id) }}" 
+                                       class="action-btn btn-view-details w-100">
+                                        <i class="fas fa-eye me-2"></i> View Results
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-file-alt"></i>
+                    <h5>No Exams Available</h5>
+                    <p class="text-muted">There are currently no exams scheduled for you.</p>
+                    <p class="small text-muted">Check back later or contact your teacher.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats Row -->
+<div class="row">
+    <div class="col-md-4 mb-3">
+        <div class="student-card">
+            <div class="card-body text-center">
+                <h3 class="text-primary">{{ total_exams_taken }}</h3>
+                <p class="text-muted mb-0">Exams Taken</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="student-card">
+            <div class="card-body text-center">
+                <h3 class="text-success">{{ average_score|default(0)|round(1) }}</h3>
+                <p class="text-muted mb-0">Average Score</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="student-card">
+            <div class="card-body text-center">
+                <h3 class="text-warning">{{ available_exams|length }}</h3>
+                <p class="text-muted mb-0">Available Exams</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Announcements -->
+<div class="row">
+    <div class="col-12">
+        <div class="student-card">
+            <div class="card-header">
+                <h5><i class="fas fa-bullhorn"></i> System Announcements</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Welcome to ARNDALE CBT System!</strong> You can access your exams and view results from this dashboard.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-refresh exams every 30 seconds
+        setInterval(function() {
+            fetch(window.location.href)
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const newDoc = parser.parseFromString(html, 'text/html');
+                    const newExams = newDoc.querySelector('.row .col-lg-8 .student-card .card-body');
+                    if (newExams) {
+                        const currentExams = document.querySelector('.row .col-lg-8 .student-card .card-body');
+                        if (currentExams && newExams.innerHTML !== currentExams.innerHTML) {
+                            currentExams.innerHTML = newExams.innerHTML;
+                            console.log('Exams updated');
+                        }
+                    }
+                })
+                .catch(error => console.error('Error refreshing exams:', error));
+        }, 30000); // 30 seconds
+    });
+</script>
+{% endblock %}

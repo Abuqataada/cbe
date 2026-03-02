@@ -1,0 +1,175 @@
+{% extends "student/student_base.html" %}
+
+{% block title %}My Profile - Student Portal{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1><i class="fas fa-user-circle me-2"></i>My Profile</h1>
+            <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Personal Information -->
+    <div class="col-lg-6 mb-4">
+        <div class="student-card">
+            <div class="card-header">
+                <h5><i class="fas fa-user me-2"></i> Personal Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="student-info-box">
+                    <div class="info-item">
+                        <div class="info-label">Admission Number</div>
+                        <div class="info-value">{{ student.admission_number }}</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Full Name</div>
+                        <div class="info-value">{{ student.first_name }} {{ student.last_name }}</div>
+                    </div>
+                    
+                    {% if student.middle_name %}
+                    <div class="info-item">
+                        <div class="info-label">Middle Name</div>
+                        <div class="info-value">{{ student.middle_name }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="info-item">
+                        <div class="info-label">Class</div>
+                        <div class="info-value">{{ student.classroom.name if student.classroom else 'Not Assigned' }}</div>
+                    </div>
+                    
+                    {% if student.date_of_birth %}
+                    <div class="info-item">
+                        <div class="info-label">Date of Birth</div>
+                        <div class="info-value">{{ student.date_of_birth.strftime('%d %b %Y') }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if student.gender %}
+                    <div class="info-item">
+                        <div class="info-label">Gender</div>
+                        <div class="info-value">{{ student.gender|title }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="info-item">
+                        <div class="info-label">Enrollment Date</div>
+                        <div class="info-value">{{ student.enrollment_date.strftime('%d %b %Y') if student.enrollment_date else 'N/A' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Parent/Guardian Information -->
+    <div class="col-lg-6 mb-4">
+        <div class="student-card">
+            <div class="card-header">
+                <h5><i class="fas fa-users me-2"></i> Parent/Guardian Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="student-info-box">
+                    {% if student.parent_name %}
+                    <div class="info-item">
+                        <div class="info-label">Parent Name</div>
+                        <div class="info-value">{{ student.parent_name }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if student.parent_phone %}
+                    <div class="info-item">
+                        <div class="info-label">Parent Phone</div>
+                        <div class="info-value">{{ student.parent_phone }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if student.parent_email %}
+                    <div class="info-item">
+                        <div class="info-label">Parent Email</div>
+                        <div class="info-value">{{ student.parent_email }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if student.parent_occupation %}
+                    <div class="info-item">
+                        <div class="info-label">Parent Occupation</div>
+                        <div class="info-value">{{ student.parent_occupation }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if student.address %}
+                    <div class="info-item">
+                        <div class="info-label">Address</div>
+                        <div class="info-value">{{ student.address }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Summary -->
+<div class="row">
+    <div class="col-12">
+        <div class="student-card">
+            <div class="card-header">
+                <h5><i class="fas fa-clipboard-check me-2"></i> Attendance Summary</h5>
+            </div>
+            <div class="card-body">
+                {% if attendance_summary %}
+                <div class="row">
+                    {% for status, count in attendance_summary %}
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="text-center p-3 rounded 
+                            {% if status == 'present' %}bg-success text-white
+                            {% elif status == 'absent' %}bg-danger text-white
+                            {% elif status == 'late' %}bg-warning text-white
+                            {% else %}bg-info text-white{% endif %}">
+                            <h3 class="mb-1">{{ count }}</h3>
+                            <p class="mb-0">{{ status|title }} Days</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <p class="text-muted mb-0">No attendance records found.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Account Information -->
+<div class="row">
+    <div class="col-12">
+        <div class="student-card">
+            <div class="card-header">
+                <h5><i class="fas fa-shield-alt me-2"></i> Account Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Login Information:</strong> You log in using your admission number: 
+                    <code>{{ student.admission_number }}</code>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Note:</strong> Your account is managed by the school administration. 
+                    Contact your teacher or administrator if you need to update any information.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

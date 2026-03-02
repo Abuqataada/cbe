@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}Exams Management - ARNDALE CBT{% endblock %}
+
+{% block page_title %}
+<h1 class="h3 mb-2"><i class="fas fa-file-alt"></i> Exams Management</h1>
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="separator">/</span>
+<a href="{{ url_for('teacher.dashboard') }}">Dashboard</a>
+<span class="separator">/</span>
+<span>Exams</span>
+{% endblock %}
+
+{% block content %}
+<!-- Stats Overview -->
+<div class="stats-grid">
+    <div class="stat-card stat-card-primary">
+        <div class="stat-content stat-primary">
+            <div class="stat-numbers">
+                <h3>{{ exam_stats.total }}</h3>
+                <p>Total Exams</p>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-file-alt"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-card stat-card-success">
+        <div class="stat-content stat-success">
+            <div class="stat-numbers">
+                <h3>{{ exam_stats.draft }}</h3>
+                <p>Draft</p>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-edit"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-card stat-card-warning">
+        <div class="stat-content stat-warning">
+            <div class="stat-numbers">
+                <h3>{{ exam_stats.scheduled }}</h3>
+                <p>Scheduled</p>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-card stat-card-info">
+        <div class="stat-content stat-info">
+            <div class="stat-numbers">
+                <h3>{{ exam_stats.completed }}</h3>
+                <p>Completed</p>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Grid -->
+<div class="content-grid">
+    <!-- Exams Table -->
+    <div class="exams-table-container">
+        <div class="table-header">
+            <h5><i class="fas fa-list"></i> My Exams</h5>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" 
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="?status=all">All Exams</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="?status=draft">Draft</a></li>
+                    <li><a class="dropdown-item" href="?status=scheduled">Scheduled</a></li>
+                    <li><a class="dropdown-item" href="?status=active">Active</a></li>
+                    <li><a class="dropdown-item" href="?status=completed">Completed</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="table-body">
+            {% if exams %}
+            <table class="compact-table">
+                <thead>
+                    <tr>
+                        <th>Exam</th>
+                        <th>Subject</th>
+                        <th>Date & Time</th>
+                        <th>Duration</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for exam in exams %}
+                    <tr>
+                        <td>
+                            <div class="exam-name">{{ exam.name }}</div>
+                            <div class="exam-meta">{{ exam.total_marks }} marks</div>
+                        </td>
+                        <td>
+                            <div class="exam-subject">{{ exam.subject.name }}</div>
+                            <div class="exam-class">{{ exam.classroom.name }}</div>
+                        </td>
+                        <td>
+                            {% if exam.scheduled_start %}
+                            <div class="exam-date">{{ exam.scheduled_start.strftime('%d %b %Y') }}</div>
+                            <div class="exam-time">{{ exam.scheduled_start.strftime('%I:%M %p') }}</div>
+                            {% else %}
+                            <span class="text-muted">Not scheduled</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="exam-duration">{{ exam.duration_minutes }} mins</div>
+                        </td>
+                        <td>
+                            {% if exam.status == 'draft' %}
+                            <span class="status-badge status-draft">Draft</span>
+                            {% elif exam.status == 'scheduled' %}
+                            <span class="status-badge status-scheduled">Scheduled</span>
+                            {% elif exam.status == 'active' %}
+                            <span class="status-badge status-active">Active</span>
+                            {% elif exam.status == 'completed' %}
+                            <span class="status-badge status-completed">Completed</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="{{ url_for('teacher.view_exam', exam_id=exam.id) }}" 
+                                   class="action-btn action-view" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ url_for('teacher.edit_exam', exam_id=exam.id) }}" 
+                                   class="action-btn action-edit" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form action="{{ url_for('teacher.delete_exam', exam_id=exam.id) }}" method="POST" class="d-inline">
+                                    <button type="submit" 
+                                            class="action-btn action-delete delete-exam" 
+                                            title="Delete"
+                                            data-id="{{ exam.id }}"
+                                            data-name="{{ exam.name }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <h4>No Exams Created</h4>
+                <p>Start by creating your first exam</p>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createExamModal">
+                    <i class="fas fa-plus me-1"></i> Create New Exam
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div>
+        <!-- Quick Actions -->
+        <div class="sidebar-card">
+            <div class="sidebar-header">
+                <i class="fas fa-bolt"></i>
+                <h5>Quick Actions</h5>
+            </div>
+            <div class="quick-actions-grid">
+                <button class="quick-action-btn" data-bs-toggle="modal" data-bs-target="#createExamModal">
+                    <i class="fas fa-plus"></i>
+                    <span>Create New Exam</span>
+                </button>
+                <a href="{{ url_for('teacher.question_bank') }}" class="quick-action-btn">
+                    <i class="fas fa-database"></i>
+                    <span>Question Bank</span>
+                </a>
+                <a href="{{ url_for('teacher.dashboard') }}" class="quick-action-btn">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back to Dashboard</span>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Assigned Subjects -->
+        <div class="sidebar-card">
+            <div class="sidebar-header">
+                <i class="fas fa-book"></i>
+                <h5>Available Subjects</h5>
+            </div>
+            <div class="subject-list">
+                {% for class_info in assigned_classes %}
+                <div class="subject-item">
+                    <div class="subject-info">
+                        <h6>{{ class_info.subject.name }}</h6>
+                        <small>{{ class_info.classroom.name }}</small>
+                    </div>
+                    <div class="subject-actions">
+                        <span class="subject-badge">{{ class_info.question_count }} Q</span>
+                        <button class="btn btn-sm btn-outline-primary" 
+                                onclick="createExamForSubject({{ class_info.subject.id }}, {{ class_info.classroom.id }})">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Exam Modal -->
+<div class="modal fade" id="createExamModal" tabindex="-1" aria-labelledby="createExamModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header-custom">
+                <h5 class="modal-title" id="createExamModalLabel">
+                    <i class="fas fa-plus"></i> Create New Exam
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('teacher.create_exam') }}" id="createExamForm">
+                <div class="modal-body-custom">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="exam_name" class="form-label-sm required">Exam Name</label>
+                            <input type="text" class="form-control form-control-sm" id="exam_name" name="exam_name" 
+                                   placeholder="e.g., Mid-Term Mathematics Exam" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="exam_type" class="form-label-sm required">Exam Type</label>
+                            <select class="form-select form-select-sm" id="exam_type" name="exam_type" required>
+                                <option value="">Select Type</option>
+                                <option value="test">Test</option>
+                                <option value="quiz">Quiz</option>
+                                <option value="mid_term">Mid-Term</option>
+                                <option value="final">Final Exam</option>
+                                <option value="assignment">Assignment</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-12">
+                            <label for="subject_selection" class="form-label-sm required">Subject & Class</label>
+                            <select class="form-select form-select-sm" id="subject_selection" name="subject_selection" required>
+                                <option value="">Select Subject & Class</option>
+                                {% for class_info in assigned_classes %}
+                                <option value="{{ class_info.subject.id }}_{{ class_info.classroom.id }}"
+                                        data-subject-id="{{ class_info.subject.id }}"
+                                        data-class-id="{{ class_info.classroom.id }}"
+                                        data-subject-name="{{ class_info.subject.name }}"
+                                        data-class-name="{{ class_info.classroom.name }}"
+                                        data-question-count="{{ class_info.question_count }}">
+                                    {{ class_info.subject.name }} - {{ class_info.classroom.name }}
+                                    {% if class_info.question_count > 0 %}
+                                    ({{ class_info.question_count }} questions)
+                                    {% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Hidden fields -->
+                        <input type="hidden" id="subject_id" name="subject_id" value="">
+                        <input type="hidden" id="class_id" name="class_id" value="">
+                        
+                        <div class="col-md-6">
+                            <label for="duration" class="form-label-sm required">Duration (minutes)</label>
+                            <input type="number" class="form-control form-control-sm" id="duration" name="duration" 
+                                   min="5" max="300" value="60" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="total_marks" class="form-label-sm required">Total Marks</label>
+                            <input type="number" class="form-control form-control-sm" id="total_marks" name="total_marks" 
+                                   min="1" max="500" value="100" required>
+                        </div>
+                        
+                        <div class="col-12">
+                            <label for="instructions" class="form-label-sm">Instructions</label>
+                            <textarea class="form-control form-control-sm" id="instructions" name="instructions" 
+                                      rows="3" placeholder="Enter exam instructions..."></textarea>
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="alert alert-info alert-sm">
+                                <i class="fas fa-info-circle me-1"></i>
+                                You'll be able to add questions to this exam after creation.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="fas fa-save me-1"></i> Create Exam
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteExamModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-trash"></i> Delete Exam</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-exclamation-triangle fa-2x text-danger mb-2"></i>
+                    <p class="mb-2">Are you sure you want to delete:</p>
+                    <h6 class="mb-0" id="examNameToDelete"></h6>
+                </div>
+                <p class="text-danger small mb-0">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-sm btn-danger" id="confirmDeleteExam">
+                    <i class="fas fa-trash me-1"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Stats Cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .stat-card-primary::before { background: #10b981; }
+    .stat-card-success::before { background: #10b981; }
+    .stat-card-warning::before { background: #f59e0b; }
+    .stat-card-info::before { background: #0ea5e9; }
+    
+    .stat-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .stat-numbers h3 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+        line-height: 1;
+    }
+    
+    .stat-numbers p {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin: 0;
+        font-weight: 500;
+    }
+    
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    .stat-primary .stat-icon { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .stat-success .stat-icon { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .stat-warning .stat-icon { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+    .stat-info .stat-icon { background: rgba(14, 165, 233, 0.1); color: #0ea5e9; }
+    
+    /* Main Content Grid */
+    .content-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    @media (min-width: 992px) {
+        .content-grid {
+            grid-template-columns: 2fr 1fr;
+        }
+    }
+    
+    /* Exams Table */
+    .exams-table-container {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+    }
+    
+    .table-header {
+        background: #f8fafc;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .table-header h5 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .table-body {
+        padding: 0;
+    }
+    
+    .compact-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+    }
+    
+    .compact-table th {
+        background: #f8fafc;
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        color: #475569;
+        text-align: left;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .compact-table td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+    }
+    
+    .compact-table tr:hover {
+        background: #f8fafc;
+    }
+    
+    .exam-name {
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+        font-size: 0.95rem;
+    }
+    
+    .exam-meta {
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+    
+    .exam-subject {
+        font-weight: 500;
+        color: #1e293b;
+        margin-bottom: 0.1rem;
+    }
+    
+    .exam-class {
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+    
+    .exam-date {
+        font-weight: 500;
+        color: #1e293b;
+        margin-bottom: 0.1rem;
+    }
+    
+    .exam-time {
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+    
+    .exam-duration {
+        font-weight: 600;
+        color: #1e293b;
+    }
+    
+    /* Status Badges */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    
+    .status-draft { background: #e2e8f0; color: #475569; }
+    .status-scheduled { background: #dbeafe; color: #1e40af; }
+    .status-active { background: #d1fae5; color: #065f46; }
+    .status-completed { background: #f3e8ff; color: #7c3aed; }
+    
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: 1px solid;
+        font-size: 0.85rem;
+    }
+    
+    .action-view { 
+        background: white; 
+        color: #10b981; 
+        border-color: #bbf7d0; 
+    }
+    .action-view:hover { 
+        background: #10b981; 
+        color: white; 
+        border-color: #10b981; 
+    }
+    
+    .action-edit { 
+        background: white; 
+        color: #f59e0b; 
+        border-color: #fde68a; 
+    }
+    .action-edit:hover { 
+        background: #f59e0b; 
+        color: white; 
+        border-color: #f59e0b; 
+    }
+    
+    .action-delete { 
+        background: white; 
+        color: #ef4444; 
+        border-color: #fecaca; 
+    }
+    .action-delete:hover { 
+        background: #ef4444; 
+        color: white; 
+        border-color: #ef4444; 
+    }
+    
+    /* Sidebar Cards */
+    .sidebar-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1.5rem;
+    }
+    
+    .sidebar-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .sidebar-header h5 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+    
+    .sidebar-header i {
+        color: #10b981;
+        font-size: 1.1rem;
+    }
+    
+    .quick-actions-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .quick-action-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        text-decoration: none;
+        color: #1e293b;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .quick-action-btn:hover {
+        background: white;
+        border-color: #10b981;
+        color: #10b981;
+        transform: translateX(3px);
+    }
+    
+    .quick-action-btn i {
+        font-size: 1rem;
+        color: #10b981;
+    }
+    
+    /* Subjects List */
+    .subject-list {
+        display: grid;
+        gap: 0.75rem;
+    }
+    
+    .subject-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+    
+    .subject-item:hover {
+        background: white;
+        border-color: #bbf7d0;
+    }
+    
+    .subject-info h6 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.1rem;
+    }
+    
+    .subject-info small {
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+    
+    .subject-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .subject-badge {
+        font-size: 0.75rem;
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        padding: 0.2rem 0.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    
+    /* Empty States */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1.5rem;
+    }
+    
+    .empty-icon {
+        font-size: 3rem;
+        color: #e2e8f0;
+        margin-bottom: 1rem;
+        opacity: 0.6;
+    }
+    
+    .empty-state h4 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+    }
+    
+    .empty-state p {
+        color: #64748b;
+        margin-bottom: 1.5rem;
+        max-width: 300px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    /* Modal Styling */
+    .modal-header-custom {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-radius: 12px 12px 0 0;
+        padding: 1.25rem 1.5rem;
+    }
+    
+    .modal-header-custom .modal-title {
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .modal-body-custom {
+        padding: 1.5rem;
+    }
+    
+    .form-label-sm {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-control-sm {
+        font-size: 0.9rem;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+        
+        .stat-card {
+            padding: 1rem;
+        }
+        
+        .stat-numbers h3 {
+            font-size: 1.5rem;
+        }
+        
+        .table-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        
+        .compact-table {
+            display: block;
+            overflow-x: auto;
+        }
+        
+        .compact-table th,
+        .compact-table td {
+            white-space: nowrap;
+        }
+        
+        .subject-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        
+        .subject-actions {
+            width: 100%;
+            justify-content: space-between;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .action-buttons {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+    }
+</style>
+
+<script>
+    // Handle subject selection change
+    document.getElementById('subject_selection').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        
+        if (selectedOption.value) {
+            const subjectId = selectedOption.getAttribute('data-subject-id');
+            const classId = selectedOption.getAttribute('data-class-id');
+            
+            document.getElementById('subject_id').value = subjectId;
+            document.getElementById('class_id').value = classId;
+        }
+    });
+
+    // Handle create exam form submission
+    document.getElementById('createExamForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Validate form
+        const examName = document.getElementById('exam_name').value.trim();
+        const examType = document.getElementById('exam_type').value;
+        const subjectId = document.getElementById('subject_id').value;
+        const classId = document.getElementById('class_id').value;
+        
+        if (!examName || !examType || !subjectId || !classId) {
+            alert('Please fill in all required fields');
+            return;
+        }
+        
+        // Show loading
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        submitBtn.disabled = true;
+        
+        // Submit form
+        this.submit();
+    });
+
+    // Handle delete exam buttons
+    document.addEventListener('click', function(e) {
+        const deleteBtn = e.target.closest('.delete-exam');
+        
+        if (deleteBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const examId = deleteBtn.getAttribute('data-id');
+            const examName = deleteBtn.getAttribute('data-name');
+            
+            // Store exam info
+            window.currentExamIdToDelete = examId;
+            window.currentExamNameToDelete = examName;
+            
+            // Update modal
+            document.getElementById('examNameToDelete').textContent = examName;
+            
+            // Show modal
+            new bootstrap.Modal(document.getElementById('deleteExamModal')).show();
+        }
+    });
+
+    // Handle confirm delete
+    document.getElementById('confirmDeleteExam').addEventListener('click', function() {
+        const examId = window.currentExamIdToDelete;
+        
+        if (!examId) return;
+        
+        // Show loading
+        const originalText = this.innerHTML;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        this.disabled = true;
+        
+        // Submit delete request
+        fetch(`/teacher/exams/delete/${examId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Close modal
+                bootstrap.Modal.getInstance(document.getElementById('deleteExamModal')).hide();
+                
+                // Remove row from table
+                const row = document.querySelector(`.delete-exam[data-id="${examId}"]`).closest('tr');
+                if (row) {
+                    row.style.opacity = '0';
+                    setTimeout(() => {
+                        row.remove();
+                        
+                        // Check if table is empty
+                        const tbody = document.querySelector('.compact-table tbody');
+                        if (tbody && tbody.children.length === 0) {
+                            location.reload();
+                        } else {
+                            // Update stats
+                            updateExamStats();
+                        }
+                    }, 300);
+                } else {
+                    location.reload();
+                }
+            } else {
+                alert(data.message || 'Error deleting exam');
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Network error');
+            location.reload();
+        });
+    });
+
+    // Helper function to update exam stats
+    function updateExamStats() {
+        // Get all status badges
+        const statusBadges = document.querySelectorAll('.status-badge');
+        
+        let draftCount = 0, scheduledCount = 0, activeCount = 0, completedCount = 0;
+        
+        statusBadges.forEach(badge => {
+            const status = badge.textContent.toLowerCase();
+            if (status === 'draft') draftCount++;
+            else if (status === 'scheduled') scheduledCount++;
+            else if (status === 'active') activeCount++;
+            else if (status === 'completed') completedCount++;
+        });
+        
+        const totalCount = draftCount + scheduledCount + activeCount + completedCount;
+        
+        // Update stat cards
+        document.querySelectorAll('.stat-numbers h3').forEach((h3, index) => {
+            const values = [totalCount, draftCount, scheduledCount, completedCount];
+            if (values[index] !== undefined) {
+                h3.textContent = values[index];
+            }
+        });
+    }
+
+    // Function to create exam for specific subject
+    function createExamForSubject(subjectId, classId) {
+        const select = document.getElementById('subject_selection');
+        
+        for (let option of select.options) {
+            if (option.getAttribute('data-subject-id') == subjectId && 
+                option.getAttribute('data-class-id') == classId) {
+                select.value = option.value;
+                select.dispatchEvent(new Event('change'));
+                
+                // Show modal
+                new bootstrap.Modal(document.getElementById('createExamModal')).show();
+                break;
+            }
+        }
+    }
+
+    // Clear delete exam data when modal is hidden
+    document.getElementById('deleteExamModal').addEventListener('hidden.bs.modal', function() {
+        window.currentExamIdToDelete = null;
+        window.currentExamNameToDelete = null;
+        document.getElementById('confirmDeleteExam').innerHTML = '<i class="fas fa-trash me-1"></i> Delete';
+        document.getElementById('confirmDeleteExam').disabled = false;
+    });
+</script>
+{% endblock %}

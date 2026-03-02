@@ -1,0 +1,397 @@
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}Upload Notes & Materials - ARNDALE CBT{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-book-open me-2"></i> Upload Learning Materials</h4>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    Upload notes, assignments, videos, and other learning materials for your students.
+                    Students in the selected class will be able to access these materials.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Form -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-upload me-2"></i> Upload New Material</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('teacher.upload_material') }}" enctype="multipart/form-data">
+                    <!-- Basic Information -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="title" class="form-label">Title *</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="material_type" class="form-label">Material Type</label>
+                            <select class="form-select" id="material_type" name="material_type">
+                                <option value="note">Note/Lecture</option>
+                                <option value="assignment">Assignment</option>
+                                <option value="video">Video</option>
+                                <option value="presentation">Presentation</option>
+                                <option value="reading">Reading Material</option>
+                                <option value="quiz">Quiz/Exercise</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Subject and Class Selection -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="subject_id" class="form-label">Subject *</label>
+                            <select class="form-select" id="subject_id" name="subject_id" required>
+                                <option value="">Select Subject</option>
+                                {% for item in subject_classes %}
+                                <option value="{{ item.subject.id }}" 
+                                        data-class="{{ item.classroom.id }}">
+                                    {{ item.subject.name }} - {{ item.classroom.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="class_id" class="form-label">Class *</label>
+                            <select class="form-select" id="class_id" name="class_id" required>
+                                <option value="">Select Class</option>
+                                {% for item in subject_classes %}
+                                <option value="{{ item.classroom.id }}" 
+                                        data-subject="{{ item.subject.id }}">
+                                    {{ item.classroom.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+
+                    <!-- Description -->
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+
+                    <!-- Upload Options -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">Upload Options</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="file" class="form-label">Upload File (Optional)</label>
+                                <input type="file" class="form-control" id="file" name="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.mp4,.mp3,.zip">
+                                <div class="form-text">
+                                    Allowed: PDF, Word, PowerPoint, Images, Videos, MP3, ZIP (Max 50MB)
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="content" class="form-label">Or Write Content (Optional)</label>
+                                <textarea class="form-control" id="content" name="content" rows="5" placeholder="You can type your notes here instead of uploading a file..."></textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="external_link" class="form-label">Or Add External Link (Optional)</label>
+                                <input type="url" class="form-control" id="external_link" name="external_link" placeholder="https://example.com/video-link">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tags and Settings -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="tags" class="form-label">Tags (comma separated)</label>
+                            <input type="text" class="form-control" id="tags" name="tags" placeholder="math, algebra, chapter1">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="accessible_to" class="form-label">Access Level</label>
+                            <select class="form-select" id="accessible_to" name="accessible_to">
+                                <option value="class">Class Students Only</option>
+                                <option value="subject">All Students in Subject</option>
+                                <option value="all">All Students</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Publish Settings -->
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_published" name="is_published" checked>
+                            <label class="form-check-label" for="is_published">
+                                Publish Immediately (Students can access)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_featured" name="is_featured">
+                            <label class="form-check-label" for="is_featured">
+                                Mark as Featured (Will appear at top for students)
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="reset" class="btn btn-secondary">Clear</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-upload me-2"></i> Upload Material
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="col-lg-4">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i> Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-primary rounded p-3 me-3">
+                                <i class="fas fa-book-open text-white fa-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="mb-0">{{ subject_classes|length }}</h4>
+                                <p class="text-muted mb-0">Subjects Assigned</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if materials_by_subject %}
+                    <div class="col-12">
+                        <h6>Materials by Subject:</h6>
+                        <div class="list-group">
+                            {% for key, data in materials_by_subject.items() %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ data.subject.name }}</h6>
+                                    <span class="badge bg-primary rounded-pill">{{ data.materials|length }}</span>
+                                </div>
+                                <small class="text-muted">{{ data.classroom.name }}</small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Tips -->
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i> Tips</h5>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>Keep file sizes under 50MB for faster uploads</li>
+                    <li>Use descriptive titles for easy searching</li>
+                    <li>Add tags to help students filter materials</li>
+                    <li>You can update materials anytime</li>
+                    <li>Unpublish materials to temporarily hide them</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Existing Materials -->
+{% if materials_by_subject %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-list me-2"></i> Existing Materials</h5>
+            </div>
+            <div class="card-body">
+                {% for key, data in materials_by_subject.items() %}
+                <div class="mb-4">
+                    <h5 class="border-bottom pb-2">
+                        <i class="fas fa-book me-2"></i>{{ data.subject.name }}
+                        <small class="text-muted">- {{ data.classroom.name }}</small>
+                        <span class="badge bg-secondary float-end">{{ data.materials|length }} materials</span>
+                    </h5>
+                    
+                    <div class="row">
+                        {% for material in data.materials %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card h-100 border">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="card-title mb-0">{{ material.title }}</h6>
+                                        <span class="badge {% if material.is_published %}bg-success{% else %}bg-warning{% endif %}">
+                                            {% if material.is_published %}Published{% else %}Draft{% endif %}
+                                        </span>
+                                    </div>
+                                    
+                                    {% if material.description %}
+                                    <p class="card-text small text-muted">{{ material.description[:100] }}{% if material.description|length > 100 %}...{% endif %}</p>
+                                    {% endif %}
+                                    
+                                    <div class="small mb-2">
+                                        <i class="fas fa-tag me-1"></i>
+                                        {% if material.tags %}
+                                            {% for tag in material.tags[:3] %}
+                                            <span class="badge bg-light text-dark me-1">{{ tag }}</span>
+                                            {% endfor %}
+                                        {% else %}
+                                            <span class="text-muted">No tags</span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="fas fa-download me-1"></i>{{ material.download_count }}
+                                            <i class="fas fa-eye ms-2 me-1"></i>{{ material.view_count }}
+                                        </small>
+                                        <div>
+                                            <a href="{{ url_for('teacher.edit_material', material_id=material.id) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                    onclick="deleteMaterial('{{ material.id }}', '{{ material.title }}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-light">
+                                    <small class="text-muted">
+                                        Uploaded: {{ material.created_at.strftime('%d %b %Y') }}
+                                        {% if material.file_type %}
+                                        • <i class="fas fa-file-{{ material.file_type }} me-1"></i>{{ material.file_type|upper }}
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+    // Update class dropdown based on subject selection
+    document.getElementById('subject_id').addEventListener('change', function() {
+        const selectedSubjectId = this.value;
+        const classSelect = document.getElementById('class_id');
+        const classOptions = classSelect.options;
+        
+        // Show all options first
+        for (let i = 0; i < classOptions.length; i++) {
+            classOptions[i].style.display = '';
+        }
+        
+        // If a subject is selected, show only classes for that subject
+        if (selectedSubjectId) {
+            // Find the selected subject option to get its data-class attribute
+            const subjectSelect = document.getElementById('subject_id');
+            const selectedSubjectOption = subjectSelect.options[subjectSelect.selectedIndex];
+            const allowedClassId = selectedSubjectOption.getAttribute('data-class');
+            
+            // Hide all classes except the one associated with this subject
+            for (let i = 0; i < classOptions.length; i++) {
+                const option = classOptions[i];
+                if (option.value && option.value !== allowedClassId) {
+                    option.style.display = 'none';
+                }
+            }
+            
+            // Auto-select the allowed class
+            for (let i = 0; i < classOptions.length; i++) {
+                if (classOptions[i].value === allowedClassId) {
+                    classSelect.selectedIndex = i;
+                    break;
+                }
+            }
+        } else {
+            // No subject selected, reset class selection
+            classSelect.selectedIndex = 0;
+        }
+    });
+
+    // Also update subject dropdown when class is selected
+    document.getElementById('class_id').addEventListener('change', function() {
+        const selectedClassId = this.value;
+        const subjectSelect = document.getElementById('subject_id');
+        const subjectOptions = subjectSelect.options;
+        
+        if (selectedClassId) {
+            // Find the class option to get its data-subject attribute
+            const selectedClassOption = this.options[this.selectedIndex];
+            const allowedSubjectId = selectedClassOption.getAttribute('data-subject');
+            
+            // Auto-select the corresponding subject
+            for (let i = 0; i < subjectOptions.length; i++) {
+                if (subjectOptions[i].value === allowedSubjectId) {
+                    subjectSelect.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+    });
+
+    // Delete material confirmation
+    function deleteMaterial(materialId, materialTitle) {
+        if (confirm(`Are you sure you want to delete "${materialTitle}"? This action cannot be undone.`)) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/teacher/delete-material/${materialId}`;
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+
+    // File size validation
+    document.getElementById('file').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+            if (file.size > maxSize) {
+                alert('File size exceeds 50MB limit. Please choose a smaller file.');
+                e.target.value = ''; // Clear the file input
+            }
+        }
+    });
+
+    // Auto-hide fields based on selected option
+    const fileInput = document.getElementById('file');
+    const contentInput = document.getElementById('content');
+    const linkInput = document.getElementById('external_link');
+
+    function updateInputRequirements() {
+        const hasFile = fileInput.files.length > 0;
+        const hasContent = contentInput.value.trim().length > 0;
+        const hasLink = linkInput.value.trim().length > 0;
+
+        // None are strictly required since they're all optional
+        // But we could add validation if at least one is required
+    }
+
+    fileInput.addEventListener('change', updateInputRequirements);
+    contentInput.addEventListener('input', updateInputRequirements);
+    linkInput.addEventListener('input', updateInputRequirements);
+</script>
+{% endblock %}

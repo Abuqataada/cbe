@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}My Subjects - ARNDALE CBT{% endblock %}
+
+{% block page_title %}
+<h1><i class="fas fa-book"></i> My Subjects</h1>
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="separator">/</span>
+<span>My Subjects</span>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="header-card fade-in-up">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h4>My Assigned Subjects</h4>
+            <p>Teaching assignments for the current academic term</p>
+        </div>
+        <div class="term-badge">
+            <i class="fas fa-calendar-alt me-1"></i> {{ current_term.name }}
+        </div>
+    </div>
+    <div class="mt-2 text-white-75">
+        <i class="fas fa-clock me-1"></i>
+        {{ current_term.start_date.strftime('%b %d, %Y') }} - {{ current_term.end_date.strftime('%b %d, %Y') }}
+    </div>
+</div>
+
+<!-- Subjects Grid -->
+{% if subjects_data %}
+<div class="subject-grid">
+    {% for subject_data in subjects_data %}
+    <div class="subject-card fade-in-up">
+        <div class="subject-header">
+            <div class="subject-info">
+                <h3 class="subject-title">{{ subject_data.subject.name }}</h3>
+                <div class="subject-code">{{ subject_data.subject.code }}</div>
+                <div class="class-badge">
+                    <i class="fas fa-users"></i> {{ subject_data.classroom.name }}
+                </div>
+            </div>
+            <div class="subject-actions">
+                <a href="{{ url_for('teacher.enter_scores', subject_id=subject_data.subject.id, class_id=subject_data.classroom.id) }}" 
+                   class="btn btn-sm btn-primary">
+                    <i class="fas fa-edit"></i>
+                </a>
+            </div>
+        </div>
+        
+        {% if subject_data.subject.description %}
+        <div class="subject-description">
+            {{ subject_data.subject.description }}
+        </div>
+        {% endif %}
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">{{ subject_data.student_count }}</div>
+                <div class="stat-label">Students</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ subject_data.subject.pass_mark or 40 }}%</div>
+                <div class="stat-label">Pass Mark</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ subject_data.subject.max_mark or 100 }}</div>
+                <div class="stat-label">Max Score</div>
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            <a href="{{ url_for('teacher.enter_scores', subject_id=subject_data.subject.id, class_id=subject_data.classroom.id) }}" 
+               class="action-btn action-btn-primary">
+                <i class="fas fa-edit"></i> Enter Scores
+            </a>
+            <a href="{{ url_for('teacher.enter_comments') }}?subject_id={{ subject_data.subject.id }}" 
+               class="action-btn action-btn-secondary">
+                <i class="fas fa-comment"></i> Comments
+            </a>
+            <a href="#" class="action-btn action-btn-light">
+                <i class="fas fa-chart-bar"></i> Reports
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Summary Section -->
+<div class="summary-card fade-in-up">
+    <div class="summary-header">
+        <i class="fas fa-chart-pie"></i>
+        <h5>Teaching Summary</h5>
+    </div>
+    
+    <div class="summary-grid">
+        <div class="summary-item">
+            <div class="summary-value">{{ subjects_data|length }}</div>
+            <div class="summary-label">Total Subjects</div>
+        </div>
+        
+        <div class="summary-item">
+            <div class="summary-value">{{ subjects_data|sum(attribute='student_count') }}</div>
+            <div class="summary-label">Total Students</div>
+        </div>
+        
+        <div class="summary-item">
+            <div class="summary-value">
+                {% set unique_classes = [] %}
+                {% for subject in subjects_data %}
+                    {% if subject.classroom.name not in unique_classes %}
+                        {{ unique_classes.append(subject.classroom.name) or '' }}
+                    {% endif %}
+                {% endfor %}
+                {{ unique_classes|length }}
+            </div>
+            <div class="summary-label">Different Classes</div>
+        </div>
+        
+        <div class="summary-item">
+            <div class="summary-value">{{ current_term.name }}</div>
+            <div class="summary-label">Current Term</div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- Empty State -->
+<div class="empty-state fade-in-up">
+    <div class="empty-state-icon">
+        <i class="fas fa-book-open"></i>
+    </div>
+    <h4>No Subjects Assigned</h4>
+    <p>You don't have any subjects assigned for the current academic term.</p>
+    <a href="{{ url_for('teacher.dashboard') }}" class="btn btn-primary btn-lg">
+        <i class="fas fa-arrow-left me-2"></i> Back to Dashboard
+    </a>
+</div>
+{% endif %}
+
+<!-- Quick Tips -->
+<div class="alert alert-info fade-in-up mt-4">
+    <div class="d-flex align-items-center gap-2">
+        <i class="fas fa-lightbulb" style="font-size: 1.2rem;"></i>
+        <div>
+            <strong>Tip:</strong> Click on any subject card to manage scores, comments, and generate reports.
+            Scores are automatically saved as you enter them.
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Header Card - Reduced */
+.header-card {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+}
+
+.header-card h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.header-card p {
+    opacity: 0.9;
+    font-size: 0.85rem;
+    margin-bottom: 0;
+}
+
+.term-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* Subject Cards - Compact */
+.subject-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.subject-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.25rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+}
+
+.subject-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.1);
+    border-color: #bbf7d0;
+}
+
+.subject-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: #10b981;
+}
+
+.subject-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+    padding-left: 0.5rem;
+}
+
+.subject-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 0.15rem 0;
+}
+
+.subject-code {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-bottom: 0.4rem;
+    font-weight: 500;
+}
+
+.class-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
+    background: rgba(16, 185, 129, 0.1);
+    border-radius: 15px;
+    font-size: 0.75rem;
+    color: #10b981;
+    font-weight: 600;
+}
+
+.subject-description {
+    color: #64748b;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    margin: 0.75rem 0;
+    padding-left: 0.5rem;
+}
+
+/* Stats Grid - Smaller */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin: 1rem 0;
+}
+
+.stat-card {
+    text-align: center;
+    padding: 0.75rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #10b981;
+    margin-bottom: 0.15rem;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* Action Buttons - Compact */
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    flex: 1;
+    min-width: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 0.8rem;
+    border: 1px solid;
+}
+
+.action-btn-primary {
+    background: #10b981;
+    color: white;
+    border-color: #10b981;
+}
+
+.action-btn-primary:hover {
+    background: #059669;
+    border-color: #059669;
+    transform: translateY(-1px);
+}
+
+.action-btn-secondary {
+    background: white;
+    color: #10b981;
+    border-color: #10b981;
+}
+
+.action-btn-secondary:hover {
+    background: #f0fdf4;
+    transform: translateY(-1px);
+}
+
+.action-btn-light {
+    background: #f8fafc;
+    color: #64748b;
+    border-color: #e2e8f0;
+}
+
+.action-btn-light:hover {
+    background: #e2e8f0;
+    transform: translateY(-1px);
+}
+
+/* Summary Card - Smaller */
+.summary-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.25rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 1.5rem;
+}
+
+.summary-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+}
+
+.summary-header h5 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
+
+.summary-header i {
+    color: #10b981;
+    font-size: 1rem;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+}
+
+.summary-item {
+    text-align: center;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.summary-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #10b981;
+    margin-bottom: 0.4rem;
+    line-height: 1;
+}
+
+.summary-label {
+    font-size: 0.85rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* Empty State - Smaller */
+.empty-state {
+    text-align: center;
+    padding: 2rem 1rem;
+}
+
+.empty-state-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: #e2e8f0;
+}
+
+.empty-state h4 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    color: #64748b;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.3s ease forwards;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .subject-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+    }
+    
+    .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .action-buttons {
+        flex-direction: row;
+    }
+    
+    .action-btn {
+        flex: 1;
+        min-width: auto;
+    }
+    
+    .header-card {
+        padding: 0.75rem;
+    }
+    
+    .header-card .d-flex {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .subject-header {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .stat-value {
+        font-size: 1rem;
+    }
+    
+    .summary-value {
+        font-size: 1.2rem;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .action-btn {
+        width: 100%;
+    }
+}
+
+/* Quick Alert */
+.alert {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+}
+
+.alert .fa-lightbulb {
+    font-size: 1rem;
+}
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add hover effects to subject cards
+        const subjectCards = document.querySelectorAll('.subject-card');
+        subjectCards.forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-5px)';
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+            });
+        });
+        
+        // Add animation to stats on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('fade-in-up');
+                }
+            });
+        }, observerOptions);
+        
+        // Observe all cards for animation
+        document.querySelectorAll('.subject-card, .summary-card, .alert').forEach(el => {
+            observer.observe(el);
+        });
+        
+        // Quick search functionality (optional enhancement)
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.className = 'form-control mb-3';
+        searchInput.placeholder = 'Search subjects by name or class...';
+        
+        const headerCard = document.querySelector('.header-card');
+        if (headerCard) {
+            headerCard.parentNode.insertBefore(searchInput, headerCard.nextSibling);
+            
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const cards = document.querySelectorAll('.subject-card');
+                
+                cards.forEach(card => {
+                    const title = card.querySelector('.subject-title').textContent.toLowerCase();
+                    const className = card.querySelector('.class-badge').textContent.toLowerCase();
+                    
+                    if (title.includes(searchTerm) || className.includes(searchTerm)) {
+                        card.style.display = 'block';
+                        setTimeout(() => {
+                            card.style.opacity = '1';
+                            card.style.transform = 'translateY(0)';
+                        }, 10);
+                    } else {
+                        card.style.opacity = '0.5';
+                        card.style.transform = 'scale(0.95)';
+                        setTimeout(() => {
+                            card.style.display = 'none';
+                        }, 300);
+                    }
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

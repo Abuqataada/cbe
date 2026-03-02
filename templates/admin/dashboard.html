@@ -1,0 +1,720 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Dashboard - Admin Panel{% endblock %}
+
+{% block page_title %}
+<h1><i class="fas fa-tachometer-alt"></i> Dashboard Overview</h1>
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="separator">/</span>
+<span>Dashboard</span>
+{% endblock %}
+
+{% block content %}
+<!-- Welcome Message -->
+<div class="welcome-message">
+    <div class="welcome-content">
+        <h2>Welcome back, {{ current_user.username }}!</h2>
+        <p>System Overview and Recent Activities</p>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="quick-actions">
+    <div class="quick-action-card" onclick="location.href='{{ url_for('admin.manage_students') }}'">
+        <i class="fas fa-user-plus"></i>
+        <h3>Add Student</h3>
+        <p>Register new students</p>
+    </div>
+    
+    <div class="quick-action-card" onclick="location.href='{{ url_for('admin.manage_teachers') }}'">
+        <i class="fas fa-chalkboard-teacher"></i>
+        <h3>Add Teacher</h3>
+        <p>Create teacher accounts</p>
+    </div>
+    
+    <div class="quick-action-card" onclick="location.href='{{ url_for('admin.manage_classes') }}'">
+        <i class="fas fa-school"></i>
+        <h3>Create Class</h3>
+        <p>Set up new classes</p>
+    </div>
+    
+    <div class="quick-action-card" onclick="location.href='{{ url_for('admin.generate_reports') }}'">
+        <i class="fas fa-file-pdf"></i>
+        <h3>Generate Reports</h3>
+        <p>Academic reports</p>
+    </div>
+    
+    <div class="quick-action-card" onclick="location.href='{{ url_for('admin.manage_question_bank') }}'">
+        <i class="fas fa-database"></i>
+        <h3>Question Bank</h3>
+        <p>Manage exam questions</p>
+    </div>
+    
+    <div class="quick-action-card" onclick="location.href='{{ url_for('admin.system_config') }}'">
+        <i class="fas fa-cog"></i>
+        <h3>Settings</h3>
+        <p>System preferences</p>
+    </div>
+</div>
+
+<!-- Statistics -->
+<div class="content-header">
+    <h2 class="card-title"><i class="fas fa-chart-line"></i> System Statistics</h2>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon primary">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-content">
+            <h3>{{ stats.total_students }}</h3>
+            <p>Students</p>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon success">
+            <i class="fas fa-chalkboard-teacher"></i>
+        </div>
+        <div class="stat-content">
+            <h3>{{ stats.total_teachers }}</h3>
+            <p>Teachers</p>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon warning">
+            <i class="fas fa-school"></i>
+        </div>
+        <div class="stat-content">
+            <h3>{{ stats.total_classes }}</h3>
+            <p>Classes</p>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon info">
+            <i class="fas fa-book"></i>
+        </div>
+        <div class="stat-content">
+            <h3>{{ stats.total_subjects }}</h3>
+            <p>Subjects</p>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon purple">
+            <i class="fas fa-user-friends"></i>
+        </div>
+        <div class="stat-content">
+            <h3>{{ stats.total_parents }}</h3>
+            <p>Parents</p>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon primary">
+            <i class="fas fa-calendar-alt"></i>
+        </div>
+        <div class="stat-content">
+            <h4>{{ stats.active_session }}</h4>
+            <p>Active Session</p>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activities -->
+<div class="admin-card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-history"></i> Recent Activities</h3>
+        <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-secondary btn-sm">
+            <i class="fas fa-eye"></i> View All
+        </a>
+    </div>
+    <div class="activity-list">
+        {% if recent_logs %}
+            {% for log in recent_logs %}
+            <div class="activity-item">
+                <div class="activity-icon">
+                    {% if log.action.startswith('CREATE') %}
+                        <i class="fas fa-plus"></i>
+                    {% elif log.action.startswith('UPDATE') %}
+                        <i class="fas fa-edit"></i>
+                    {% elif log.action.startswith('DELETE') %}
+                        <i class="fas fa-trash"></i>
+                    {% elif log.action.startswith('LOGIN') %}
+                        <i class="fas fa-sign-in-alt"></i>
+                    {% elif log.action.startswith('LOGOUT') %}
+                        <i class="fas fa-sign-out-alt"></i>
+                    {% else %}
+                        <i class="fas fa-info-circle"></i>
+                    {% endif %}
+                </div>
+                <div class="activity-content">
+                    <h4>{{ log.action.replace('_', ' ') }}</h4>
+                    <p>{{ log.table_name if log.table_name else 'System' }}</p>
+                </div>
+                <div class="activity-time">
+                    {{ log.timestamp.strftime('%m/%d %H:%M') }}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-center p-3">
+                <i class="fas fa-history text-muted mb-2" style="font-size: 1.5rem;"></i>
+                <p class="text-muted mb-0">No recent activities</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- System Status -->
+<div class="admin-card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-server"></i> System Status</h3>
+    </div>
+    <div class="system-status">
+        <div class="status-item">
+            <div class="status-indicator"></div>
+            <div class="status-content">
+                <h4>Database</h4>
+                <p>Operational</p>
+            </div>
+        </div>
+        
+        <div class="status-item">
+            <div class="status-indicator"></div>
+            <div class="status-content">
+                <h4>Application</h4>
+                <p>Running</p>
+            </div>
+        </div>
+        
+        <div class="status-item">
+            <div class="status-indicator"></div>
+            <div class="status-content">
+                <h4>Authentication</h4>
+                <p>Active</p>
+            </div>
+        </div>
+        
+        <div class="status-item">
+            <div class="status-indicator"></div>
+            <div class="status-content">
+                <h4>Backup</h4>
+                <p>Enabled</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pending Tasks (Only show if there are actual pending tasks) -->
+{% if stats.pending_tasks_count and stats.pending_tasks_count > 0 %}
+<div class="admin-card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-tasks"></i> Pending Tasks ({{ stats.pending_tasks_count }})</h3>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="list-group">
+                {% if stats.pending_approvals and stats.pending_approvals > 0 %}
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-clipboard-check text-primary mr-2"></i>
+                        <span>Approve exam questions</span>
+                    </div>
+                    <span class="badge badge-primary">{{ stats.pending_approvals }}</span>
+                </div>
+                {% endif %}
+                
+                {% if stats.pending_reports and stats.pending_reports > 0 %}
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-file-alt text-warning mr-2"></i>
+                        <span>Generate term reports</span>
+                    </div>
+                    <span class="badge badge-warning">{{ stats.pending_reports }}</span>
+                </div>
+                {% endif %}
+                
+                {% if stats.pending_notifications and stats.pending_notifications > 0 %}
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-bell text-purple mr-2"></i>
+                        <span>Send notifications</span>
+                    </div>
+                    <span class="badge badge-purple">{{ stats.pending_notifications }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+    /* Dashboard Specific Styles - Compact */
+    .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .quick-action-card {
+        background: white;
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--admin-border);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .quick-action-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-color: var(--admin-primary);
+    }
+    
+    .quick-action-card i {
+        font-size: 1.5rem;
+        color: var(--admin-primary);
+        margin-bottom: 0.5rem;
+    }
+    
+    .quick-action-card h3 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--admin-text);
+        margin-bottom: 0.25rem;
+    }
+    
+    .quick-action-card p {
+        font-size: 0.8rem;
+        color: var(--admin-text-light);
+        margin-bottom: 0;
+    }
+    
+    /* Statistics Cards - Compact */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 8px;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--admin-border);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: white;
+        flex-shrink: 0;
+    }
+    
+    .stat-icon.primary {
+        background: linear-gradient(135deg, var(--admin-primary) 0%, var(--admin-primary-dark) 100%);
+    }
+    
+    .stat-icon.success {
+        background: linear-gradient(135deg, var(--admin-success) 0%, #059669 100%);
+    }
+    
+    .stat-icon.warning {
+        background: linear-gradient(135deg, var(--admin-warning) 0%, #d97706 100%);
+    }
+    
+    .stat-icon.info {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    }
+    
+    .stat-icon.purple {
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    }
+    
+    .stat-content {
+        flex: 1;
+    }
+    
+    .stat-content h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--admin-text);
+        margin-bottom: 0.25rem;
+        line-height: 1;
+    }
+    
+    .stat-content p {
+        font-size: 0.85rem;
+        color: var(--admin-text-light);
+        margin-bottom: 0.25rem;
+    }
+    
+    .stat-trend {
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .stat-trend.up {
+        color: var(--admin-success);
+    }
+    
+    .stat-trend.down {
+        color: var(--admin-danger);
+    }
+    
+    /* Recent Activities - Compact */
+    .activity-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .activity-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        border-bottom: 1px solid var(--admin-border);
+        transition: var(--admin-transition);
+    }
+    
+    .activity-item:hover {
+        background: var(--admin-light);
+    }
+    
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+    
+    .activity-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--admin-primary-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--admin-primary);
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+    
+    .activity-content {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .activity-content h4 {
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-bottom: 0.125rem;
+        color: var(--admin-text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .activity-content p {
+        font-size: 0.8rem;
+        color: var(--admin-text-light);
+        margin-bottom: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .activity-time {
+        font-size: 0.75rem;
+        color: var(--admin-text-light);
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    
+    /* Welcome Message - Compact */
+    .welcome-message {
+        background: linear-gradient(135deg, var(--admin-primary) 0%, var(--admin-primary-dark) 100%);
+        color: white;
+        border-radius: 8px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .welcome-content h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    .welcome-content p {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-bottom: 0;
+    }
+    
+    /* System Status - Compact */
+    .system-status {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 0.75rem;
+    }
+    
+    .status-item {
+        background: white;
+        border-radius: 6px;
+        padding: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--admin-border);
+    }
+    
+    .status-indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--admin-success);
+        flex-shrink: 0;
+    }
+    
+    .status-indicator.warning {
+        background: var(--admin-warning);
+    }
+    
+    .status-indicator.danger {
+        background: var(--admin-danger);
+    }
+    
+    .status-content {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .status-content h4 {
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-bottom: 0.125rem;
+        color: var(--admin-text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .status-content p {
+        font-size: 0.75rem;
+        color: var(--admin-text-light);
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    /* Pending Tasks - Compact */
+    .list-group {
+        border: 1px solid var(--admin-border);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+    
+    .list-group-item {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--admin-border);
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+    }
+    
+    .list-group-item:last-child {
+        border-bottom: none;
+    }
+    
+    .list-group-item > div {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 0;
+    }
+    
+    .list-group-item i {
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+    
+    .list-group-item span {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .badge {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        border-radius: 4px;
+        font-weight: 500;
+        flex-shrink: 0;
+    }
+    
+    /* Card Headers */
+    .content-header {
+        margin-bottom: 1rem;
+    }
+    
+    .card-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--admin-text);
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .quick-actions {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 0.5rem;
+        }
+        
+        .stats-grid {
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 0.5rem;
+        }
+        
+        .stat-card {
+            padding: 0.75rem;
+        }
+        
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+        }
+        
+        .stat-content h3 {
+            font-size: 1.25rem;
+        }
+        
+        .system-status {
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 0.5rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .quick-actions {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .system-status {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .welcome-message {
+            padding: 1rem;
+        }
+        
+        .welcome-content h2 {
+            font-size: 1.1rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Quick action cards animation
+        const actionCards = document.querySelectorAll('.quick-action-card');
+        actionCards.forEach((card, index) => {
+            card.style.animationDelay = `${index * 0.05}s`;
+            card.classList.add('fade-in-up');
+        });
+        
+        // Auto-refresh stats every 2 minutes
+        let refreshCount = 0;
+        const maxRefresh = 10; // Stop after 10 refreshes (20 minutes)
+        
+        function refreshStats() {
+            if (refreshCount >= maxRefresh) return;
+            
+            fetch('{{ url_for("admin.dashboard_stats") }}')
+                .then(response => response.json())
+                .then(data => {
+                    // Update stat cards if data is available
+                    if (data.total_students) {
+                        document.querySelectorAll('.stat-content h3')[0].textContent = data.total_students;
+                    }
+                    if (data.total_teachers) {
+                        document.querySelectorAll('.stat-content h3')[1].textContent = data.total_teachers;
+                    }
+                    // Add more updates as needed
+                    
+                    refreshCount++;
+                })
+                .catch(error => console.error('Error refreshing stats:', error));
+        }
+        
+        // Start auto-refresh after 2 minutes
+        setTimeout(() => {
+            setInterval(refreshStats, 120000); // Refresh every 2 minutes
+        }, 120000);
+        
+        // Real-time activity updates
+        const activityList = document.querySelector('.activity-list');
+        if (activityList) {
+            // Listen for new activities (simulated)
+            setInterval(() => {
+                // Check if there are new activities (would be from WebSocket in real app)
+                fetch('{{ url_for("admin.recent_activities") }}')
+                    .then(response => response.json())
+                    .then(data => {
+                        // Update activity list if new activities exist
+                        if (data.new_activities && data.new_activities.length > 0) {
+                            // Add new activities to the list
+                            // Note: In a real app, you would update the DOM with new items
+                        }
+                    })
+                    .catch(error => console.error('Error checking activities:', error));
+            }, 30000); // Check every 30 seconds
+        }
+        
+        // Update online status
+        function updateOnlineStatus() {
+            const statusIndicators = document.querySelectorAll('.status-indicator');
+            statusIndicators.forEach(indicator => {
+                // Check status (simulated)
+                if (Math.random() > 0.99) { // Very rare chance of status change
+                    indicator.classList.toggle('warning');
+                }
+            });
+        }
+        
+        setInterval(updateOnlineStatus, 60000); // Check every minute
+    });
+</script>
+{% endblock %}

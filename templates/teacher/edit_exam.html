@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}Edit Exam - {{ exam.name }} - ARNDALE CBT{% endblock %}
+
+{% block page_title %}
+<h1 class="h3 mb-2"><i class="fas fa-edit"></i> Edit Exam: {{ exam.name }}</h1>
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="separator">/</span>
+<a href="{{ url_for('teacher.dashboard') }}">Dashboard</a>
+<span class="separator">/</span>
+<a href="{{ url_for('teacher.exams') }}">Exams</a>
+<span class="separator">/</span>
+<a href="{{ url_for('teacher.view_exam', exam_id=exam.id) }}">{{ exam.name|truncate(20) }}</a>
+<span class="separator">/</span>
+<span>Edit</span>
+{% endblock %}
+
+{% block content %}
+<div class="main-layout">
+    <!-- Main Content -->
+    <div>
+        <!-- Exam Settings -->
+        <div class="content-card">
+            <div class="card-header">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="fas fa-cog"></i>
+                    <h5>Exam Settings</h5>
+                </div>
+            </div>
+            
+            <form method="POST" id="examSettingsForm">
+                <!-- Basic Info -->
+                <div class="grid-2 mb-3">
+                    <div>
+                        <label for="exam_name" class="form-label required">Exam Name</label>
+                        <input type="text" class="form-control" id="exam_name" name="exam_name" 
+                               value="{{ exam.name }}" required>
+                    </div>
+                    <div>
+                        <label class="form-label">Exam Type</label>
+                        <input type="text" class="form-control" value="Test" readonly>
+                    </div>
+                </div>
+                
+                <div class="grid-2 mb-3">
+                    <div>
+                        <label class="form-label">Subject</label>
+                        <input type="text" class="form-control" value="{{ exam.subject.name }}" readonly>
+                    </div>
+                    <div>
+                        <label class="form-label">Class</label>
+                        <input type="text" class="form-control" value="{{ exam.classroom.name }}" readonly>
+                    </div>
+                </div>
+                
+                <!-- Duration & Marks -->
+                <div class="grid-3 mb-3">
+                    <div>
+                        <label for="duration" class="form-label required">Duration (minutes)</label>
+                        <input type="number" class="form-control" id="duration" name="duration" 
+                               value="{{ exam.duration_minutes }}" min="5" max="300" required>
+                    </div>
+                    <div>
+                        <label for="total_marks" class="form-label required">Total Marks</label>
+                        <input type="number" class="form-control" id="total_marks" name="total_marks" 
+                               value="{{ exam.total_marks }}" min="1" max="500" required>
+                    </div>
+                    <div>
+                        <label for="pass_mark" class="form-label">Pass Mark</label>
+                        <input type="number" class="form-control" id="pass_mark" name="pass_mark" 
+                               value="{{ exam.pass_mark }}" min="0" step="0.5">
+                    </div>
+                </div>
+                
+                <!-- Instructions -->
+                <div class="mb-3">
+                    <label for="instructions" class="form-label">Instructions</label>
+                    <textarea class="form-control" id="instructions" name="instructions" 
+                              rows="3">{{ exam.instructions or '' }}</textarea>
+                </div>
+                
+                <!-- Schedule -->
+                <div class="grid-2 mb-3">
+                    <div>
+                        <label for="scheduled_start" class="form-label">Scheduled Start</label>
+                        <input type="datetime-local" class="form-control" id="scheduled_start" 
+                               name="scheduled_start" 
+                               value="{{ exam.scheduled_start.strftime('%Y-%m-%dT%H:%M') if exam.scheduled_start else '' }}">
+                    </div>
+                    <div>
+                        <label for="scheduled_end" class="form-label">Scheduled End</label>
+                        <input type="datetime-local" class="form-control" id="scheduled_end" 
+                               name="scheduled_end" 
+                               value="{{ exam.scheduled_end.strftime('%Y-%m-%dT%H:%M') if exam.scheduled_end else '' }}">
+                    </div>
+                </div>
+                
+                <!-- Access Code -->
+                <div class="mb-3">
+                    <label for="access_code" class="form-label">Access Code (Optional)</label>
+                    <input type="text" class="form-control" id="access_code" name="access_code" 
+                           value="{{ exam.access_code or '' }}" placeholder="Leave empty for no access code">
+                </div>
+                
+                <!-- Exam Settings -->
+                <div class="checkbox-group">
+                    <div class="grid-2">
+                        <div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="is_randomized" 
+                                       name="is_randomized" {% if exam.is_randomized %}checked{% endif %}>
+                                <label class="form-check-label" for="is_randomized">
+                                    Randomize Questions
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="shuffle_questions" 
+                                       name="shuffle_questions" {% if exam.shuffle_questions %}checked{% endif %}>
+                                <label class="form-check-label" for="shuffle_questions">
+                                    Shuffle Question Order
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="shuffle_options" 
+                                       name="shuffle_options" {% if exam.shuffle_options %}checked{% endif %}>
+                                <label class="form-check-label" for="shuffle_options">
+                                    Shuffle Options Order
+                                </label>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="allow_back_navigation" 
+                                       name="allow_back_navigation" {% if exam.allow_back_navigation %}checked{% endif %}>
+                                <label class="form-check-label" for="allow_back_navigation">
+                                    Allow Back Navigation
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="show_results_immediately" 
+                                       name="show_results_immediately" {% if exam.show_results_immediately %}checked{% endif %}>
+                                <label class="form-check-label" for="show_results_immediately">
+                                    Show Results Immediately
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <a href="{{ url_for('teacher.view_exam', exam_id=exam.id) }}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Exam Questions -->
+        <div class="content-card">
+            <div class="card-header">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="fas fa-question-circle"></i>
+                    <h5>Exam Questions</h5>
+                </div>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addQuestionsModal">
+                    <i class="fas fa-plus"></i> Add Questions
+                </button>
+            </div>
+            
+            <div class="questions-table-container">
+                {% if questions %}
+                <div class="table-responsive">
+                    <table class="compact-table">
+                        <thead>
+                            <tr>
+                                <th width="50">#</th>
+                                <th>Question</th>
+                                <th width="100">Type</th>
+                                <th width="100">Marks</th>
+                                <th width="120">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="questionsTable">
+                            {% for item in questions %}
+                            <tr data-question-id="{{ item.question.id }}">
+                                <td>{{ loop.index }}</td>
+                                <td>
+                                    <div class="question-preview">
+                                        <div class="question-text">{{ item.question.question_text|truncate(100) }}</div>
+                                        {% if item.question.topics %}
+                                        <div class="question-topics">
+                                            {% for topic in item.question.topics %}
+                                            <span class="topic-badge">{{ topic }}</span>
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if item.question.question_type == 'multiple_choice' %}
+                                    <span class="type-badge badge-mcq">MCQ</span>
+                                    {% elif item.question.question_type == 'true_false' %}
+                                    <span class="type-badge badge-tf">T/F</span>
+                                    {% elif item.question.question_type == 'short_answer' %}
+                                    <span class="type-badge badge-sa">Short</span>
+                                    {% elif item.question.question_type == 'essay' %}
+                                    <span class="type-badge badge-essay">Essay</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <input type="number" class="marks-input" 
+                                           value="{{ item.marks }}" min="0.5" step="0.5"
+                                           data-question-id="{{ item.question.id }}">
+                                </td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="action-btn-sm action-remove remove-question" 
+                                                data-question-id="{{ item.question.id }}"
+                                                title="Remove from exam">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                        <button class="action-btn-sm action-move move-up" 
+                                                data-index="{{ loop.index0 }}"
+                                                title="Move up" {% if loop.first %}disabled{% endif %}>
+                                            <i class="fas fa-arrow-up"></i>
+                                        </button>
+                                        <button class="action-btn-sm action-move move-down" 
+                                                data-index="{{ loop.index0 }}"
+                                                title="Move down" {% if loop.last %}disabled{% endif %}>
+                                            <i class="fas fa-arrow-down"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+                    <div>
+                        <strong>Total Questions:</strong> {{ questions|length }}
+                        <strong style="margin-left: 1.5rem;">Total Marks:</strong> 
+                        <span id="totalMarksDisplay">{{ questions|sum(attribute='marks') }}</span>
+                    </div>
+                    <button class="btn btn-success" onclick="saveQuestionOrder()">
+                        <i class="fas fa-save"></i> Save Order & Marks
+                    </button>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                    <h4>No Questions Added</h4>
+                    <p>Add questions from your question bank to create this exam</p>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addQuestionsModal">
+                        <i class="fas fa-plus"></i> Add Questions
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div>
+        <!-- Exam Status -->
+        <div class="content-card">
+            <div class="card-header">
+                <i class="fas fa-info-circle"></i>
+                <h5>Exam Status</h5>
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <span class="status-badge badge-{{ exam.status }}">
+                    {{ exam.status|title }}
+                </span>
+            </div>
+            
+            <ul class="info-list">
+                <li class="info-item">
+                    <span class="info-label">Created:</span>
+                    <span class="info-value">{{ exam.created_at.strftime('%d %b %Y') }}</span>
+                </li>
+                <li class="info-item">
+                    <span class="info-label">Last Updated:</span>
+                    <span class="info-value">{{ exam.updated_at.strftime('%d %b %Y') }}</span>
+                </li>
+                <li class="info-item">
+                    <span class="info-label">Questions:</span>
+                    <span class="info-value">{{ questions|length }}</span>
+                </li>
+                <li class="info-item">
+                    <span class="info-label">Total Marks:</span>
+                    <span class="info-value">{{ questions|sum(attribute='marks') }}</span>
+                </li>
+                <li class="info-item">
+                    <span class="info-label">Duration:</span>
+                    <span class="info-value">{{ exam.duration_minutes }} mins</span>
+                </li>
+            </ul>
+            
+            <div style="display: grid; gap: 0.5rem; margin-top: 1.5rem;">
+                <a href="{{ url_for('teacher.view_exam', exam_id=exam.id) }}" class="btn btn-secondary">
+                    <i class="fas fa-eye"></i> View Exam
+                </a>
+                <a href="{{ url_for('teacher.question_bank') }}" class="btn btn-secondary">
+                    <i class="fas fa-database"></i> Question Bank
+                </a>
+                {% if exam.status == 'draft' %}
+                <button class="btn btn-success" onclick="publishExam('{{ exam.id }}')">
+                    <i class="fas fa-paper-plane"></i> Publish Exam
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Available Questions -->
+        <div class="content-card">
+            <div class="card-header">
+                <i class="fas fa-database"></i>
+                <h5>Question Bank</h5>
+            </div>
+            
+            <div class="stats-box">
+                <div class="stats-number">{{ available_questions|length }}</div>
+                <div class="stats-label">Available Questions</div>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <strong>By Question Type:</strong>
+                <ul class="breakdown-list" style="margin-top: 0.5rem;">
+                    {% for type, q_list in questions_by_type.items() %}
+                    <li class="breakdown-item">
+                        <span>{{ type|replace('_', ' ')|title }}</span>
+                        <span style="font-weight: 600; color: #1e293b;">{{ q_list|length }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <strong>By Difficulty:</strong>
+                <ul class="breakdown-list" style="margin-top: 0.5rem;">
+                    {% for difficulty, q_list in questions_by_difficulty.items() %}
+                    <li class="breakdown-item">
+                        <span>{{ difficulty|title }}</span>
+                        <span style="font-weight: 600; color: #1e293b;">{{ q_list|length }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <div style="background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.2); border-left: 4px solid #0ea5e9; border-radius: 8px; padding: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <i class="fas fa-lightbulb" style="color: #0ea5e9;"></i>
+                    <strong style="color: #0c4a6e;">Tip:</strong>
+                </div>
+                <div style="color: #0c4a6e; font-size: 0.85rem; line-height: 1.4;">
+                    Select questions that match your exam objectives and difficulty level.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Questions Modal -->
+<div class="modal fade" id="addQuestionsModal" tabindex="-1" aria-labelledby="addQuestionsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addQuestionsModalLabel" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-plus"></i>
+                    <span>Add Questions from Question Bank</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Filter Controls -->
+                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                    <div>
+                        <input type="text" class="form-control" id="questionSearch" 
+                               placeholder="Search questions...">
+                    </div>
+                    <div>
+                        <select class="form-select" id="filterType">
+                            <option value="">All Types</option>
+                            <option value="multiple_choice">Multiple Choice</option>
+                            <option value="true_false">True/False</option>
+                            <option value="short_answer">Short Answer</option>
+                            <option value="essay">Essay</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select class="form-select" id="filterDifficulty">
+                            <option value="">All Difficulties</option>
+                            <option value="easy">Easy</option>
+                            <option value="medium">Medium</option>
+                            <option value="hard">Hard</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Selected Counter -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding: 0.75rem; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                        <span style="font-weight: 600; color: #065f46;">
+                            <span id="selectedCount">0</span> question(s) selected
+                        </span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-weight: 600; color: #065f46;">
+                            Total Marks: <span id="selectedTotalMarks">0</span>
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Questions Table -->
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <table class="compact-table">
+                        <thead style="position: sticky; top: 0; background: #f8fafc;">
+                            <tr>
+                                <th width="30">
+                                    <input type="checkbox" id="selectAllQuestions">
+                                </th>
+                                <th>Question</th>
+                                <th width="100">Type</th>
+                                <th width="100">Difficulty</th>
+                                <th width="80">Base Marks</th>
+                                <th width="100">Set Marks</th>
+                                <th width="80">Selected</th>
+                            </tr>
+                        </thead>
+                        <tbody id="questionsList">
+                            {% for question in available_questions %}
+                            <tr data-question-id="{{ question.id }}" 
+                                data-type="{{ question.question_type }}"
+                                data-difficulty="{{ question.difficulty }}"
+                                data-base-marks="{{ question.marks }}">
+                                <td>
+                                    <input type="checkbox" class="question-checkbox" 
+                                           value="{{ question.id }}"
+                                           data-base-marks="{{ question.marks }}"
+                                           {% if question.id in questions|map(attribute='question.id') %}checked disabled{% endif %}>
+                                </td>
+                                <td>
+                                    <div class="question-preview">
+                                        <div class="question-text">{{ question.question_text|truncate(80) }}</div>
+                                        {% if question.topics %}
+                                        <div class="question-topics">
+                                            {% for topic in question.topics %}
+                                            <span class="topic-badge">{{ topic }}</span>
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if question.question_type == 'multiple_choice' %}
+                                    <span class="type-badge badge-mcq">MCQ</span>
+                                    {% elif question.question_type == 'true_false' %}
+                                    <span class="type-badge badge-tf">T/F</span>
+                                    {% elif question.question_type == 'short_answer' %}
+                                    <span class="type-badge badge-sa">Short</span>
+                                    {% elif question.question_type == 'essay' %}
+                                    <span class="type-badge badge-essay">Essay</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if question.difficulty == 'easy' %}
+                                    <span class="difficulty-badge badge-easy">Easy</span>
+                                    {% elif question.difficulty == 'medium' %}
+                                    <span class="difficulty-badge badge-medium">Medium</span>
+                                    {% else %}
+                                    <span class="difficulty-badge badge-hard">Hard</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ question.marks }}</td>
+                                <td>
+                                    <input type="number" class="marks-input question-marks" 
+                                           value="{{ question.marks }}" min="0.5" step="0.5"
+                                           style="width: 70px;"
+                                           data-question-id="{{ question.id }}"
+                                           {% if question.id in questions|map(attribute='question.id') %}disabled{% endif %}>
+                                </td>
+                                <td>
+                                    {% if question.id in questions|map(attribute='question.id') %}
+                                    <span class="badge" style="background: rgba(16, 185, 129, 0.1); color: #065f46; font-size: 0.75rem;">
+                                        <i class="fas fa-check"></i> Added
+                                    </span>
+                                    {% else %}
+                                    <span class="badge" style="background: rgba(148, 163, 184, 0.1); color: #475569; font-size: 0.75rem;">
+                                        Not selected
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Info Note -->
+                <div style="background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.2); border-left: 4px solid #0ea5e9; border-radius: 8px; padding: 1rem; margin-top: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <i class="fas fa-info-circle" style="color: #0ea5e9;"></i>
+                        <strong style="color: #0c4a6e;">Note:</strong>
+                    </div>
+                    <div style="color: #0c4a6e; font-size: 0.85rem; line-height: 1.4;">
+                        Questions already in the exam are disabled. You can adjust marks for each question before adding.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-right: auto;">
+                    <span style="font-weight: 600; color: #475569;">
+                        Selected: <span id="footerSelectedCount" style="color: #10b981;">0</span>
+                    </span>
+                    <span style="color: #cbd5e1;">|</span>
+                    <span style="font-weight: 600; color: #475569;">
+                        Marks: <span id="footerTotalMarks" style="color: #10b981;">0</span>
+                    </span>
+                </div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="addSelectedQuestions()" id="addQuestionsBtn">
+                    <i class="fas fa-plus"></i> Add <span id="addBtnCount">0</span> Question(s)
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Main Layout */
+    .main-layout {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    @media (min-width: 992px) {
+        .main-layout {
+            grid-template-columns: 2fr 1fr;
+        }
+    }
+    
+    /* Card Styling */
+    .content-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1.5rem;
+    }
+    
+    .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .card-header h5 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    /* Form Styling */
+    .form-label {
+        font-weight: 600;
+        color: #475569;
+        font-size: 0.9rem;
+        margin-bottom: 0.4rem;
+    }
+    
+    .form-label.required::after {
+        content: " *";
+        color: #ef4444;
+    }
+    
+    .form-control, .form-select {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 0.6rem 0.75rem;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        outline: none;
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+    
+    .form-control[readonly] {
+        background-color: #f8fafc;
+        border-color: #e2e8f0;
+        color: #64748b;
+    }
+    
+    /* Checkbox Styling */
+    .checkbox-group {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .form-check-input {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+    
+    .form-check-input:checked {
+        background-color: #10b981;
+        border-color: #10b981;
+    }
+    
+    .form-check-input:focus {
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+    
+    .form-check-label {
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    /* Grid */
+    .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+    
+    .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+    }
+    
+    @media (max-width: 768px) {
+        .grid-2, .grid-3 {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e2e8f0;
+    }
+    
+    .btn {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .btn-primary {
+        background: #10b981;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: #059669;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+    
+    .btn-secondary {
+        background: white;
+        color: #64748b;
+        border: 1px solid #cbd5e1;
+    }
+    
+    .btn-secondary:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+        color: #475569;
+    }
+    
+    .btn-success {
+        background: #10b981;
+        color: white;
+    }
+    
+    .btn-success:hover {
+        background: #059669;
+        transform: translateY(-1px);
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.85rem;
+    }
+    
+    /* Exam Status Badge */
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.8rem;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    
+    .badge-draft { background: rgba(148, 163, 184, 0.1); color: #475569; }
+    .badge-scheduled { background: rgba(245, 158, 11, 0.1); color: #92400e; }
+    .badge-active { background: rgba(16, 185, 129, 0.1); color: #065f46; }
+    .badge-completed { background: rgba(14, 165, 233, 0.1); color: #0c4a6e; }
+    
+    /* Questions Table */
+    .questions-table-container {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .compact-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+    
+    .compact-table th {
+        background: #f8fafc;
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        color: #475569;
+        text-align: left;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .compact-table td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+    }
+    
+    .compact-table tr:hover {
+        background: #f8fafc;
+    }
+    
+    /* Question Preview */
+    .question-preview {
+        max-width: 300px;
+    }
+    
+    .question-text {
+        font-weight: 500;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .question-topics {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        margin-top: 0.25rem;
+    }
+    
+    .topic-badge {
+        font-size: 0.7rem;
+        padding: 0.1rem 0.4rem;
+        background: #e2e8f0;
+        color: #475569;
+        border-radius: 4px;
+        font-weight: 500;
+    }
+    
+    /* Type Badges */
+    .type-badge {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    
+    .badge-mcq { background: #dbeafe; color: #1e40af; }
+    .badge-tf { background: #d1fae5; color: #065f46; }
+    .badge-sa { background: #fef3c7; color: #92400e; }
+    .badge-essay { background: #f3e8ff; color: #7c3aed; }
+    
+    /* Difficulty Badges */
+    .difficulty-badge {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    
+    .badge-easy { background: #d1fae5; color: #065f46; }
+    .badge-medium { background: #fef3c7; color: #92400e; }
+    .badge-hard { background: #fee2e2; color: #991b1b; }
+    
+    /* Marks Input */
+    .marks-input {
+        width: 80px;
+        padding: 0.4rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        text-align: center;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+    
+    .marks-input:focus {
+        outline: none;
+        border-color: #10b981;
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+    }
+    
+    /* Action Buttons in Table */
+    .table-actions {
+        display: flex;
+        gap: 0.25rem;
+    }
+    
+    .action-btn-sm {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: 1px solid;
+        font-size: 0.85rem;
+        cursor: pointer;
+    }
+    
+    .action-remove { 
+        background: white; 
+        color: #ef4444; 
+        border-color: #fecaca; 
+    }
+    .action-remove:hover { 
+        background: #ef4444; 
+        color: white; 
+        border-color: #ef4444; 
+    }
+    
+    .action-move { 
+        background: white; 
+        color: #64748b; 
+        border-color: #e2e8f0; 
+    }
+    .action-move:hover { 
+        background: #f8fafc; 
+        border-color: #94a3b8; 
+    }
+    
+    /* Exam Info */
+    .info-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .info-item:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-weight: 500;
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+    
+    .info-value {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 0.85rem;
+        text-align: right;
+    }
+    
+    /* Stats Box */
+    .stats-box {
+        text-align: center;
+        padding: 1.5rem;
+        background: #f8fafc;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stats-number {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #1e293b;
+        line-height: 1;
+        margin-bottom: 0.25rem;
+    }
+    
+    .stats-label {
+        font-size: 0.9rem;
+        color: #64748b;
+        font-weight: 500;
+    }
+    
+    /* Question Type/Difficulty Breakdown */
+    .breakdown-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .breakdown-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .breakdown-item:last-child {
+        border-bottom: none;
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1.5rem;
+    }
+    
+    .empty-icon {
+        font-size: 3rem;
+        color: #e2e8f0;
+        margin-bottom: 1rem;
+        opacity: 0.6;
+    }
+    
+    .empty-state h4 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+    }
+    
+    .empty-state p {
+        color: #64748b;
+        margin-bottom: 1.5rem;
+        max-width: 300px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .content-card {
+            padding: 1rem;
+        }
+        
+        .card-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .compact-table {
+            display: block;
+            overflow-x: auto;
+        }
+        
+        .compact-table th,
+        .compact-table td {
+            white-space: nowrap;
+        }
+        
+        .question-preview {
+            max-width: 200px;
+        }
+        
+        .table-actions {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .grid-2, .grid-3 {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Selected counter badge */
+    #selectedCount {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #10b981;
+    }
+
+    #selectedTotalMarks {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #10b981;
+    }
+
+    /* Disabled state for add button */
+    #addQuestionsBtn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    /* Marks input styling for selected questions */
+    .question-marks:disabled {
+        background-color: #f8fafc;
+        border-color: #e2e8f0;
+        color: #94a3b8;
+    }
+
+    /* Highlight selected rows */
+    #questionsList tr.selected {
+        background-color: rgba(16, 185, 129, 0.05);
+    }
+
+    /* Badge styles */
+    .badge {
+        padding: 0.2rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    /* Checkbox styling */
+    .question-checkbox:checked:not(:disabled) {
+        accent-color: #10b981;
+    }
+
+    /* Responsive adjustments for modal footer */
+    @media (max-width: 768px) {
+        .modal-footer {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+        }
+        
+        .modal-footer > div:first-child {
+            margin-right: 0;
+            margin-bottom: 0.5rem;
+            justify-content: center;
+        }
+    }
+</style>
+
+<script>
+let selectedQuestions = new Set();
+
+// Initialize question order from existing questions
+let questionOrder = [];
+try {
+    // Parse questions from template data
+    const questionsData = {{ questions_json|tojson|safe }};
+    questionsData.forEach(item => {
+        questionOrder.push({
+            id: item.question.id,
+            marks: item.marks
+        });
+    });
+} catch (error) {
+    console.error('Error parsing questions data:', error);
+    // Fallback: if tojson doesn't work, use the original template data
+    questionOrder = [
+        {% for item in questions %}
+        {
+            id: '{{ item.question.id }}',
+            marks: {{ item.marks }}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+}
+
+// Update selected count and total marks
+function updateSelectedCounter() {
+    const checkboxes = document.querySelectorAll('.question-checkbox:checked:not(:disabled)');
+    const selectedCount = checkboxes.length;
+    
+    // Calculate total marks
+    let totalMarks = 0;
+    checkboxes.forEach(cb => {
+        const questionId = cb.value;
+        const marksInput = document.querySelector(`.question-marks[data-question-id="${questionId}"]`);
+        if (marksInput) {
+            totalMarks += parseFloat(marksInput.value) || 0;
+        }
+    });
+    
+    // Update counters
+    document.getElementById('selectedCount').textContent = selectedCount;
+    document.getElementById('selectedTotalMarks').textContent = totalMarks.toFixed(1);
+    document.getElementById('footerSelectedCount').textContent = selectedCount;
+    document.getElementById('footerTotalMarks').textContent = totalMarks.toFixed(1);
+    document.getElementById('addBtnCount').textContent = selectedCount;
+    
+    // Update button state
+    const addBtn = document.getElementById('addQuestionsBtn');
+    if (addBtn) {
+        addBtn.disabled = selectedCount === 0;
+        if (selectedCount === 0) {
+            addBtn.style.opacity = '0.6';
+            addBtn.style.cursor = 'not-allowed';
+        } else {
+            addBtn.style.opacity = '1';
+            addBtn.style.cursor = 'pointer';
+        }
+    }
+    
+    // Update status badges in table
+    document.querySelectorAll('#questionsList tr').forEach(row => {
+        const checkbox = row.querySelector('.question-checkbox');
+        const statusCell = row.cells[6];
+        if (statusCell) {
+            if (checkbox.checked && !checkbox.disabled) {
+                statusCell.innerHTML = '<span class="badge" style="background: rgba(16, 185, 129, 0.1); color: #065f46; font-size: 0.75rem;"><i class="fas fa-check"></i> Selected</span>';
+            } else if (checkbox.disabled) {
+                statusCell.innerHTML = '<span class="badge" style="background: rgba(16, 185, 129, 0.1); color: #065f46; font-size: 0.75rem;"><i class="fas fa-check"></i> Added</span>';
+            } else {
+                statusCell.innerHTML = '<span class="badge" style="background: rgba(148, 163, 184, 0.1); color: #475569; font-size: 0.75rem;">Not selected</span>';
+            }
+        }
+    });
+}
+
+// Add event listeners for marks changes
+function setupMarksChangeListeners() {
+    document.querySelectorAll('.question-marks').forEach(input => {
+        input.addEventListener('change', function() {
+            // Validate marks
+            const marks = parseFloat(this.value);
+            if (marks < 0.5) {
+                this.value = 0.5;
+            } else if (marks > 100) {
+                this.value = 100;
+            }
+            
+            // Update total marks
+            const checkbox = document.querySelector(`.question-checkbox[value="${this.getAttribute('data-question-id')}"]`);
+            if (checkbox && checkbox.checked) {
+                updateSelectedCounter();
+            }
+        });
+        
+        input.addEventListener('input', function() {
+            // Update in real-time if checkbox is checked
+            const checkbox = document.querySelector(`.question-checkbox[value="${this.getAttribute('data-question-id')}"]`);
+            if (checkbox && checkbox.checked) {
+                updateSelectedCounter();
+            }
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize selected questions from checkboxes
+    document.querySelectorAll('.question-checkbox:checked:not(:disabled)').forEach(cb => {
+        selectedQuestions.add(cb.value);
+    });
+    
+    // Select all questions checkbox
+    const selectAllCheckbox = document.getElementById('selectAllQuestions');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            document.querySelectorAll('.question-checkbox:not(:disabled)').forEach(cb => {
+                cb.checked = this.checked;
+                if (this.checked) {
+                    selectedQuestions.add(cb.value);
+                } else {
+                    selectedQuestions.delete(cb.value);
+                }
+                
+                // Enable/disable marks input
+                const questionId = cb.value;
+                const marksInput = document.querySelector(`.question-marks[data-question-id="${questionId}"]`);
+                if (marksInput) {
+                    marksInput.disabled = !cb.checked;
+                    if (cb.checked) {
+                        marksInput.style.backgroundColor = '#f8fafc';
+                    } else {
+                        marksInput.style.backgroundColor = '';
+                    }
+                }
+            });
+            updateSelectedCounter();
+        });
+    }
+    
+    // Individual checkbox handling
+    document.querySelectorAll('.question-checkbox').forEach(cb => {
+        cb.addEventListener('change', function() {
+            if (this.checked) {
+                selectedQuestions.add(this.value);
+            } else {
+                selectedQuestions.delete(this.value);
+            }
+        });
+    });
+    
+    // Search and filter questions
+    const questionSearch = document.getElementById('questionSearch');
+    const filterType = document.getElementById('filterType');
+    const filterDifficulty = document.getElementById('filterDifficulty');
+    
+    function filterQuestions() {
+        const searchText = questionSearch.value.toLowerCase();
+        const typeFilter = filterType.value;
+        const difficultyFilter = filterDifficulty.value;
+        
+        document.querySelectorAll('#questionsList tr').forEach(row => {
+            const questionText = row.querySelector('.question-text').textContent.toLowerCase();
+            const questionType = row.getAttribute('data-type');
+            const questionDifficulty = row.getAttribute('data-difficulty');
+            
+            const matchesSearch = searchText === '' || questionText.includes(searchText);
+            const matchesType = typeFilter === '' || questionType === typeFilter;
+            const matchesDifficulty = difficultyFilter === '' || questionDifficulty === difficultyFilter;
+            
+            row.style.display = (matchesSearch && matchesType && matchesDifficulty) ? '' : 'none';
+        });
+    }
+    
+    if (questionSearch) questionSearch.addEventListener('input', filterQuestions);
+    if (filterType) filterType.addEventListener('change', filterQuestions);
+    if (filterDifficulty) filterDifficulty.addEventListener('change', filterQuestions);
+    
+    // Remove question from exam
+    document.querySelectorAll('.remove-question').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const questionId = this.getAttribute('data-question-id');
+            removeQuestion(questionId);
+        });
+    });
+    
+    // Move question up
+    document.querySelectorAll('.move-up').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const index = parseInt(this.getAttribute('data-index'));
+            moveQuestion(index, 'up');
+        });
+    });
+    
+    // Move question down
+    document.querySelectorAll('.move-down').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const index = parseInt(this.getAttribute('data-index'));
+            moveQuestion(index, 'down');
+        });
+    });
+    
+    // Update marks
+    document.querySelectorAll('.marks-input').forEach(input => {
+        input.addEventListener('change', function() {
+            const questionId = this.getAttribute('data-question-id');
+            const marks = parseFloat(this.value);
+            updateQuestionMarks(questionId, marks);
+        });
+    });
+    
+    // Calculate initial total marks
+    updateTotalMarksDisplay();
+
+    // Add event listeners for checkboxes
+    document.querySelectorAll('.question-checkbox').forEach(cb => {
+        cb.addEventListener('change', function() {
+            // Update selected counter
+            updateSelectedCounter();
+            
+            // Enable/disable marks input
+            const questionId = this.value;
+            const marksInput = document.querySelector(`.question-marks[data-question-id="${questionId}"]`);
+            if (marksInput) {
+                marksInput.disabled = !this.checked;
+                if (this.checked) {
+                    marksInput.style.backgroundColor = '#f8fafc';
+                } else {
+                    marksInput.style.backgroundColor = '';
+                }
+            }
+        });
+    });
+    
+    // Initialize selected counter
+    updateSelectedCounter();
+    
+    // Setup marks change listeners
+    setupMarksChangeListeners();
+    
+    // Add marks input listener for existing questions in exam table
+    document.querySelectorAll('.marks-input').forEach(input => {
+        input.addEventListener('change', updateTotalMarksDisplay);
+    });
+});
+
+function addSelectedQuestions() {
+    const questionsToAdd = [];
+    
+    document.querySelectorAll('.question-checkbox:checked:not(:disabled)').forEach(cb => {
+        const questionId = cb.value;
+        const row = cb.closest('tr');
+        const marksInput = row.querySelector('.question-marks');
+        const marks = parseFloat(marksInput.value);
+        
+        questionsToAdd.push({
+            id: questionId,
+            marks: marks
+        });
+    });
+    
+    if (questionsToAdd.length === 0) {
+        alert('Please select at least one question');
+        return;
+    }
+    
+    fetch(`/teacher/exams/{{ exam.id }}/add-questions`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ questions: questionsToAdd })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.message || 'Error adding questions');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error adding questions');
+    });
+}
+
+function removeQuestion(questionId) {
+    if (!confirm('Remove this question from the exam?')) return;
+    
+    fetch(`/teacher/exams/{{ exam.id }}/remove-question/${questionId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.message || 'Error removing question');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error removing question');
+    });
+}
+
+function moveQuestion(index, direction) {
+    if (direction === 'up' && index > 0) {
+        const temp = questionOrder[index];
+        questionOrder[index] = questionOrder[index - 1];
+        questionOrder[index - 1] = temp;
+        updateQuestionTable();
+    } else if (direction === 'down' && index < questionOrder.length - 1) {
+        const temp = questionOrder[index];
+        questionOrder[index] = questionOrder[index + 1];
+        questionOrder[index + 1] = temp;
+        updateQuestionTable();
+    }
+}
+
+function updateQuestionMarks(questionId, marks) {
+    const question = questionOrder.find(q => q.id == questionId);
+    if (question) {
+        question.marks = marks;
+        updateTotalMarksDisplay();
+    }
+}
+
+function updateQuestionTable() {
+    const tbody = document.querySelector('#questionsTable');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    questionOrder.forEach((item, index) => {
+        // Find the question row in the original table
+        const originalRow = document.querySelector(`tr[data-question-id="${item.id}"]`);
+        if (originalRow) {
+            const newRow = originalRow.cloneNode(true);
+            
+            // Update index
+            newRow.cells[0].textContent = index + 1;
+            
+            // Update move buttons
+            const moveUpBtn = newRow.querySelector('.move-up');
+            const moveDownBtn = newRow.querySelector('.move-down');
+            
+            if (moveUpBtn) {
+                moveUpBtn.setAttribute('data-index', index);
+                moveUpBtn.disabled = index === 0;
+            }
+            
+            if (moveDownBtn) {
+                moveDownBtn.setAttribute('data-index', index);
+                moveDownBtn.disabled = index === questionOrder.length - 1;
+            }
+            
+            tbody.appendChild(newRow);
+        }
+    });
+    
+    // Re-attach event listeners
+    document.querySelectorAll('.remove-question').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const questionId = this.getAttribute('data-question-id');
+            removeQuestion(questionId);
+        });
+    });
+    
+    document.querySelectorAll('.move-up').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const index = parseInt(this.getAttribute('data-index'));
+            moveQuestion(index, 'up');
+        });
+    });
+    
+    document.querySelectorAll('.move-down').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const index = parseInt(this.getAttribute('data-index'));
+            moveQuestion(index, 'down');
+        });
+    });
+    
+    document.querySelectorAll('.marks-input').forEach(input => {
+        input.addEventListener('change', function() {
+            const questionId = this.getAttribute('data-question-id');
+            const marks = parseFloat(this.value);
+            updateQuestionMarks(questionId, marks);
+        });
+    });
+}
+
+function updateTotalMarksDisplay() {
+    const totalMarks = questionOrder.reduce((sum, q) => sum + q.marks, 0);
+    const displayElement = document.getElementById('totalMarksDisplay');
+    if (displayElement) {
+        displayElement.textContent = totalMarks.toFixed(1);
+    }
+}
+
+function saveQuestionOrder() {
+    fetch(`/teacher/exams/{{ exam.id }}/update-order`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ questions: questionOrder })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Question order and marks saved successfully!');
+        } else {
+            alert(data.message || 'Error saving order');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error saving order');
+    });
+}
+
+function publishExam(examId) {
+    if (questionOrder.length === 0) {
+        alert('Please add at least one question before publishing the exam.');
+        return;
+    }
+    
+    if (confirm('Publish this exam? Once published, students will be able to take it.')) {
+        fetch(`/teacher/exams/publish/${examId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: 'scheduled' })
+        })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.message || 'Error publishing exam');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error publishing exam');
+    });
+    }
+}
+
+// Add this function to filterQuestions to update counter
+function filterQuestions() {
+    const searchText = questionSearch.value.toLowerCase();
+    const typeFilter = filterType.value;
+    const difficultyFilter = filterDifficulty.value;
+    
+    document.querySelectorAll('#questionsList tr').forEach(row => {
+        const questionText = row.querySelector('.question-text').textContent.toLowerCase();
+        const questionType = row.getAttribute('data-type');
+        const questionDifficulty = row.getAttribute('data-difficulty');
+        
+        const matchesSearch = searchText === '' || questionText.includes(searchText);
+        const matchesType = typeFilter === '' || questionType === typeFilter;
+        const matchesDifficulty = difficultyFilter === '' || questionDifficulty === difficultyFilter;
+        
+        row.style.display = (matchesSearch && matchesType && matchesDifficulty) ? '' : 'none';
+    });
+    
+    // Update counter to reflect filtered selection
+    setTimeout(updateSelectedCounter, 100);
+}
+</script>
+{% endblock %}

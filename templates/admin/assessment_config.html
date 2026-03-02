@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<!-- templates/admin/assessment_config.html -->
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Assessment Configuration - Admin Panel{% endblock %}
+
+{% block page_title %}
+<h1><i class="fas fa-cogs"></i> Term Assessment Configuration</h1>
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="separator">/</span>
+<a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+<span class="separator">/</span>
+<span>Assessment Configuration</span>
+{% endblock %}
+
+{% block content %}
+<!-- Term Selection -->
+<div class="config-card">
+    <div class="config-header">
+        <div class="config-title">
+            <h3 class="mb-0">
+                <i class="fas fa-calendar-alt"></i> Select Academic Term
+            </h3>
+        </div>
+    </div>
+    
+    <form method="get" action="{{ url_for('admin.assessment_config') }}" id="termForm">
+        <div class="form-group">
+            <label class="form-label">Academic Term *</label>
+            <select name="term_id" id="termSelect" class="form-control" style="max-width: 400px;" onchange="this.form.submit()">
+                <option value="">Select Term</option>
+                {% for term in terms %}
+                <option value="{{ term.id }}" 
+                        {% if selected_term and selected_term.id == term.id %}selected{% endif %}>
+                    {{ term.name }} - {{ term.session.name }} (Term {{ term.term_number }})
+                    {% if term.is_active %}<strong> - Active</strong>{% endif %}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </form>
+</div>
+
+{% if selected_term %}
+<!-- Term Assessment Configuration -->
+<div class="config-card">
+    <div class="config-header">
+        <div class="config-title">
+            <h3 class="mb-0">
+                <i class="fas fa-sliders-h"></i> Configure Assessment Structure
+            </h3>
+        </div>
+    </div>
+    
+    <div class="term-info">
+        <h4 class="mb-0">{{ selected_term.name }}</h4>
+        <span class="term-badge">Term {{ selected_term.term_number }}</span>
+        <span class="badge badge-primary">{{ selected_term.session.name }}</span>
+        <div class="ml-auto">
+            <span class="text-muted">Status:</span>
+            {% if selected_term.is_active %}
+            <span class="badge badge-success ml-1">Active</span>
+            {% else %}
+            <span class="badge badge-secondary ml-1">Inactive</span>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i>
+        <strong>Note:</strong> This assessment structure will apply to <strong>all subjects</strong> 
+        taught in {{ selected_term.name }}. Teachers will use this structure to enter scores.
+    </div>
+    
+    <!-- Assessment Structure Configuration -->
+    <h4 class="mb-3 mt-4">
+        <i class="fas fa-tasks"></i> Assessment Structure
+        <small class="text-muted ml-2">Configure different types of assessments and their weights</small>
+    </h4>
+    
+    <!-- Drop zone for adding new assessments -->
+    <div class="drop-zone" id="dropZone">
+        <i class="fas fa-plus-circle mb-2"></i>
+        <p>Drag assessment types here or use the button below to add new assessments</p>
+    </div>
+    
+    <!-- Available Assessment Types -->
+    <div class="mb-4">
+        <h5>Available Assessment Types</h5>
+        <div class="d-flex flex-wrap gap-2 mb-3" id="assessmentTypes">
+            <span class="badge badge-secondary draggable-item" data-type="Test 1" data-weight="20" data-max-score="30">
+                <i class="fas fa-vial"></i> Test 1 (20%, Max 30)
+            </span>
+            <span class="badge badge-secondary draggable-item" data-type="Test 2" data-weight="20" data-max-score="30">
+                <i class="fas fa-vial"></i> Test 2 (20%, Max 30)
+            </span>
+            <span class="badge badge-secondary draggable-item" data-type="Assignment" data-weight="10" data-max-score="20">
+                <i class="fas fa-clipboard-check"></i> Assignment (10%, Max 20)
+            </span>
+            <span class="badge badge-secondary draggable-item" data-type="Class Work" data-weight="10" data-max-score="15">
+                <i class="fas fa-chalkboard-teacher"></i> Class Work (10%, Max 15)
+            </span>
+            <span class="badge badge-secondary draggable-item" data-type="Mid-Term Exam" data-weight="20" data-max-score="40">
+                <i class="fas fa-file-alt"></i> Mid-Term (20%, Max 40)
+            </span>
+            <span class="badge badge-secondary draggable-item" data-type="Final Exam" data-weight="40" data-max-score="60">
+                <i class="fas fa-file-contract"></i> Final Exam (40%, Max 60)
+            </span>
+            <span class="badge badge-secondary draggable-item" data-type="Practical" data-weight="15" data-max-score="30">
+                <i class="fas fa-flask"></i> Practical (15%, Max 30)
+            </span>
+            <span class="badge badge-secondary draggable-item" data-type="Project" data-weight="15" data-max-score="25">
+                <i class="fas fa-project-diagram"></i> Project (15%, Max 25)
+            </span>
+        </div>
+        <button class="btn btn-outline-primary btn-sm" id="addCustomBtn">
+            <i class="fas fa-plus"></i> Add Custom Assessment Type
+        </button>
+    </div>
+    
+    <!-- Configured Assessments -->
+    <div id="configuredAssessments">
+        {% if assessments %}
+            {% for assessment in assessments %}
+            <div class="assessment-item" data-index="{{ loop.index0 }}">
+                <div class="assessment-header">
+                    <div>
+                        <h5 class="mb-0">{{ assessment.assessment_type }}</h5>
+                        <small class="text-muted">Drag to reorder</small>
+                    </div>
+                    <div class="assessment-controls">
+                        <span class="weight-display">{{ assessment.weight }}%</span>
+                        <button class="btn btn-sm btn-outline-danger remove-assessment-btn" type="button">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Assessment Type</label>
+                        <input type="text" class="form-control assessment-type" 
+                               value="{{ assessment.assessment_type }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Weight (%)</label>
+                        <input type="number" class="form-control weight-input" 
+                               min="0" max="100" step="0.5" 
+                               value="{{ assessment.weight }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Maximum Score</label>
+                        <input type="number" class="form-control max-score-input" 
+                               min="1" step="1"
+                               name="max_score"
+                               value="{{ assessment.max_score }}" required>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-tasks"></i>
+            </div>
+            <h4>No Assessments Configured</h4>
+            <p class="text-muted">Add assessment types to configure the structure for this term.</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Add Assessment Button -->
+    <div class="text-center mt-3">
+        <button class="btn btn-primary" id="addAssessmentBtn">
+            <i class="fas fa-plus-circle"></i> Add New Assessment
+        </button>
+    </div>
+    
+    <!-- Total Weight Display -->
+    <div class="total-weight" id="totalWeight">
+        <h4 class="mb-1">
+            <span id="weightTotal">0</span>% / 100%
+        </h4>
+        <p class="mb-0" id="weightStatus">Add assessments to configure total weight</p>
+    </div>
+    
+    <!-- Assessment Structure Preview -->
+    <div class="assessment-structure-preview">
+        <h5>
+            <i class="fas fa-eye"></i> Structure Preview
+            <small class="text-muted ml-2">This assessment structure will apply to all subjects in {{ selected_term.name }}</small>
+        </h5>
+        <div id="structurePreview">
+            <div class="preview-item">
+                <div class="preview-type">No assessments configured</div>
+                <div class="preview-weight">0%</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Save Configuration -->
+    <div class="d-flex justify-content-between align-items-center mt-4 pt-4 border-top">
+        <div>
+            <button class="btn btn-outline-secondary" id="resetBtn">
+                <i class="fas fa-redo"></i> Reset to Default
+            </button>
+            <button class="btn btn-outline-danger ml-2" id="clearBtn">
+                <i class="fas fa-trash"></i> Clear All
+            </button>
+        </div>
+        <div>
+            <button class="btn btn-secondary" id="saveDraftBtn">
+                <i class="fas fa-save"></i> Save as Draft
+            </button>
+            <button class="btn btn-primary ml-2" id="saveConfigBtn">
+                <i class="fas fa-check-circle"></i> Save Configuration
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Default Templates -->
+<template id="assessmentTemplate">
+    <div class="assessment-item" data-index="__INDEX__">
+        <div class="assessment-header">
+            <div>
+                <h5 class="mb-0">New Assessment</h5>
+                <small class="text-muted">Drag to reorder</small>
+            </div>
+            <div class="assessment-controls">
+                <span class="weight-display">0%</span>
+                <button class="btn btn-sm btn-outline-danger remove-assessment-btn" type="button">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Assessment Type</label>
+                <input type="text" class="form-control assessment-type" 
+                       placeholder="e.g., Test, Assignment, Exam" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Weight (%)</label>
+                <input type="number" class="form-control weight-input" 
+                       min="0" max="100" step="0.5" value="0" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Maximum Score</label>
+                <input type="number" class="form-control max-score-input"
+                       name="max_score"
+                       min="1" step="1" value="100" required>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="previewTemplate">
+    <div class="preview-item">
+        <div class="preview-type">__TYPE__</div>
+        <div>
+            <span class="preview-weight">__WEIGHT__%</span>
+            <div class="preview-max-score">Max Score: __MAX_SCORE__</div>
+        </div>
+    </div>
+</template>
+
+<!-- Success Modal -->
+<div class="modal-overlay" id="successModal">
+    <div class="modal" style="max-width: 400px;">
+        <div class="confirmation-content">
+            <div class="confirmation-icon" style="color: var(--admin-success);">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h4>Configuration Saved</h4>
+            <p id="successMessage">Assessment configuration has been saved successfully.</p>
+            <div class="confirmation-actions">
+                <button type="button" class="btn btn-primary" id="closeSuccessBtn">
+                    <i class="fas fa-check"></i> OK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<!-- No Term Selected -->
+<div class="config-card">
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="fas fa-calendar-alt"></i>
+        </div>
+        <h4>Select an Academic Term</h4>
+        <p class="text-muted">Choose an academic term from the dropdown above to configure its assessment structure.</p>
+        <a href="{{ url_for('admin.academic_terms') }}" class="btn btn-primary mt-2">
+            <i class="fas fa-calendar-plus"></i> Manage Academic Terms
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<style>
+    .config-card {
+        background: var(--admin-card);
+        border-radius: var(--admin-radius);
+        padding: 1.5rem;
+        border: 1px solid var(--admin-border);
+        margin-bottom: 1.5rem;
+    }
+    
+    .config-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--admin-border);
+    }
+    
+    .term-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .term-badge {
+        background: var(--admin-primary);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 4px;
+        font-weight: 600;
+    }
+    
+    .assessment-types {
+        background: rgba(0, 0, 0, 0.02);
+        border-radius: var(--admin-radius);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .assessment-item {
+        background: white;
+        border: 1px solid var(--admin-border);
+        border-radius: var(--admin-radius);
+        padding: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.2s ease;
+    }
+    
+    .assessment-item:hover {
+        border-color: var(--admin-primary);
+        box-shadow: 0 2px 8px rgba(var(--admin-primary-rgb), 0.1);
+    }
+    
+    .assessment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .assessment-controls {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    
+    .weight-display {
+        background: var(--admin-primary-light);
+        color: var(--admin-primary);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-weight: 600;
+        min-width: 80px;
+        text-align: center;
+    }
+    
+    .weight-input {
+        max-width: 100px;
+        text-align: center;
+    }
+    
+    .max-score-input {
+        max-width: 100px;
+        text-align: center;
+    }
+    
+    .form-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        align-items: flex-end;
+    }
+    
+    .form-row .form-group {
+        flex: 1;
+        margin-bottom: 0;
+    }
+    
+    .total-weight {
+        background: var(--admin-card);
+        border-radius: var(--admin-radius);
+        padding: 1rem;
+        margin-top: 1rem;
+        text-align: center;
+        border: 2px solid transparent;
+        transition: all 0.3s ease;
+    }
+    
+    .total-weight.valid {
+        background: #d1fae5;
+        border-color: #10b981;
+        color: #065f46;
+    }
+    
+    .total-weight.invalid {
+        background: #fee2e2;
+        border-color: #ef4444;
+        color: #991b1b;
+    }
+    
+    .assessment-structure-preview {
+        background: var(--admin-card);
+        border-radius: var(--admin-radius);
+        padding: 1.5rem;
+        margin-top: 2rem;
+    }
+    
+    .preview-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--admin-border);
+    }
+    
+    .preview-item:last-child {
+        border-bottom: none;
+    }
+    
+    .preview-type {
+        font-weight: 500;
+    }
+    
+    .preview-weight {
+        font-weight: 600;
+        color: var(--admin-primary);
+    }
+    
+    .preview-max-score {
+        color: var(--admin-text-light);
+        font-size: 0.9rem;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+    }
+    
+    .empty-state-icon {
+        font-size: 3rem;
+        color: var(--admin-border);
+        margin-bottom: 1rem;
+    }
+    
+    /* Drag and drop styles */
+    .draggable-item {
+        cursor: move;
+        user-select: none;
+    }
+    
+    .dragging {
+        opacity: 0.5;
+        background: var(--admin-primary-light);
+    }
+    
+    .drop-zone {
+        min-height: 50px;
+        border: 2px dashed var(--admin-border);
+        border-radius: var(--admin-radius);
+        margin-bottom: 1rem;
+        padding: 1rem;
+        text-align: center;
+        color: var(--admin-text-light);
+        transition: all 0.3s ease;
+    }
+    
+    .drop-zone.drag-over {
+        border-color: var(--admin-primary);
+        background: rgba(var(--admin-primary-rgb), 0.05);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .form-row {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .form-row .form-group {
+            width: 100%;
+        }
+        
+        .weight-input,
+        .max-score-input {
+            max-width: 100%;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Elements
+        const configuredAssessments = document.getElementById('configuredAssessments');
+        const addAssessmentBtn = document.getElementById('addAssessmentBtn');
+        const addCustomBtn = document.getElementById('addCustomBtn');
+        const totalWeightDiv = document.getElementById('totalWeight');
+        const weightTotal = document.getElementById('weightTotal');
+        const weightStatus = document.getElementById('weightStatus');
+        const structurePreview = document.getElementById('structurePreview');
+        const saveConfigBtn = document.getElementById('saveConfigBtn');
+        const saveDraftBtn = document.getElementById('saveDraftBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const dropZone = document.getElementById('dropZone');
+        const assessmentTypes = document.getElementById('assessmentTypes');
+        const successModal = document.getElementById('successModal');
+        
+        // Templates
+        const assessmentTemplate = document.getElementById('assessmentTemplate').innerHTML;
+        const previewTemplate = document.getElementById('previewTemplate').innerHTML;
+        
+        // State
+        let currentIndex = 0;
+        let draggedItem = null;
+        
+        // Initialize
+        updateTotalWeight();
+        updatePreview();
+        
+        // Load existing assessments on page load
+        loadExistingAssessments();
+        
+        async function loadExistingAssessments() {
+            const termSelect = document.getElementById('termSelect');
+            const termId = termSelect ? termSelect.value : null;
+            
+            if (!termId) return;
+            
+            try {
+                const response = await fetch(`/api/assessments/${termId}`);
+                const data = await response.json();
+                
+                if (data.success && data.assessments.length > 0) {
+                    // Clear existing assessments display
+                    if (!configuredAssessments.querySelector('.empty-state')) {
+                        configuredAssessments.innerHTML = '';
+                    }
+                    
+                    // Add assessments from API
+                    data.assessments.forEach(assessment => {
+                        addAssessment(assessment.type, assessment.weight, assessment.max_score);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading assessments:', error);
+            }
+        }
+        
+        // Drag and drop functionality
+        function initializeDragAndDrop() {
+            // Make assessment items draggable
+            document.querySelectorAll('.assessment-item').forEach(item => {
+                item.setAttribute('draggable', 'true');
+                
+                item.addEventListener('dragstart', function(e) {
+                    draggedItem = this;
+                    this.classList.add('dragging');
+                    e.dataTransfer.setData('text/plain', '');
+                });
+                
+                item.addEventListener('dragend', function() {
+                    this.classList.remove('dragging');
+                    draggedItem = null;
+                    updateIndices();
+                    updateTotalWeight();
+                    updatePreview();
+                });
+            });
+            
+            // Drop zone for assessment items
+            const assessmentContainer = document.querySelector('#configuredAssessments');
+            
+            assessmentContainer?.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(this, e.clientY);
+                const draggable = document.querySelector('.dragging');
+                
+                if (afterElement == null) {
+                    this.appendChild(draggable);
+                } else {
+                    this.insertBefore(draggable, afterElement);
+                }
+            });
+            
+            // Drop zone for adding new assessments
+            dropZone?.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('drag-over');
+            });
+            
+            dropZone?.addEventListener('dragleave', function() {
+                this.classList.remove('drag-over');
+            });
+            
+            dropZone?.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('drag-over');
+                
+                const assessmentType = e.dataTransfer.getData('assessment-type');
+                const assessmentWeight = e.dataTransfer.getData('assessment-weight');
+                const assessmentMaxScore = e.dataTransfer.getData('assessment-maxscore');
+                
+                if (assessmentType) {
+                    addAssessment(assessmentType, parseFloat(assessmentWeight), parseInt(assessmentMaxScore));
+                }
+            });
+            
+            // Make assessment type badges draggable
+            document.querySelectorAll('.draggable-item').forEach(badge => {
+                badge.setAttribute('draggable', 'true');
+                
+                badge.addEventListener('dragstart', function(e) {
+                    e.dataTransfer.setData('assessment-type', this.getAttribute('data-type'));
+                    e.dataTransfer.setData('assessment-weight', this.getAttribute('data-weight'));
+                    e.dataTransfer.setData('assessment-maxscore', this.getAttribute('data-max-score'));
+                });
+            });
+        }
+        
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.assessment-item:not(.dragging)')];
+            
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+        
+        // Add new assessment
+        function addAssessment(type = '', weight = 0, maxScore = 100) {
+            const newIndex = currentIndex++;
+            let assessmentHTML = assessmentTemplate.replace(/__INDEX__/g, newIndex);
+            
+            if (type) {
+                assessmentHTML = assessmentHTML.replace('New Assessment', type);
+                assessmentHTML = assessmentHTML.replace('value="0"', `value="${weight}"`);
+                assessmentHTML = assessmentHTML.replace('value="100"', `value="${maxScore}"`);
+            }
+            
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = assessmentHTML;
+            const newAssessment = tempDiv.firstElementChild;
+            
+            if (configuredAssessments.querySelector('.empty-state')) {
+                configuredAssessments.innerHTML = '';
+            }
+            
+            configuredAssessments.appendChild(newAssessment);
+            
+            // Add event listeners to new assessment
+            const typeInput = newAssessment.querySelector('.assessment-type');
+            const weightInput = newAssessment.querySelector('.weight-input');
+            const maxScoreInput = newAssessment.querySelector('.max-score-input');
+            const removeBtn = newAssessment.querySelector('.remove-assessment-btn');
+            const weightDisplay = newAssessment.querySelector('.weight-display');
+            
+            typeInput.value = type || 'New Assessment';
+            weightInput.value = weight || 0;
+            maxScoreInput.value = maxScore || 100;
+            weightDisplay.textContent = `${weight || 0}%`;
+            
+            // Update on input changes
+            weightInput.addEventListener('input', function() {
+                weightDisplay.textContent = `${this.value}%`;
+                updateTotalWeight();
+                updatePreview();
+            });
+            
+            maxScoreInput.addEventListener('input', updatePreview);
+            typeInput.addEventListener('input', updatePreview);
+            
+            removeBtn.addEventListener('click', function() {
+                newAssessment.remove();
+                if (configuredAssessments.children.length === 0) {
+                    showEmptyState();
+                }
+                updateTotalWeight();
+                updatePreview();
+            });
+            
+            // Initialize drag and drop for new assessment
+            newAssessment.setAttribute('draggable', 'true');
+            newAssessment.addEventListener('dragstart', function(e) {
+                draggedItem = this;
+                this.classList.add('dragging');
+                e.dataTransfer.setData('text/plain', '');
+            });
+            
+            newAssessment.addEventListener('dragend', function() {
+                this.classList.remove('dragging');
+                draggedItem = null;
+                updateIndices();
+                updateTotalWeight();
+                updatePreview();
+            });
+            
+            updateTotalWeight();
+            updatePreview();
+            initializeDragAndDrop();
+        }
+        
+        // Update assessment indices
+        function updateIndices() {
+            document.querySelectorAll('.assessment-item').forEach((item, index) => {
+                item.setAttribute('data-index', index);
+            });
+        }
+        
+        // Calculate total weight
+        function updateTotalWeight() {
+            const weightInputs = document.querySelectorAll('.weight-input');
+            let total = 0;
+            
+            weightInputs.forEach(input => {
+                const value = parseFloat(input.value) || 0;
+                total += value;
+            });
+            
+            weightTotal.textContent = total.toFixed(1);
+            
+            if (weightInputs.length === 0) {
+                totalWeightDiv.className = 'total-weight';
+                weightStatus.textContent = 'Add assessments to configure total weight';
+            } else if (total === 100) {
+                totalWeightDiv.className = 'total-weight valid';
+                weightStatus.textContent = 'Perfect! Total weight is 100%';
+            } else if (total > 100) {
+                totalWeightDiv.className = 'total-weight invalid';
+                weightStatus.textContent = `Overweight by ${(total - 100).toFixed(1)}%`;
+            } else {
+                totalWeightDiv.className = 'total-weight';
+                weightStatus.textContent = `Underweight by ${(100 - total).toFixed(1)}%`;
+            }
+        }
+        
+        // Update preview
+        function updatePreview() {
+            const assessments = [];
+            
+            document.querySelectorAll('.assessment-item').forEach(item => {
+                const type = item.querySelector('.assessment-type').value;
+                const weight = item.querySelector('.weight-input').value;
+                const maxScore = item.querySelector('.max-score-input').value;
+                
+                if (type && weight) {
+                    assessments.push({
+                        type: type,
+                        weight: parseFloat(weight),
+                        maxScore: parseInt(maxScore) || 100
+                    });
+                }
+            });
+            
+            if (assessments.length === 0) {
+                structurePreview.innerHTML = `
+                    <div class="preview-item">
+                        <div class="preview-type">No assessments configured</div>
+                        <div class="preview-weight">0%</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            structurePreview.innerHTML = '';
+            assessments.forEach(assessment => {
+                let previewHTML = previewTemplate;
+                previewHTML = previewHTML.replace(/__TYPE__/g, assessment.type);
+                previewHTML = previewHTML.replace(/__WEIGHT__/g, assessment.weight);
+                previewHTML = previewHTML.replace(/__MAX_SCORE__/g, assessment.maxScore);
+                
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = previewHTML;
+                structurePreview.appendChild(tempDiv.firstElementChild);
+            });
+        }
+        
+        // Show empty state
+        function showEmptyState() {
+            configuredAssessments.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <h4>No Assessments Configured</h4>
+                    <p class="text-muted">Add assessment types to configure the structure for this term.</p>
+                </div>
+            `;
+        }
+        
+        // Event Listeners
+        addAssessmentBtn?.addEventListener('click', function() {
+            addAssessment();
+        });
+        
+        addCustomBtn?.addEventListener('click', function() {
+            const customType = prompt('Enter custom assessment type name:', 'Custom Assessment');
+            if (customType) {
+                const weight = parseFloat(prompt('Enter weight percentage:', '20')) || 20;
+                const maxScore = parseInt(prompt('Enter maximum score:', '100')) || 100;
+                addAssessment(customType, weight, maxScore);
+            }
+        });
+        
+        // Assessment type badges click to add
+        document.querySelectorAll('.draggable-item').forEach(badge => {
+            badge.addEventListener('click', function() {
+                const type = this.getAttribute('data-type');
+                const weight = parseFloat(this.getAttribute('data-weight'));
+                const maxScore = parseInt(this.getAttribute('data-max-score'));
+                addAssessment(type, weight, maxScore);
+            });
+        });
+        
+        resetBtn?.addEventListener('click', function() {
+            if (confirm('Reset to default assessment structure? This will replace all current configurations.')) {
+                configuredAssessments.innerHTML = '';
+                
+                // Add default assessments
+                const defaults = [
+                    { type: 'Test 1', weight: 20, maxScore: 30 },
+                    { type: 'Test 2', weight: 20, maxScore: 30 },
+                    { type: 'Final Exam', weight: 60, maxScore: 40 }
+                ];
+                
+                defaults.forEach(assessment => {
+                    addAssessment(assessment.type, assessment.weight, assessment.maxScore);
+                });
+            }
+        });
+        
+        clearBtn?.addEventListener('click', function() {
+            if (confirm('Clear all assessments? This action cannot be undone.')) {
+                configuredAssessments.innerHTML = '';
+                showEmptyState();
+                updateTotalWeight();
+                updatePreview();
+            }
+        });
+        
+        // Save configuration
+        saveConfigBtn?.addEventListener('click', async function() {
+            const termSelect = document.getElementById('termSelect');
+            const academicTermId = termSelect.value;
+            
+            if (!academicTermId) {
+                alert('Please select an academic term.');
+                return;
+            }
+            
+            // Collect assessment data
+            const assessments = [];
+            document.querySelectorAll('.assessment-item').forEach(item => {
+                const type = item.querySelector('.assessment-type').value;
+                const weight = item.querySelector('.weight-input').value;
+                const maxScoreInput = item.querySelector('.max-score-input');
+                const maxScore = maxScoreInput ? maxScoreInput.value : '';
+                
+                console.log('Max Score Input:', maxScore); // Debug log
+                
+                if (type && weight && maxScore) {
+                    assessments.push({
+                        type: type,
+                        weight: parseFloat(weight),
+                        maxScore: parseFloat(maxScore) // Use parseFloat, not parseInt
+                    });
+                }
+            });
+            
+            console.log('Assessments data to send:', assessments); // Debug log
+            
+            if (assessments.length === 0) {
+                alert('Please add at least one assessment type.');
+                return;
+            }
+            
+            // Calculate total weight
+            const totalWeight = assessments.reduce((sum, a) => sum + a.weight, 0);
+            if (Math.abs(totalWeight - 100) > 0.1) {
+                if (!confirm(`Total weight is ${totalWeight}% (should be 100%). Save anyway?`)) {
+                    return;
+                }
+            }
+            
+            // Prepare data for API
+            const data = {
+                academic_term_id: academicTermId,
+                assessments: assessments
+            };
+            
+            console.log('Data to send to server:', data); // Debug log
+            
+            // Save button state
+            const saveBtn = this;
+            const originalText = saveBtn.innerHTML;
+            
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            saveBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/admin/configure-assessment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('successMessage').textContent = result.message;
+                    successModal.classList.add('active');
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            } finally {
+                saveBtn.innerHTML = originalText;
+                saveBtn.disabled = false;
+            }
+        });
+
+        saveDraftBtn?.addEventListener('click', function() {
+            alert('Draft saved locally. Note: Drafts are stored in browser localStorage.');
+            
+            // Save to localStorage
+            const assessments = [];
+            document.querySelectorAll('.assessment-item').forEach(item => {
+                const type = item.querySelector('.assessment-type').value;
+                const weight = item.querySelector('.weight-input').value;
+                const maxScore = item.querySelector('.max-score-input').value;
+                
+                if (type && weight) {
+                    assessments.push({
+                        type: type,
+                        weight: parseFloat(weight),
+                        maxScore: parseInt(maxScore) || 100
+                    });
+                }
+            });
+            
+            const termSelect = document.getElementById('termSelect');
+            const termId = termSelect.value;
+            
+            if (termId && assessments.length > 0) {
+                const draftData = {
+                    assessments: assessments,
+                    timestamp: new Date().toISOString()
+                };
+                localStorage.setItem(`assessment_draft_${termId}`, JSON.stringify(draftData));
+            }
+        });
+        
+        // Load draft from localStorage
+        function loadDraftFromStorage() {
+            const termSelect = document.getElementById('termSelect');
+            const termId = termSelect.value;
+            
+            if (!termId) return;
+            
+            const draftData = localStorage.getItem(`assessment_draft_${termId}`);
+            if (draftData) {
+                try {
+                    const data = JSON.parse(draftData);
+                    const date = new Date(data.timestamp).toLocaleString();
+                    
+                    if (confirm(`Load draft saved on ${date}?`)) {
+                        // Clear existing assessments
+                        if (configuredAssessments.querySelector('.empty-state')) {
+                            configuredAssessments.innerHTML = '';
+                        } else {
+                            configuredAssessments.querySelectorAll('.assessment-item').forEach(item => item.remove());
+                        }
+                        
+                        // Add assessments from draft
+                        data.assessments.forEach(assessment => {
+                            addAssessment(assessment.type, assessment.weight, assessment.maxScore);
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error loading draft:', error);
+                }
+            }
+        }
+        
+        // Close success modal
+        document.getElementById('closeSuccessBtn')?.addEventListener('click', function() {
+            successModal.classList.remove('active');
+            // Reload to show updated assessments
+            loadExistingAssessments();
+        });
+        
+        // Initialize existing assessments
+        document.querySelectorAll('.assessment-item').forEach(item => {
+            const weightInput = item.querySelector('.weight-input');
+            const maxScoreInput = item.querySelector('.max-score-input');
+            const typeInput = item.querySelector('.assessment-type');
+            const weightDisplay = item.querySelector('.weight-display');
+            const removeBtn = item.querySelector('.remove-assessment-btn');
+            
+            weightInput?.addEventListener('input', function() {
+                weightDisplay.textContent = `${this.value}%`;
+                updateTotalWeight();
+                updatePreview();
+            });
+            
+            maxScoreInput?.addEventListener('input', updatePreview);
+            typeInput?.addEventListener('input', updatePreview);
+            
+            removeBtn?.addEventListener('click', function() {
+                item.remove();
+                if (configuredAssessments.children.length === 0) {
+                    showEmptyState();
+                }
+                updateTotalWeight();
+                updatePreview();
+            });
+        });
+        
+        // Initialize drag and drop
+        initializeDragAndDrop();
+        
+        // Auto-save weight display updates
+        setInterval(updateTotalWeight, 1000);
+        
+        // Load draft when page loads
+        setTimeout(loadDraftFromStorage, 500);
+        
+        // Term change handler
+        const termSelect = document.getElementById('termSelect');
+        if (termSelect) {
+            // Remove the onchange attribute and add event listener
+            termSelect.removeAttribute('onchange');
+            termSelect.addEventListener('change', function() {
+                document.getElementById('termForm').submit();
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,964 @@
+<!-- templates/teacher/attendance.html -->
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}Attendance - {{ teacher.user.username }}{% endblock %}
+
+{% block page_title %}
+<h1><i class="fas fa-calendar-check"></i> Daily Attendance</h1>
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="separator">/</span>
+<a href="{{ url_for('teacher.dashboard') }}">Dashboard</a>
+<span class="separator">/</span>
+<span>Attendance</span>
+{% endblock %}
+
+{% block content %}
+<div class="attendance-container">
+    <div class="attendance-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="mb-1"><i class="fas fa-calendar-check"></i> Daily Attendance</h3>
+                <p class="mb-0 opacity-90">Mark attendance for students in your form class</p>
+            </div>
+            <div class="text-white">
+                <i class="fas fa-users"></i> {{ students|length }} students
+            </div>
+        </div>
+    </div>
+    
+    <div class="attendance-body">
+        <!-- Form Class Info -->
+        <div class="form-class-info">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1">Form Class: {{ teacher.form_class.name }}</h5>
+                    <p class="mb-0 text-muted small">
+                        Level: {{ teacher.form_class.level }} | 
+                        Section: {{ teacher.form_class.section }} | 
+                        Teacher: {{ teacher.user.username }}
+                    </p>
+                </div>
+                <div>
+                    <div class="term-badge">
+                        <i class="fas fa-calendar-alt"></i> {{ current_term.name }} - Term {{ current_term.term_number }}
+                    </div>
+                    <div class="text-muted mt-1 small text-end">
+                        Academic Year: {{ current_term.session.name }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Date Selection -->
+        <div class="date-selector">
+            <div class="date-navigation">
+                <div>
+                    <h5 class="mb-2">Select Date</h5>
+                    <input type="date" id="attendanceDate" class="date-input" value="{{ today.isoformat() }}" max="{{ today.isoformat() }}">
+                </div>
+                <div>
+                    <button class="btn btn-outline-primary" id="loadAttendanceBtn">
+                        <i class="fas fa-sync-alt"></i> Load Attendance
+                    </button>
+                </div>
+            </div>
+            <div class="mt-2">
+                <small class="text-muted">Note: You can only mark attendance for past and current dates</small>
+            </div>
+        </div>
+        
+        <!-- Legend -->
+        <div class="d-flex justify-content-center gap-3 mb-3">
+            <div class="attendance-icons">
+                <div class="attendance-icon icon-present" title="Present">
+                    <i class="fas fa-check"></i>
+                </div>
+                <small class="text-muted">Present</small>
+            </div>
+            <div class="attendance-icons">
+                <div class="attendance-icon icon-absent" title="Absent">
+                    <i class="fas fa-times"></i>
+                </div>
+                <small class="text-muted">Absent</small>
+            </div>
+            <div class="attendance-icons">
+                <div class="attendance-icon icon-late" title="Late">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <small class="text-muted">Late</small>
+            </div>
+            <div class="attendance-icons">
+                <div class="attendance-icon icon-excused" title="Excused">
+                    <i class="fas fa-user-clock"></i>
+                </div>
+                <small class="text-muted">Excused</small>
+            </div>
+        </div>
+        
+        <!-- Stats Summary -->
+        <div class="stats-summary">
+            <div class="stat-card stat-present">
+                <div class="stat-value" id="statPresent">0</div>
+                <div class="stat-label">Present Today</div>
+            </div>
+            <div class="stat-card stat-absent">
+                <div class="stat-value" id="statAbsent">0</div>
+                <div class="stat-label">Absent Today</div>
+            </div>
+            <div class="stat-card stat-late">
+                <div class="stat-value" id="statLate">0</div>
+                <div class="stat-label">Late Today</div>
+            </div>
+            <div class="stat-card stat-excused">
+                <div class="stat-value" id="statExcused">0</div>
+                <div class="stat-label">Excused Today</div>
+            </div>
+        </div>
+        
+        <!-- Student List -->
+        <div class="student-attendance-list">
+            <h5 class="mb-3">Mark Attendance</h5>
+            
+            {% if students %}
+            <div id="attendanceList">
+                {% for student in students %}
+                <div class="student-attendance-card" data-student-id="{{ student.id }}">
+                    <div class="student-header">
+                        <div class="student-info">
+                            <div class="student-avatar">
+                                {{ student.first_name[0] }}{{ student.last_name[0] }}
+                            </div>
+                            <div>
+                                <div class="student-name">
+                                    {{ student.first_name }} {{ student.last_name }}
+                                </div>
+                                <div class="text-muted small mt-1">
+                                    Admission: {{ student.admission_number }} | 
+                                    Gender: {{ student.gender or 'N/A' }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="student-admission">{{ student.admission_number }}</div>
+                    </div>
+                    
+                    <!-- Attendance Options -->
+                    <div class="attendance-options">
+                        <div class="attendance-option">
+                            <input type="radio" 
+                                   id="present_{{ student.id }}" 
+                                   name="attendance_{{ student.id }}" 
+                                   value="present"
+                                   class="attendance-input"
+                                   {% if student.id in today_attendance and today_attendance[student.id].status == 'present' %}checked{% endif %}>
+                            <label for="present_{{ student.id }}" class="attendance-label present">
+                                <i class="fas fa-check"></i> Present
+                            </label>
+                        </div>
+                        <div class="attendance-option">
+                            <input type="radio" 
+                                   id="absent_{{ student.id }}" 
+                                   name="attendance_{{ student.id }}" 
+                                   value="absent"
+                                   class="attendance-input"
+                                   {% if student.id in today_attendance and today_attendance[student.id].status == 'absent' %}checked{% endif %}>
+                            <label for="absent_{{ student.id }}" class="attendance-label absent">
+                                <i class="fas fa-times"></i> Absent
+                            </label>
+                        </div>
+                        <div class="attendance-option">
+                            <input type="radio" 
+                                   id="late_{{ student.id }}" 
+                                   name="attendance_{{ student.id }}" 
+                                   value="late"
+                                   class="attendance-input"
+                                   {% if student.id in today_attendance and today_attendance[student.id].status == 'late' %}checked{% endif %}>
+                            <label for="late_{{ student.id }}" class="attendance-label late">
+                                <i class="fas fa-clock"></i> Late
+                            </label>
+                        </div>
+                        <div class="attendance-option">
+                            <input type="radio" 
+                                   id="excused_{{ student.id }}" 
+                                   name="attendance_{{ student.id }}" 
+                                   value="excused"
+                                   class="attendance-input"
+                                   {% if student.id in today_attendance and today_attendance[student.id].status == 'excused' %}checked{% endif %}>
+                            <label for="excused_{{ student.id }}" class="attendance-label excused">
+                                <i class="fas fa-user-clock"></i> Excused
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Remark -->
+                    <div class="remark-section">
+                        <label class="form-label small text-muted mb-1">Remark (Optional)</label>
+                        <textarea class="remark-textarea"
+                                  id="remark_{{ student.id }}"
+                                  placeholder="Enter remark (e.g., reason for absence, late arrival time...)"
+                                  maxlength="200">{% if student.id in today_attendance %}{{ today_attendance[student.id].remark or '' }}{% endif %}</textarea>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h4>No Students in Form Class</h4>
+                <p class="text-muted">
+                    There are no active students assigned to your form class.
+                    Please contact the administrator if this is incorrect.
+                </p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Action Buttons -->
+        {% if students %}
+        <div class="action-buttons">
+            <div>
+                <a href="{{ url_for('teacher.attendance_report') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-chart-bar"></i> View Reports
+                </a>
+                <a href="{{ url_for('teacher.attendance_calendar') }}" class="btn btn-outline-secondary ms-2">
+                    <i class="fas fa-calendar"></i> View Calendar
+                </a>
+            </div>
+            <button class="save-all-btn" id="saveAttendanceBtn">
+                <i class="fas fa-save"></i> Save All Attendance
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<style>
+    .attendance-container {
+        background: white;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1.25rem;
+        box-shadow: 0 1px 5px rgba(0, 0, 0, 0.03);
+    }
+    
+    .attendance-header {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 0.875rem 1.25rem;
+        border-radius: 10px 10px 0 0;
+    }
+    
+    .attendance-body {
+        padding: 1.25rem;
+    }
+    
+    .date-selector {
+        background: #f0f9ff;
+        border-radius: 6px;
+        padding: 0.875rem;
+        margin-bottom: 1.25rem;
+        border: 1px solid #bae6fd;
+    }
+    
+    .date-badge {
+        background: #3b82f6;
+        color: white;
+        padding: 0.2rem 0.6rem;
+        border-radius: 16px;
+        font-weight: 600;
+        font-size: 0.8rem;
+    }
+    
+    .student-attendance-list {
+        margin-top: 1.25rem;
+    }
+    
+    .student-attendance-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 1rem;
+        margin-bottom: 0.875rem;
+        transition: all 0.2s ease;
+    }
+    
+    .student-attendance-card:hover {
+        border-color: #3b82f6;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
+    }
+    
+    .student-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.875rem;
+        padding-bottom: 0.625rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    
+    .student-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .student-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 0.8rem;
+    }
+    
+    .student-name {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 0.95rem;
+    }
+    
+    .student-admission {
+        font-size: 0.7rem;
+        color: #64748b;
+        background: #f1f5f9;
+        padding: 0.125rem 0.375rem;
+        border-radius: 3px;
+    }
+    
+    .attendance-options {
+        display: flex;
+        gap: 0.375rem;
+        margin-bottom: 0.875rem;
+        flex-wrap: wrap;
+    }
+    
+    .attendance-option {
+        flex: 1;
+        min-width: 80px;
+    }
+    
+    .attendance-input {
+        display: none;
+    }
+    
+    .attendance-label {
+        display: block;
+        text-align: center;
+        padding: 0.5rem 0.25rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-weight: 500;
+        font-size: 0.8rem;
+    }
+    
+    .attendance-input:checked + .attendance-label {
+        color: white;
+        border-color: transparent;
+    }
+    
+    .attendance-label.present {
+        border-color: #10b981;
+        color: #10b981;
+    }
+    
+    .attendance-input:checked + .attendance-label.present {
+        background: #10b981;
+    }
+    
+    .attendance-label.absent {
+        border-color: #ef4444;
+        color: #ef4444;
+    }
+    
+    .attendance-input:checked + .attendance-label.absent {
+        background: #ef4444;
+    }
+    
+    .attendance-label.late {
+        border-color: #f59e0b;
+        color: #f59e0b;
+    }
+    
+    .attendance-input:checked + .attendance-label.late {
+        background: #f59e0b;
+    }
+    
+    .attendance-label.excused {
+        border-color: #8b5cf6;
+        color: #8b5cf6;
+    }
+    
+    .attendance-input:checked + .attendance-label.excused {
+        background: #8b5cf6;
+    }
+    
+    .attendance-label:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    }
+    
+    .attendance-icons {
+        display: flex;
+        gap: 0.375rem;
+        margin-bottom: 0.375rem;
+    }
+    
+    .attendance-icon {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.6rem;
+        color: white;
+    }
+    
+    .icon-present { background: #10b981; }
+    .icon-absent { background: #ef4444; }
+    .icon-late { background: #f59e0b; }
+    .icon-excused { background: #8b5cf6; }
+    
+    .remark-section {
+        margin-top: 0.75rem;
+    }
+    
+    .remark-textarea {
+        width: 100%;
+        min-height: 50px;
+        padding: 0.625rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 5px;
+        font-size: 0.8rem;
+        resize: vertical;
+        font-family: inherit;
+        transition: all 0.2s ease;
+    }
+    
+    .remark-textarea:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.08);
+    }
+    
+    .action-buttons {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1.5rem;
+        padding-top: 0.875rem;
+        border-top: 1px solid #e2e8f0;
+    }
+    
+    .save-all-btn {
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 0.625rem 1.25rem;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        font-size: 0.875rem;
+    }
+    
+    .save-all-btn:hover {
+        background: #059669;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(16, 185, 129, 0.25);
+    }
+    
+    .save-all-btn.saving {
+        background: #64748b;
+        cursor: not-allowed;
+    }
+    
+    .stats-summary {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.75rem;
+        margin-top: 1.25rem;
+    }
+    
+    .stat-card {
+        background: #f8fafc;
+        border-radius: 6px;
+        padding: 0.75rem;
+        text-align: center;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .stat-value {
+        font-size: 1.125rem;
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+    }
+    
+    .stat-label {
+        font-size: 0.75rem;
+        color: #64748b;
+    }
+    
+    .stat-present .stat-value { color: #10b981; }
+    .stat-absent .stat-value { color: #ef4444; }
+    .stat-late .stat-value { color: #f59e0b; }
+    .stat-excused .stat-value { color: #8b5cf6; }
+    
+    .date-navigation {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.875rem;
+    }
+    
+    .date-input {
+        padding: 0.375rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 5px;
+        font-size: 0.875rem;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 2rem 1rem;
+    }
+    
+    .empty-state-icon {
+        font-size: 2.5rem;
+        color: #cbd5e1;
+        margin-bottom: 0.875rem;
+    }
+    
+    /* Toast notifications */
+    .toast-container {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        z-index: 9999;
+    }
+    
+    .toast {
+        background: white;
+        border-radius: 6px;
+        padding: 0.75rem;
+        margin-bottom: 0.375rem;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+        border-left: 3px solid #3b82f6;
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        min-width: 280px;
+        animation: slideIn 0.25s ease;
+    }
+    
+    .toast.success {
+        border-left-color: #10b981;
+    }
+    
+    .toast.error {
+        border-left-color: #ef4444;
+    }
+    
+    .toast.warning {
+        border-left-color: #f59e0b;
+    }
+    
+    .toast.info {
+        border-left-color: #3b82f6;
+    }
+    
+    .toast-icon {
+        font-size: 1rem;
+    }
+    
+    .toast-content {
+        flex: 1;
+        font-size: 0.875rem;
+    }
+    
+    .toast-close {
+        background: none;
+        border: none;
+        color: #64748b;
+        cursor: pointer;
+        padding: 0.2rem;
+        font-size: 0.8rem;
+    }
+    
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .stats-summary {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+        
+        .attendance-options {
+            flex-direction: column;
+        }
+        
+        .attendance-option {
+            min-width: 100%;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .action-buttons button {
+            width: 100%;
+        }
+        
+        .date-navigation {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .toast {
+            min-width: 220px;
+            font-size: 0.8rem;
+        }
+        
+        .attendance-body {
+            padding: 1rem;
+        }
+        
+        .attendance-header {
+            padding: 0.75rem 1rem;
+        }
+    }
+</style>
+
+<script>
+// Attendance Management Application
+class AttendanceApp {
+    constructor() {
+        this.currentDate = new Date().toISOString().split('T')[0];
+        this.attendanceData = {};
+        this.init();
+    }
+    
+    init() {
+        this.bindEvents();
+        this.loadTodayAttendance();
+        this.updateStats();
+    }
+    
+    bindEvents() {
+        // Date selection
+        document.getElementById('attendanceDate')?.addEventListener('change', (e) => {
+            this.currentDate = e.target.value;
+        });
+        
+        // Load attendance for selected date
+        document.getElementById('loadAttendanceBtn')?.addEventListener('click', () => {
+            this.loadAttendanceForDate();
+        });
+        
+        // Save all attendance
+        document.getElementById('saveAttendanceBtn')?.addEventListener('click', () => {
+            this.saveAllAttendance();
+        });
+        
+        // Update stats when attendance changes
+        document.querySelectorAll('.attendance-input').forEach(input => {
+            input.addEventListener('change', () => this.updateStats());
+        });
+        
+        // Handle beforeunload for unsaved changes
+        window.addEventListener('beforeunload', (e) => {
+            if (this.hasUnsavedChanges()) {
+                e.preventDefault();
+                e.returnValue = 'You have unsaved attendance changes. Are you sure you want to leave?';
+            }
+        });
+    }
+    
+    loadTodayAttendance() {
+        // Update stats for today's attendance
+        this.updateStats();
+    }
+    
+    async loadAttendanceForDate() {
+        const date = document.getElementById('attendanceDate').value;
+        
+        if (!date) {
+            this.showToast('Please select a date', 'warning');
+            return;
+        }
+        
+        // Check if date is in future
+        const selectedDate = new Date(date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (selectedDate > today) {
+            this.showToast('Cannot load attendance for future dates', 'warning');
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/teacher/get-attendance?date=${date}`);
+            const result = await response.json();
+            
+            if (result.success) {
+                // Reset all attendance inputs
+                document.querySelectorAll('.attendance-input').forEach(input => {
+                    input.checked = false;
+                });
+                
+                document.querySelectorAll('.remark-textarea').forEach(textarea => {
+                    textarea.value = '';
+                });
+                
+                // Set attendance from loaded data
+                result.attendance.forEach(att => {
+                    const input = document.querySelector(`input[name="attendance_${att.student_id}"][value="${att.status}"]`);
+                    if (input) {
+                        input.checked = true;
+                    }
+                    
+                    const remark = document.getElementById(`remark_${att.student_id}`);
+                    if (remark) {
+                        remark.value = att.remark || '';
+                    }
+                });
+                
+                this.showToast(`Attendance loaded for ${date}`, 'success');
+                this.updateStats();
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error) {
+            console.error('Error loading attendance:', error);
+            this.showToast(`Error: ${error.message}`, 'error');
+        }
+    }
+    
+    async saveAllAttendance() {        
+        const date = document.getElementById('attendanceDate').value;
+        
+        if (!date) {
+            this.showToast('Please select a date', 'warning');
+            return;
+        }
+        
+        // FIXED: Better date comparison for future date check
+        const selectedDate = new Date(date);
+        const today = new Date();
+        
+        // Normalize both dates to midnight for comparison
+        const selectedDateNormalized = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+        const todayNormalized = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        
+        // Allow marking attendance for today and past dates only
+        if (selectedDateNormalized > todayNormalized) {
+            this.showToast('Cannot mark attendance for future dates', 'warning');
+            return;
+        }
+        
+        // Rest of the function remains the same...
+        // Collect attendance data
+        const attendanceData = [];
+        const studentCards = document.querySelectorAll('.student-attendance-card');
+        
+        studentCards.forEach((card, index) => {
+            const studentId = card.dataset.studentId;
+            
+            const selectedInput = card.querySelector('.attendance-input:checked');
+            
+            const remarkInput = document.getElementById(`remark_${studentId}`);
+            const remark = remarkInput ? remarkInput.value.trim() : '';
+            
+            if (selectedInput) {
+                attendanceData.push({
+                    student_id: studentId,
+                    status: selectedInput.value,
+                    session: 'full_day',
+                    remark: remark
+                });
+            } else {
+                console.log('No attendance selected');
+            }
+        });
+        
+        if (attendanceData.length === 0) {
+            this.showToast('No attendance marked. Please select attendance status for at least one student.', 'warning');
+            return;
+        }
+        
+        if (attendanceData.length < studentCards.length) {
+            const shouldContinue = confirm(`You have marked attendance for ${attendanceData.length} out of ${studentCards.length} students. Continue?`);
+            if (!shouldContinue) {
+                return;
+            }
+        }
+        
+        const saveBtn = document.getElementById('saveAttendanceBtn');
+        
+        if (!saveBtn) {
+            this.showToast('Save button not found!', 'error');
+            return;
+        }
+        
+        const originalText = saveBtn.innerHTML;
+        const originalClass = saveBtn.className;
+        
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        saveBtn.classList.add('saving');
+        saveBtn.disabled = true;
+        
+        try {
+            const response = await fetch('/teacher/mark-attendance', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    date: date,
+                    attendance_data: attendanceData
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved Successfully';
+                saveBtn.classList.remove('saving');
+                saveBtn.classList.add('saved');
+                
+                this.showToast(result.message, 'success');
+                
+                // Reset button after 2 seconds
+                setTimeout(() => {
+                    saveBtn.innerHTML = originalText;
+                    saveBtn.className = originalClass;
+                    saveBtn.disabled = false;
+                }, 2000);
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error) {
+            console.error('ERROR in saveAllAttendance:', error);
+            
+            saveBtn.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error';
+            saveBtn.classList.remove('saving');
+            saveBtn.classList.add('error');
+            
+            this.showToast(`Error: ${error.message}`, 'error');
+            
+            // Reset button after 3 seconds
+            setTimeout(() => {
+                saveBtn.innerHTML = originalText;
+                saveBtn.className = originalClass;
+                saveBtn.disabled = false;
+            }, 3000);
+        }
+    }
+
+    updateStats() {
+        let present = 0;
+        let absent = 0;
+        let late = 0;
+        let excused = 0;
+        
+        document.querySelectorAll('.attendance-input:checked').forEach(input => {
+            switch(input.value) {
+                case 'present':
+                    present++;
+                    break;
+                case 'absent':
+                    absent++;
+                    break;
+                case 'late':
+                    late++;
+                    break;
+                case 'excused':
+                    excused++;
+                    break;
+            }
+        });
+        
+        // Update stat displays
+        document.getElementById('statPresent').textContent = present;
+        document.getElementById('statAbsent').textContent = absent;
+        document.getElementById('statLate').textContent = late;
+        document.getElementById('statExcused').textContent = excused;
+    }
+    
+    hasUnsavedChanges() {
+        // Check if any attendance has been marked but not saved
+        const markedCount = document.querySelectorAll('.attendance-input:checked').length;
+        return markedCount > 0;
+    }
+    
+    showToast(message, type = 'info') {
+        const toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) return;
+        
+        const toastId = 'toast-' + Date.now();
+        
+        const iconMap = {
+            'success': 'check-circle',
+            'error': 'exclamation-circle',
+            'warning': 'exclamation-triangle',
+            'info': 'info-circle'
+        };
+        
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.id = toastId;
+        toast.innerHTML = `
+            <div class="toast-icon">
+                <i class="fas fa-${iconMap[type] || 'info-circle'}"></i>
+            </div>
+            <div class="toast-content">${message}</div>
+            <button class="toast-close" onclick="document.getElementById('${toastId}').remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        toastContainer.appendChild(toast);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            const toastElement = document.getElementById(toastId);
+            if (toastElement) {
+                toastElement.remove();
+            }
+        }, 5000);
+    }
+}
+
+// Initialize the application when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    window.attendanceApp = new AttendanceApp();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}Question Bank - ARNDALE CBT{% endblock %}
+
+{% block page_title %}
+<h1 class="h3 mb-2"><i class="fas fa-database"></i> Question Bank</h1>
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="separator">/</span>
+<a href="{{ url_for('teacher.dashboard') }}">Dashboard</a>
+<span class="separator">/</span>
+<span>Question Bank</span>
+{% endblock %}
+
+{% block content %}
+<!-- Stats Overview -->
+<div class="stats-grid">
+    <div class="stat-card stat-card-primary">
+        <div class="stat-content stat-primary">
+            <div class="stat-numbers">
+                <h3>{{ questions|length }}</h3>
+                <p>Total Questions</p>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-question-circle"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-card stat-card-success">
+        <div class="stat-content stat-success">
+            <div class="stat-numbers">
+                <h3>{{ assigned_subjects|length }}</h3>
+                <p>Subjects</p>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-book"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-card stat-card-info">
+        <div class="stat-content stat-info">
+            <div class="stat-numbers">
+                <h3>{{ approved_count }}</h3>
+                <p>Approved</p>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Layout -->
+<div class="main-layout">
+    <!-- Sidebar -->
+    <div>
+        <!-- Filters -->
+        <div class="filters-card">
+            <div class="filters-header">
+                <i class="fas fa-filter"></i>
+                <h5>Filters</h5>
+            </div>
+            
+            <form method="GET" id="filterForm">
+                <div class="filter-group">
+                    <label for="subject" class="filter-label">Subject</label>
+                    <select name="subject" id="subject" class="filter-select">
+                        <option value="all">All Subjects</option>
+                        {% for subject in subjects %}
+                        <option value="{{ subject.id }}" 
+                                {% if request.args.get('subject') == subject.id|string %}selected{% endif %}>
+                            {{ subject.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="type" class="filter-label">Question Type</label>
+                    <select name="type" id="type" class="filter-select">
+                        <option value="all">All Types</option>
+                        <option value="multiple_choice" {% if request.args.get('type') == 'multiple_choice' %}selected{% endif %}>Multiple Choice</option>
+                        <option value="true_false" {% if request.args.get('type') == 'true_false' %}selected{% endif %}>True/False</option>
+                        <option value="short_answer" {% if request.args.get('type') == 'short_answer' %}selected{% endif %}>Short Answer</option>
+                        <option value="essay" {% if request.args.get('type') == 'essay' %}selected{% endif %}>Essay</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="difficulty" class="filter-label">Difficulty</label>
+                    <select name="difficulty" id="difficulty" class="filter-select">
+                        <option value="all">All Difficulties</option>
+                        <option value="easy" {% if request.args.get('difficulty') == 'easy' %}selected{% endif %}>Easy</option>
+                        <option value="medium" {% if request.args.get('difficulty') == 'medium' %}selected{% endif %}>Medium</option>
+                        <option value="hard" {% if request.args.get('difficulty') == 'hard' %}selected{% endif %}>Hard</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="search" class="filter-label">Search</label>
+                    <input type="text" 
+                           name="search" 
+                           id="search" 
+                           class="filter-input" 
+                           placeholder="Search questions..."
+                           value="{{ request.args.get('search', '') }}">
+                </div>
+                
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="fas fa-search me-1"></i> Apply Filters
+                    </button>
+                    <a href="{{ url_for('teacher.question_bank') }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i> Clear All
+                    </a>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="actions-card">
+            <div class="filters-header">
+                <i class="fas fa-bolt"></i>
+                <h5>Quick Actions</h5>
+            </div>
+            <div class="actions-grid">
+                <a href="{{ url_for('teacher.add_question') }}" class="action-btn">
+                    <i class="fas fa-plus"></i>
+                    <span>Add New Question</span>
+                </a>
+                <a href="{{ url_for('teacher.bulk_upload_questions') }}" class="action-btn">
+                    <i class="fas fa-file-upload"></i>
+                    <span>Bulk Upload</span>
+                </a>
+                <a href="{{ url_for('teacher.download_question_template') }}" class="action-btn">
+                    <i class="fas fa-file-download"></i>
+                    <span>Download Template</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div>
+        <!-- Questions Table -->
+        <div class="questions-table-container">
+            <div class="table-header">
+                <h5><i class="fas fa-list"></i> Questions</h5>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" 
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-cog"></i> Actions
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" id="exportQuestions">
+                            <i class="fas fa-file-export me-2"></i> Export Selected
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" id="selectAll">
+                            <i class="fas fa-check-square me-2"></i> Select All
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" id="deselectAll">
+                            <i class="fas fa-square me-2"></i> Deselect All
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="table-body">
+                {% if questions %}
+                <div class="table-responsive">
+                    <table class="compact-table">
+                        <thead>
+                            <tr>
+                                <th class="checkbox-cell">
+                                    <input type="checkbox" id="selectAllCheckbox" class="question-checkbox">
+                                </th>
+                                <th>Question</th>
+                                <th>Subject</th>
+                                <th>Type</th>
+                                <th>Difficulty</th>
+                                <th>Marks</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for question in questions %}
+                            <tr>
+                                <td class="checkbox-cell">
+                                    <input type="checkbox" class="question-checkbox" value="{{ question.id }}">
+                                </td>
+                                <td>
+                                    <div class="question-preview">
+                                        <div class="question-text">{{ question.question_text|truncate(100) }}</div>
+                                        {% if question.topics %}
+                                        <div class="question-topics">
+                                            {% for topic in question.topics %}
+                                            <span class="topic-badge">{{ topic }}</span>
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>{{ question.subject.name }}</td>
+                                <td>
+                                    {% if question.question_type == 'multiple_choice' %}
+                                    <span class="type-badge badge-mcq">MCQ</span>
+                                    {% elif question.question_type == 'true_false' %}
+                                    <span class="type-badge badge-tf">T/F</span>
+                                    {% elif question.question_type == 'short_answer' %}
+                                    <span class="type-badge badge-sa">Short</span>
+                                    {% elif question.question_type == 'essay' %}
+                                    <span class="type-badge badge-essay">Essay</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if question.difficulty == 'easy' %}
+                                    <span class="difficulty-badge badge-easy">Easy</span>
+                                    {% elif question.difficulty == 'medium' %}
+                                    <span class="difficulty-badge badge-medium">Medium</span>
+                                    {% else %}
+                                    <span class="difficulty-badge badge-hard">Hard</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ question.marks }}</td>
+                                <td>
+                                    {% if question.is_approved %}
+                                    <span class="status-badge badge-approved">Approved</span>
+                                    {% else %}
+                                    <span class="status-badge badge-pending">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="{{ url_for('teacher.edit_question', question_id=question.id) }}" 
+                                           class="action-btn-sm action-edit" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button class="action-btn-sm action-delete delete-question" 
+                                                data-id="{{ question.id }}"
+                                                data-question="{{ question.question_text|truncate(50) }}"
+                                                title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <h4>No Questions Found</h4>
+                    <p>Start building your question bank</p>
+                    <a href="{{ url_for('teacher.add_question') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i> Add First Question
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Subjects Overview -->
+        <div class="filters-card mt-4">
+            <div class="filters-header">
+                <i class="fas fa-book"></i>
+                <h5>Subjects Overview</h5>
+            </div>
+            <div class="subjects-grid">
+                {% for subject_info in assigned_subjects %}
+                <div class="subject-card">
+                    <div class="subject-header">
+                        <div>
+                            <h6 class="subject-name">{{ subject_info.subject.name }}</h6>
+                            <div class="subject-code">{{ subject_info.subject.code }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="subject-footer">
+                        <span class="question-count">{{ subject_info.question_count }} Questions</span>
+                        <a href="{{ url_for('teacher.add_question') }}?subject={{ subject_info.subject.id }}" 
+                           class="add-btn">
+                            <i class="fas fa-plus"></i> Add
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Stats Cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .stat-card-primary::before { background: #10b981; }
+    .stat-card-success::before { background: #10b981; }
+    .stat-card-info::before { background: #0ea5e9; }
+    
+    .stat-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .stat-numbers h3 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+        line-height: 1;
+    }
+    
+    .stat-numbers p {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin: 0;
+        font-weight: 500;
+    }
+    
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    .stat-primary .stat-icon { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .stat-success .stat-icon { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .stat-info .stat-icon { background: rgba(14, 165, 233, 0.1); color: #0ea5e9; }
+    
+    /* Main Layout */
+    .main-layout {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    @media (min-width: 992px) {
+        .main-layout {
+            grid-template-columns: 1fr 3fr;
+        }
+    }
+    
+    /* Filters Sidebar */
+    .filters-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1.5rem;
+    }
+    
+    .filters-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .filters-header h5 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+    
+    .filter-group {
+        margin-bottom: 1rem;
+    }
+    
+    .filter-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    
+    .filter-select {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        background: white;
+        transition: all 0.2s ease;
+    }
+    
+    .filter-select:focus {
+        outline: none;
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+    
+    .filter-input {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+    
+    .filter-input:focus {
+        outline: none;
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+    
+    .filter-actions {
+        display: grid;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
+    }
+    
+    /* Quick Actions */
+    .actions-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+    }
+    
+    .actions-grid {
+        display: grid;
+        gap: 0.75rem;
+    }
+    
+    .action-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        text-decoration: none;
+        color: #1e293b;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .action-btn:hover {
+        background: white;
+        border-color: #10b981;
+        color: #10b981;
+        transform: translateX(3px);
+    }
+    
+    .action-btn i {
+        font-size: 1rem;
+        color: #10b981;
+    }
+    
+    /* Questions Table */
+    .questions-table-container {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+    }
+    
+    .table-header {
+        background: #f8fafc;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .table-header h5 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .table-body {
+        padding: 0;
+    }
+    
+    .compact-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+    }
+    
+    .compact-table th {
+        background: #f8fafc;
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        color: #475569;
+        text-align: left;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .compact-table td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+    }
+    
+    .compact-table tr:hover {
+        background: #f8fafc;
+    }
+    
+    /* Question Preview */
+    .question-preview {
+        max-width: 300px;
+    }
+    
+    .question-text {
+        font-weight: 500;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-clamp: 2;
+    }
+    
+    .question-topics {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        margin-top: 0.25rem;
+    }
+    
+    .topic-badge {
+        font-size: 0.7rem;
+        padding: 0.1rem 0.4rem;
+        background: #e2e8f0;
+        color: #475569;
+        border-radius: 4px;
+        font-weight: 500;
+    }
+    
+    /* Question Type Badges */
+    .type-badge {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    
+    .badge-mcq { background: #dbeafe; color: #1e40af; }
+    .badge-tf { background: #d1fae5; color: #065f46; }
+    .badge-sa { background: #fef3c7; color: #92400e; }
+    .badge-essay { background: #f3e8ff; color: #7c3aed; }
+    
+    /* Difficulty Badges */
+    .difficulty-badge {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    
+    .badge-easy { background: #d1fae5; color: #065f46; }
+    .badge-medium { background: #fef3c7; color: #92400e; }
+    .badge-hard { background: #fee2e2; color: #991b1b; }
+    
+    /* Status Badges */
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    
+    .badge-approved { background: #d1fae5; color: #065f46; }
+    .badge-pending { background: #fef3c7; color: #92400e; }
+    
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .action-btn-sm {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: 1px solid;
+        font-size: 0.85rem;
+    }
+    
+    .action-edit { 
+        background: white; 
+        color: #10b981; 
+        border-color: #bbf7d0; 
+    }
+    .action-edit:hover { 
+        background: #10b981; 
+        color: white; 
+        border-color: #10b981; 
+    }
+    
+    .action-delete { 
+        background: white; 
+        color: #ef4444; 
+        border-color: #fecaca; 
+    }
+    .action-delete:hover { 
+        background: #ef4444; 
+        color: white; 
+        border-color: #ef4444; 
+    }
+    
+    /* Checkbox */
+    .checkbox-cell {
+        width: 40px;
+    }
+    
+    .question-checkbox {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+    
+    /* Subjects Overview */
+    .subjects-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .subject-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1rem;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s ease;
+    }
+    
+    .subject-card:hover {
+        border-color: #10b981;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+    }
+    
+    .subject-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.5rem;
+    }
+    
+    .subject-name {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0;
+    }
+    
+    .subject-code {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin-bottom: 0.5rem;
+    }
+    
+    .subject-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 0.75rem;
+    }
+    
+    .question-count {
+        font-size: 0.85rem;
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    
+    .add-btn {
+        padding: 0.25rem 0.75rem;
+        background: #10b981;
+        color: white;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 0.8rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .add-btn:hover {
+        background: #059669;
+        color: white;
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1.5rem;
+    }
+    
+    .empty-icon {
+        font-size: 3rem;
+        color: #e2e8f0;
+        margin-bottom: 1rem;
+        opacity: 0.6;
+    }
+    
+    .empty-state h4 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+    }
+    
+    .empty-state p {
+        color: #64748b;
+        margin-bottom: 1.5rem;
+        max-width: 300px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+        
+        .stat-card {
+            padding: 1rem;
+        }
+        
+        .stat-numbers h3 {
+            font-size: 1.5rem;
+        }
+        
+        .table-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        
+        .compact-table {
+            display: block;
+            overflow-x: auto;
+        }
+        
+        .compact-table th,
+        .compact-table td {
+            white-space: nowrap;
+        }
+        
+        .question-preview {
+            max-width: 200px;
+        }
+        
+        .subjects-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .action-buttons {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+    }
+</style>
+
+<script>
+    // Delete question confirmation
+    document.addEventListener('click', function(e) {
+        const deleteBtn = e.target.closest('.delete-question');
+        
+        if (deleteBtn) {
+            e.preventDefault();
+            
+            const questionId = deleteBtn.getAttribute('data-id');
+            const questionText = deleteBtn.getAttribute('data-question');
+            
+            if (confirm(`Delete this question?\n\n"${questionText}"`)) {
+                fetch(`/teacher/question/delete/${questionId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Error deleting question');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Network error');
+                });
+            }
+        }
+    });
+    
+    // Select all checkbox
+    document.getElementById('selectAllCheckbox').addEventListener('change', function() {
+        document.querySelectorAll('.question-checkbox').forEach(cb => {
+            cb.checked = this.checked;
+        });
+    });
+    
+    // Update select all checkbox when individual checkboxes change
+    document.querySelectorAll('.question-checkbox').forEach(cb => {
+        cb.addEventListener('change', function() {
+            const allChecked = Array.from(document.querySelectorAll('.question-checkbox'))
+                .every(cb => cb.checked);
+            document.getElementById('selectAllCheckbox').checked = allChecked;
+        });
+    });
+    
+    // Select all action
+    document.getElementById('selectAll').addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('.question-checkbox').forEach(cb => {
+            cb.checked = true;
+        });
+        document.getElementById('selectAllCheckbox').checked = true;
+    });
+    
+    // Deselect all action
+    document.getElementById('deselectAll').addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('.question-checkbox').forEach(cb => {
+            cb.checked = false;
+        });
+        document.getElementById('selectAllCheckbox').checked = false;
+    });
+    
+    // Export selected questions
+    document.getElementById('exportQuestions').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        const selected = Array.from(document.querySelectorAll('.question-checkbox:checked'))
+            .map(cb => cb.value);
+        
+        if (selected.length === 0) {
+            alert('Please select questions to export');
+            return;
+        }
+        
+        // Create export URL
+        const url = new URL(window.location.href);
+        url.searchParams.set('export', selected.join(','));
+        window.open(url.toString(), '_blank');
+    });
+    
+    // Auto-submit filters when select changes
+    document.querySelectorAll('#subject, #type, #difficulty').forEach(select => {
+        select.addEventListener('change', function() {
+            document.getElementById('filterForm').submit();
+        });
+    });
+</script>
+{% endblock %}

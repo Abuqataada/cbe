@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Administrator Login - ARNDALE Finance Portal</title>
+    
+    <!-- Bootstrap 5 CSS (Local) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+
+    <!-- Font Awesome (Local) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        /* Finance Admin Login Card */
+        .login-container {
+            max-width: 440px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: 0 20px 40px rgba(46, 204, 113, 0.12);
+            border: 1px solid rgba(46, 204, 113, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%);
+        }
+
+        /* Finance Admin Header */
+        .finance-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .finance-icon {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin: 0 auto 1rem;
+            color: white;
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            box-shadow: 0 10px 25px rgba(46, 204, 113, 0.25);
+            border: 4px solid white;
+        }
+
+        .finance-title {
+            font-size: 1.85rem;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .finance-subtitle {
+            color: #2ecc71;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.25rem;
+        }
+
+        .finance-badge {
+            background: #f0f9f0;
+            color: #27ae60;
+            padding: 0.35rem 1rem;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 0.5rem;
+        }
+
+        /* Finance-specific styling */
+        .finance-input:focus {
+            border-color: #2ecc71 !important;
+            box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1) !important;
+        }
+
+        .finance-btn {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            color: white;
+            border: none;
+            padding: 0.875rem 1.5rem;
+            border-radius: 12px;
+            width: 100%;
+            font-weight: 600;
+            transition: all 0.3s;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        .finance-btn:hover {
+            background: linear-gradient(135deg, #27ae60 0%, #219a52 100%);
+            box-shadow: 0 8px 20px rgba(46, 204, 113, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .finance-btn i {
+            margin-right: 8px;
+        }
+
+        .finance-notice {
+            background: #f0f9f0;
+            border-left: 4px solid #2ecc71;
+            border-radius: 12px;
+            padding: 1rem;
+            color: #1e293b;
+            font-size: 0.9rem;
+        }
+
+        .finance-notice i {
+            color: #2ecc71;
+        }
+
+        /* Security warning for finance admin */
+        .audit-warning {
+            background: linear-gradient(135deg, #fef9e7 0%, #fef3c7 100%);
+            border: 2px solid #f39c12;
+            border-radius: 16px;
+            padding: 1.25rem;
+            margin-top: 1.5rem;
+            text-align: left;
+            color: #92400e;
+        }
+        
+        .audit-warning i {
+            color: #f39c12;
+            font-size: 1.1rem;
+            margin-right: 8px;
+        }
+
+        /* Form styling */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .form-label i {
+            color: #2ecc71;
+            font-size: 1rem;
+        }
+        
+        .form-control {
+            padding: 0.875rem 1rem;
+            border-radius: 12px;
+            border: 1.5px solid #e2e8f0;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+        
+        .form-control:focus {
+            border-color: #2ecc71;
+            box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
+        }
+        
+        /* Flash messages */
+        .alert {
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: none;
+            font-size: 0.95rem;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+        
+        /* CAPTCHA styling */
+        .captcha-section {
+            background: #f8fafc;
+            border: 1.5px dashed #2ecc71;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        .captcha-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #27ae60;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
+        }
+        
+        .captcha-image {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1rem;
+            margin: 1rem 0;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+        
+        .captcha-image img {
+            border-radius: 8px;
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .input-group {
+            position: relative;
+        }
+        
+        .input-group i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            z-index: 10;
+        }
+        
+        .input-group input {
+            padding-left: 2.5rem !important;
+        }
+        
+        /* Back link */
+        .back-link {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+        
+        .back-link a {
+            color: #64748b;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .back-link a:hover {
+            color: #2ecc71;
+        }
+        
+        /* Fiscal year indicator */
+        .fiscal-year {
+            text-align: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+        
+        .fiscal-year i {
+            color: #2ecc71;
+            margin-right: 6px;
+        }
+        
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 2rem 1.5rem;
+            }
+            
+            .finance-icon {
+                width: 75px;
+                height: 75px;
+                font-size: 2rem;
+            }
+            
+            .finance-title {
+                font-size: 1.6rem;
+            }
+            
+            .finance-subtitle {
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <!-- Finance Admin Header -->
+            <div class="finance-header">
+                <div class="finance-icon">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <span class="finance-subtitle">ARNDALE Finance Portal</span>
+                <h2 class="finance-title">Finance Administrator</h2>
+                <span class="finance-badge">
+                    <i class="fas fa-shield-alt"></i>
+                    Elevated Access • FY 2026
+                </span>
+                <p class="admin-subtitle mt-3" style="color: #475569; font-size: 0.95rem;">
+                    Complete financial system control, reporting, and management
+                </p>
+            </div>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} mb-3">
+                                <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Finance Admin Login Form -->
+            <form method="POST" action="{{ url_for('auth.login') }}" class="login-form">
+                <input type="hidden" name="role" value="finance_admin">
+                
+                <!-- Username Field -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-user-tie"></i>
+                        Finance Admin ID
+                    </label>
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="text" 
+                               name="username" 
+                               class="form-control finance-input" 
+                               placeholder="Enter your admin ID or email"
+                               value="{{ username or '' }}"
+                               required
+                               autofocus
+                               autocomplete="username">
+                    </div>
+                    <small class="text-muted mt-1 d-block">
+                        <i class="fas fa-info-circle"></i> 
+                        Your authorized finance administrator credentials
+                    </small>
+                </div>
+
+                <!-- Password Field -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-lock"></i>
+                        Secure Password
+                    </label>
+                    <div class="input-group">
+                        <i class="fas fa-key"></i>
+                        <input type="password" 
+                               name="password" 
+                               class="form-control finance-input" 
+                               placeholder="Enter your secure password"
+                               required
+                               autocomplete="current-password">
+                    </div>
+                </div>
+
+                <!-- CAPTCHA Section -->
+                {% if show_captcha and captcha %}
+                <div class="captcha-section">
+                    <div class="captcha-header">
+                        <i class="fas fa-shield-virus"></i>
+                        <strong>Financial Security Verification</strong>
+                    </div>
+                    <p class="mb-2" style="color: #475569; font-size: 0.9rem;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Additional verification required for financial system access:
+                    </p>
+                    
+                    <div class="captcha-image">
+                        <img src="{{ captcha.image }}" alt="CAPTCHA Verification Code">
+                    </div>
+                    
+                    <input type="hidden" name="captcha_id" value="{{ captcha.id }}">
+                    
+                    <div class="input-group">
+                        <i class="fas fa-font"></i>
+                        <input type="text" 
+                               name="captcha" 
+                               class="form-control finance-input" 
+                               placeholder="Enter the security code shown above"
+                               required
+                               maxlength="6"
+                               autocomplete="off">
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Remember Me -->
+                <div class="form-check mb-4">
+                    <input class="form-check-input" type="checkbox" name="remember" id="remember">
+                    <label class="form-check-label" for="remember" style="color: #475569;">
+                        Keep me signed in on this device
+                    </label>
+                </div>
+
+                <!-- Login Button -->
+                <button type="submit" class="finance-btn" id="loginBtn">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Access Finance Dashboard
+                </button>
+            </form>
+
+            <!-- Finance Admin Notice -->
+            <div class="finance-notice mt-4">
+                <div class="d-flex align-items-start gap-2">
+                    <i class="fas fa-file-invoice-dollar mt-1"></i>
+                    <div>
+                        <strong>Financial System Access:</strong> This portal provides complete access to fee management, payroll, budgeting, and financial reporting. All transactions are audited.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Fiscal Year & Session Info -->
+        <div class="fiscal-year">
+            <i class="fas fa-calendar-check"></i>
+            Current Fiscal Year: {{ fiscal_year or '2024-2026' }} | 
+            Session: {{ academic_session or 'Spring 2026' }}
+        </div>
+
+        <!-- Back Link -->
+        <div class="back-link">
+            <a href="{{ url_for('finance_admin_index') }}">
+                <i class="fas fa-arrow-left"></i>
+                Return to Finance Portal Welcome Page
+            </a>
+        </div>
+        
+        <div class="text-center mt-3">
+            <span style="color: #94a3b8; font-size: 0.8rem;">
+                <i class="fas fa-shield-alt"></i> 
+                PCI DSS Compliant • SSL Encrypted
+            </span>
+        </div>
+    </div>
+    
+    <!-- No JavaScript - keeping original functionality -->
+</body>
+</html>

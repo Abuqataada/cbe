@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}Bulk Upload Results - ARNDALE CBT{% endblock %}
+
+{% block page_title %}
+<h1 class="h3 mb-2"><i class="fas fa-file-upload"></i> Bulk Upload Results</h1>
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="separator">/</span>
+<a href="{{ url_for('teacher.dashboard') }}">Dashboard</a>
+<span class="separator">/</span>
+<a href="{{ url_for('teacher.question_bank') }}">Question Bank</a>
+<span class="separator">/</span>
+<a href="{{ url_for('teacher.bulk_upload_questions') }}">Bulk Upload</a>
+<span class="separator">/</span>
+<span>Results</span>
+{% endblock %}
+
+{% block content %}
+<div class="main-layout">
+    <!-- Main Content -->
+    <div>
+        <!-- Upload Summary Card -->
+        <div class="content-card">
+            <div class="card-header">
+                <i class="fas fa-chart-bar"></i>
+                <h5>Upload Summary</h5>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card stat-card-success">
+                    <div class="stat-number">{{ success_count }}</div>
+                    <div class="stat-label">Successful</div>
+                </div>
+                
+                <div class="stat-card stat-card-error">
+                    <div class="stat-number">{{ error_count }}</div>
+                    <div class="stat-label">Failed</div>
+                </div>
+                
+                <div class="stat-card stat-card-info">
+                    <div class="stat-number">{{ success_count + error_count }}</div>
+                    <div class="stat-label">Total Processed</div>
+                </div>
+            </div>
+            
+            {% if errors %}
+            <div class="errors-box">
+                <h6>
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Errors Found During Upload
+                </h6>
+                <p class="mb-3" style="color: #92400e;">
+                    The following rows had errors and were not imported:
+                </p>
+                
+                <div class="table-responsive">
+                    <table class="compact-table">
+                        <thead>
+                            <tr>
+                                <th>Row</th>
+                                <th>Error Message</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for error in errors %}
+                            <tr class="error-row">
+                                <td><strong>{{ error.split(': ')[0] if ': ' in error else 'Row ' + loop.index|string }}</strong></td>
+                                <td class="error-cell">{{ error.split(': ')[1] if ': ' in error else error }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="action-buttons">
+                <a href="{{ url_for('teacher.bulk_upload_questions') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-upload"></i> Upload Another File
+                </a>
+                <a href="{{ url_for('teacher.question_bank') }}" class="btn btn-primary">
+                    <i class="fas fa-database"></i> View Question Bank
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div>
+        <!-- Next Steps Card -->
+        <div class="content-card">
+            <div class="card-header">
+                <i class="fas fa-forward"></i>
+                <h5>Next Steps</h5>
+            </div>
+            
+            <ul class="steps-list">
+                <li class="step-item">
+                    <div class="step-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-title">Review Questions</div>
+                        <div class="step-description">
+                            Check the uploaded questions in your question bank
+                        </div>
+                    </div>
+                </li>
+                
+                <li class="step-item">
+                    <div class="step-icon">
+                        <i class="fas fa-edit"></i>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-title">Edit if Needed</div>
+                        <div class="step-description">
+                            Make any necessary edits to the imported questions
+                        </div>
+                    </div>
+                </li>
+                
+                <li class="step-item">
+                    <div class="step-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-title">Use in Exams</div>
+                        <div class="step-description">
+                            Start using these questions in your exams and assessments
+                        </div>
+                    </div>
+                </li>
+            </ul>
+            
+            {% if error_count > 0 %}
+            <div class="help-box">
+                <h6>
+                    <i class="fas fa-exclamation-circle"></i>
+                    Need Help With Errors?
+                </h6>
+                <ul>
+                    <li>Download the template and compare formats</li>
+                    <li>Check subject codes in your file</li>
+                    <li>Verify question types are correctly formatted</li>
+                    <li>Contact support if issues persist</li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Main Layout */
+    .main-layout {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    @media (min-width: 992px) {
+        .main-layout {
+            grid-template-columns: 2fr 1fr;
+        }
+    }
+    
+    /* Card Styling */
+    .content-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1.5rem;
+    }
+    
+    .card-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .card-header h5 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+    
+    /* Stats Cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+    }
+    
+    .stat-card {
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.2s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .stat-card-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+    
+    .stat-card-error {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+    }
+    
+    .stat-card-info {
+        background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+        color: white;
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 800;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        opacity: 0.9;
+    }
+    
+    /* Errors Box */
+    .errors-box {
+        background: rgba(245, 158, 11, 0.1);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        border-left: 4px solid #f59e0b;
+        border-radius: 8px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .errors-box h6 {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #92400e;
+        margin-bottom: 0.75rem;
+    }
+    
+    /* Help Box */
+    .help-box {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        border-left: 4px solid #ef4444;
+        border-radius: 8px;
+        padding: 1.25rem;
+        margin-top: 1.5rem;
+    }
+    
+    .help-box h6 {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #991b1b;
+        margin-bottom: 0.75rem;
+    }
+    
+    .help-box ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .help-box li {
+        position: relative;
+        padding-left: 1.25rem;
+        margin-bottom: 0.4rem;
+        line-height: 1.4;
+        color: #991b1b;
+    }
+    
+    .help-box li:before {
+        content: "•";
+        position: absolute;
+        left: 0.5rem;
+        color: #ef4444;
+        font-weight: bold;
+    }
+    
+    .help-box li:last-child {
+        margin-bottom: 0;
+    }
+    
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e2e8f0;
+    }
+    
+    .btn {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .btn-primary {
+        background: #10b981;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: #059669;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+    
+    .btn-outline-secondary {
+        background: white;
+        color: #64748b;
+        border: 1px solid #cbd5e1;
+    }
+    
+    .btn-outline-secondary:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+        color: #475569;
+    }
+    
+    /* Table Styling */
+    .compact-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+    
+    .compact-table th {
+        background: #f8fafc;
+        padding: 0.75rem;
+        font-weight: 600;
+        color: #475569;
+        text-align: left;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .compact-table td {
+        padding: 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: top;
+    }
+    
+    .compact-table tr:hover {
+        background: #f8fafc;
+    }
+    
+    .error-row {
+        border-left: 4px solid #ef4444;
+    }
+    
+    .error-cell {
+        color: #dc2626;
+        font-weight: 500;
+    }
+    
+    /* Next Steps List */
+    .steps-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .step-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1rem 0;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .step-item:last-child {
+        border-bottom: none;
+    }
+    
+    .step-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    
+    .step-content {
+        flex: 1;
+    }
+    
+    .step-title {
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+        font-size: 0.95rem;
+    }
+    
+    .step-description {
+        color: #64748b;
+        font-size: 0.85rem;
+        line-height: 1.4;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .content-card {
+            padding: 1rem;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .compact-table {
+            display: block;
+            overflow-x: auto;
+        }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Bulk upload results page loaded');
+    
+    // Optional: Add animation to stats cards
+    const statCards = document.querySelectorAll('.stat-card');
+    statCards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 200);
+    });
+    
+    // Optional: Add row highlighting on error table hover
+    const errorRows = document.querySelectorAll('.error-row');
+    errorRows.forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = '#fef2f2';
+        });
+        
+        row.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '';
+        });
+    });
+    
+    // Show success message if all uploads were successful
+    const errorCount = parseInt('{{ error_count }}') || 0;
+    const successCount = parseInt('{{ success_count }}') || 0;
+    if (errorCount === 0 && successCount > 0) {
+        console.log('All uploads successful!');
+        // You could add a subtle success notification here if needed
+    }
+});
+</script>
+{% endblock %}

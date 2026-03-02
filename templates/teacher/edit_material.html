@@ -1,0 +1,222 @@
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}Edit Material - ARNDALE CBT{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-edit me-2"></i> Edit Learning Material</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('teacher.edit_material', material_id=material.id) }}" enctype="multipart/form-data">
+                    <!-- Basic Information -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="title" class="form-label">Title *</label>
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   value="{{ material.title }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="material_type" class="form-label">Material Type</label>
+                            <select class="form-select" id="material_type" name="material_type">
+                                <option value="note" {% if material.material_type == 'note' %}selected{% endif %}>Note/Lecture</option>
+                                <option value="assignment" {% if material.material_type == 'assignment' %}selected{% endif %}>Assignment</option>
+                                <option value="video" {% if material.material_type == 'video' %}selected{% endif %}>Video</option>
+                                <option value="presentation" {% if material.material_type == 'presentation' %}selected{% endif %}>Presentation</option>
+                                <option value="reading" {% if material.material_type == 'reading' %}selected{% endif %}>Reading Material</option>
+                                <option value="quiz" {% if material.material_type == 'quiz' %}selected{% endif %}>Quiz/Exercise</option>
+                                <option value="other" {% if material.material_type == 'other' %}selected{% endif %}>Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Subject and Class Information -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Subject</label>
+                                <input type="text" class="form-control" 
+                                       value="{{ material.subject.name }} - {{ material.classroom.name }}" 
+                                       readonly disabled>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="accessible_to" class="form-label">Access Level</label>
+                            <select class="form-select" id="accessible_to" name="accessible_to">
+                                <option value="class" {% if material.accessible_to == 'class' %}selected{% endif %}>Class Students Only</option>
+                                <option value="subject" {% if material.accessible_to == 'subject' %}selected{% endif %}>All Students in Subject</option>
+                                <option value="all" {% if material.accessible_to == 'all' %}selected{% endif %}>All Students</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ material.description or '' }}</textarea>
+                    </div>
+
+                    <!-- Current File Information -->
+                    {% if material.file_path %}
+                    <div class="card mb-3 border-info">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0">Current File</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-file-{% if material.file_type %}{{ material.file_type }}{% else %}alt{% endif %} me-2"></i>
+                                    <strong>{{ material.file_path.split('/')[-1] }}</strong>
+                                    {% if material.file_size %}
+                                    <small class="text-muted ms-2">({{ (material.file_size / 1024 / 1024)|round(2) }} MB)</small>
+                                    {% endif %}
+                                </div>
+                                <a href="{{ material.file_path }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                    <i class="fas fa-eye me-1"></i> View
+                                </a>
+                            </div>
+                            <div class="form-text mt-2">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Upload a new file below to replace this one.
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Upload New File -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">Update File/Content</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="file" class="form-label">Upload New File (Optional)</label>
+                                <input type="file" class="form-control" id="file" name="file" 
+                                       accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.mp4,.mp3,.zip">
+                                <div class="form-text">
+                                    Leave empty to keep current file. Allowed: PDF, Word, PowerPoint, Images, Videos, MP3, ZIP
+                                </div>
+                            </div>
+
+                            {% if not material.file_path or material.file_type == 'text' %}
+                            <div class="mb-3">
+                                <label for="content" class="form-label">Content</label>
+                                <textarea class="form-control" id="content" name="content" rows="5">{{ material.content or '' }}</textarea>
+                            </div>
+                            {% endif %}
+
+                            <div class="mb-3">
+                                <label for="external_link" class="form-label">External Link (Optional)</label>
+                                <input type="url" class="form-control" id="external_link" name="external_link" 
+                                       value="{{ material.external_link or '' }}" placeholder="https://example.com/video-link">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="mb-3">
+                        <label for="tags" class="form-label">Tags (comma separated)</label>
+                        <input type="text" class="form-control" id="tags" name="tags" 
+                               value="{% if material.tags %}{{ material.tags|join(', ') }}{% endif %}" 
+                               placeholder="math, algebra, chapter1">
+                    </div>
+
+                    <!-- Publish Settings -->
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_published" name="is_published" 
+                                   {% if material.is_published %}checked{% endif %}>
+                            <label class="form-check-label" for="is_published">
+                                Publish (Students can access)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_featured" name="is_featured"
+                                   {% if material.is_featured %}checked{% endif %}>
+                            <label class="form-check-label" for="is_featured">
+                                Mark as Featured (Will appear at top for students)
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="card mb-4 border-secondary">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="mb-0">Statistics</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-4 mb-2">
+                                    <div class="border rounded p-2">
+                                        <h4 class="text-primary mb-0">{{ material.download_count or 0 }}</h4>
+                                        <small class="text-muted">Downloads</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <div class="border rounded p-2">
+                                        <h4 class="text-success mb-0">{{ material.view_count or 0 }}</h4>
+                                        <small class="text-muted">Views</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <div class="border rounded p-2">
+                                        <h4 class="text-warning mb-0">
+                                            {% if material.updated_at %}
+                                                {{ material.updated_at.strftime('%d %b') }}
+                                            {% else %}
+                                                New
+                                            {% endif %}
+                                        </h4>
+                                        <small class="text-muted">Last Updated</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                        <a href="{{ url_for('teacher.upload_notes') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i> Back to List
+                        </a>
+                        <div>
+                            <button type="reset" class="btn btn-outline-secondary">Reset</button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-2"></i> Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // File size validation
+    document.getElementById('file').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+            if (file.size > maxSize) {
+                alert('File size exceeds 50MB limit. Please choose a smaller file.');
+                e.target.value = ''; // Clear the file input
+            }
+        }
+    });
+
+    // Show/hide content field based on file type
+    const fileInput = document.getElementById('file');
+    const contentField = document.getElementById('content');
+    
+    fileInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            contentField.style.display = 'none';
+        } else {
+            contentField.style.display = 'block';
+        }
+    });
+</script>
+{% endblock %}

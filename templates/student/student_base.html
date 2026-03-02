@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>{% block title %}Student Portal - ARNDALE CBT{% endblock %}</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fonts/fonts.css') }}">
+   
+    <!-- Student-specific CSS -->
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --primary-dark: #1d4ed8;
+            --secondary-color: #10b981;
+            --accent-color: #8b5cf6;
+            --light-bg: #f0f9ff;
+            --border-radius: 10px;
+            --mobile-padding: 0.75rem;
+            --sidebar-width: 280px;
+            --sidebar-collapsed: 70px;
+            --sidebar-transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            min-height: 100vh;
+            display: flex;
+            -webkit-text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: linear-gradient(180deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+            box-shadow: 2px 0 15px rgba(0, 0, 0, 0.1);
+            z-index: 1030;
+            transition: var(--sidebar-transition);
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-collapsed {
+            width: var(--sidebar-collapsed);
+        }
+
+        .sidebar-header {
+            padding: 1.5rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .sidebar-brand {
+            color: white;
+            font-weight: 700;
+            font-size: 1.25rem;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            white-space: nowrap;
+        }
+
+        .sidebar-brand i {
+            color: #93c5fd;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .brand-text {
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-collapsed .brand-text {
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+        }
+
+        /* Navigation Links */
+        .sidebar-nav {
+            flex: 1;
+            padding: 1rem 0;
+        }
+
+        .nav-item {
+            margin-bottom: 0.25rem;
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.9) !important;
+            padding: 0.875rem 1.25rem !important;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+            white-space: nowrap;
+        }
+
+        .nav-link i {
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .link-text {
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-collapsed .link-text {
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-left-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-link.active {
+            background: rgba(255, 255, 255, 0.15);
+            border-left-color: white;
+            color: white !important;
+            font-weight: 600;
+        }
+
+        /* Sidebar Footer */
+        .sidebar-footer {
+            padding: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .logout-text {
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-collapsed .logout-text {
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+        }
+
+        /* Main Content Wrapper */
+        .main-wrapper {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            transition: var(--sidebar-transition);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-wrapper-expanded {
+            margin-left: var(--sidebar-collapsed);
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+
+        .sidebar-toggle:hover {
+            background-color: #f3f4f6;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .user-details {
+            display: none;
+        }
+
+        @media (min-width: 768px) {
+            .user-details {
+                display: block;
+            }
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+        }
+
+        /* Flash Messages */
+        .alert {
+            margin-bottom: 1.5rem;
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .alert i {
+            margin-right: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        /* Student Cards */
+        .student-card {
+            background: white;
+            border-radius: var(--border-radius);
+            border: none;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .student-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .student-card .card-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: white;
+            border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+            padding: 1rem 1.25rem;
+            border: none;
+            font-size: 0.95rem;
+        }
+
+        .student-card .card-header h5 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .student-card .card-header i {
+            margin-right: 0.5rem;
+        }
+
+        /* Student Info Box */
+        .student-info-box {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-radius: var(--border-radius);
+            padding: 1.25rem;
+            border-left: 4px solid var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .student-info-box .info-item {
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px dashed #cbd5e1;
+            font-size: 0.875rem;
+        }
+
+        .student-info-box .info-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: var(--primary-dark);
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 0.1rem;
+        }
+
+        .info-value {
+            color: #1e293b;
+            font-weight: 500;
+            word-break: break-word;
+        }
+
+        /* Exam Cards */
+        .exam-card {
+            border-left: 3px solid;
+            border-left-color: var(--primary-color);
+            height: auto;
+            margin-bottom: 1rem;
+        }
+
+        .exam-card .exam-status {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-upcoming {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-completed {
+            background-color: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .exam-card .card-body {
+            padding: 1.25rem;
+        }
+
+        .exam-card .exam-details {
+            margin-top: 0.75rem;
+        }
+
+        .exam-card .detail-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.4rem;
+            font-size: 0.85rem;
+        }
+
+        .exam-card .detail-item i {
+            width: 18px;
+            color: var(--primary-color);
+            margin-right: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        /* Action Buttons */
+        .action-btn {
+            padding: 0.5rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            border: none;
+            font-size: 0.875rem;
+            min-height: 44px;
+        }
+
+        .btn-start-exam {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-start-exam:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-view-details {
+            background: white;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+        }
+
+        .btn-view-details:hover {
+            background: var(--primary-color);
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: #6b7280;
+        }
+
+        .empty-state i {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+            color: #cbd5e1;
+        }
+
+        .empty-state h4 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Footer */
+        .student-footer {
+            background: white;
+            color: #6b7280;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            font-size: 0.85rem;
+        }
+
+        .student-footer p {
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+
+        .student-footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+
+        .student-footer a:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: fixed;
+                bottom: 0;
+                top: auto;
+                left: 0;
+                transform: translateY(100%);
+                transition: transform 0.3s ease;
+                border-radius: 20px 20px 0 0;
+            }
+
+            .sidebar.show {
+                transform: translateY(0);
+            }
+
+            .main-wrapper {
+                margin-left: 0;
+                padding-bottom: 70px; /* Space for mobile bottom bar */
+            }
+
+            .sidebar-header {
+                padding: 1rem;
+            }
+
+            .sidebar-nav {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.5rem;
+                padding: 1rem;
+            }
+
+            .nav-item {
+                margin-bottom: 0;
+            }
+
+            .nav-link {
+                flex-direction: column;
+                padding: 0.75rem 0.5rem !important;
+                border-left: none;
+                border-top: 3px solid transparent;
+                text-align: center;
+                gap: 0.5rem;
+            }
+
+            .nav-link.active {
+                border-left: none;
+                border-top-color: white;
+            }
+
+            .nav-link:hover {
+                border-left: none;
+                border-top-color: rgba(255, 255, 255, 0.3);
+            }
+
+            .link-text {
+                font-size: 0.7rem;
+                opacity: 1 !important;
+                width: auto !important;
+                overflow: visible !important;
+            }
+
+            .sidebar-footer {
+                display: none;
+            }
+
+            .top-bar {
+                padding: 0.75rem 1rem;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .mobile-menu-trigger {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                width: 60px;
+                height: 60px;
+                background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 1.5rem;
+                box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+                z-index: 1040;
+                cursor: pointer;
+            }
+
+            .sidebar-toggle {
+                display: none;
+            }
+        }
+
+        /* Touch-friendly Improvements */
+        .btn, 
+        .nav-link,
+        .form-control,
+        .form-select {
+            min-height: 44px;
+        }
+
+        input, 
+        select, 
+        textarea {
+            font-size: 16px !important;
+        }
+
+        /* Print Styles */
+        @media print {
+            .sidebar,
+            .top-bar,
+            .student-footer,
+            .alert,
+            .btn {
+                display: none !important;
+            }
+            
+            .main-wrapper {
+                margin-left: 0 !important;
+            }
+            
+            .main-content {
+                padding: 0;
+            }
+            
+            .student-card {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="{{ url_for('student.dashboard') }}" class="sidebar-brand">
+                <i class="fas fa-graduation-cap"></i>
+                <span class="brand-text">ARNDALE CBE</span>
+            </a>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <div class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'student.dashboard' %}active{% endif %}" 
+                   href="{{ url_for('student.dashboard') }}">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span class="link-text">Dashboard</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'student.exams_dashboard' %}active{% endif %}" 
+                   href="{{ url_for('student.exams_dashboard') }}">
+                    <i class="fas fa-file-alt"></i>
+                    <span class="link-text">Exams</span>
+                </a>
+            </div>
+
+            <div class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'student.e_library' %}active{% endif %}" 
+                   href="{{ url_for('student.e_library') }}">
+                    <i class="fas fa-book-open"></i>
+                    <span class="link-text">E-Library</span>
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'student.results' %}active{% endif %}" 
+                   href="{{ url_for('student.results') }}">
+                    <i class="fas fa-chart-line"></i>
+                    <span class="link-text">Results</span>
+                </a>
+            </div>
+            
+            <!-- Add more navigation items as needed -->
+        </nav>
+        
+        <div class="sidebar-footer">
+            <a href="{{ url_for('auth.student_logout') }}" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="logout-text">Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Mobile Menu Trigger -->
+    <div class="mobile-menu-trigger d-lg-none" id="mobileMenuTrigger">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper" id="mainWrapper">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <button class="sidebar-toggle d-none d-lg-block" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <div class="user-info">
+                <div class="user-avatar">
+                    {{ student.first_name[0] if student else 'S' }}
+                </div>
+                <div class="user-details">
+                    <strong>{{ student.first_name if student else 'Student' }}</strong>
+                    <small class="text-muted d-block">{{ student.admission_number if student else '' }}</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        <div class="main-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show">
+                            <div class="d-flex align-items-center">
+                                {% if category == 'success' %}
+                                    <i class="fas fa-check-circle me-2"></i>
+                                {% elif category == 'danger' %}
+                                    <i class="fas fa-exclamation-circle me-2"></i>
+                                {% elif category == 'warning' %}
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                {% else %}
+                                    <i class="fas fa-info-circle me-2"></i>
+                                {% endif %}
+                                <span>{{ message }}</span>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Main Content Area -->
+            {% block content %}{% endblock %}
+        </div>
+
+        <!-- Footer -->
+        <footer class="student-footer">
+            <div class="container-fluid">
+                <div class="row align-items-center">
+                    <div class="col-md-6 mb-2 mb-md-0">
+                        <p class="mb-1">
+                            <i class="fas fa-graduation-cap me-2"></i>
+                            <strong>ARNDALE CBT System</strong>
+                        </p>
+                        <p class="mb-0 small">Student Portal v2.0</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-0 text-md-end small">
+                            &copy; <span id="currentYear"></span> ARNDALE Schools
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle with Popper -->
+    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set current year in footer
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+            
+            // Sidebar toggle functionality
+            const sidebar = document.getElementById('sidebar');
+            const mainWrapper = document.getElementById('mainWrapper');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const mobileMenuTrigger = document.getElementById('mobileMenuTrigger');
+            
+            // Desktop sidebar toggle
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('sidebar-collapsed');
+                    mainWrapper.classList.toggle('main-wrapper-expanded');
+                    
+                    // Update icon
+                    const icon = this.querySelector('i');
+                    if (sidebar.classList.contains('sidebar-collapsed')) {
+                        icon.className = 'fas fa-chevron-right';
+                    } else {
+                        icon.className = 'fas fa-bars';
+                    }
+                    
+                    // Save state to localStorage
+                    localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('sidebar-collapsed'));
+                });
+                
+                // Load saved sidebar state
+                const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+                if (isCollapsed) {
+                    sidebar.classList.add('sidebar-collapsed');
+                    mainWrapper.classList.add('main-wrapper-expanded');
+                    sidebarToggle.querySelector('i').className = 'fas fa-chevron-right';
+                }
+            }
+            
+            // Mobile menu toggle
+            if (mobileMenuTrigger) {
+                mobileMenuTrigger.addEventListener('click', function() {
+                    sidebar.classList.toggle('show');
+                    
+                    // Update icon
+                    const icon = this.querySelector('i');
+                    if (sidebar.classList.contains('show')) {
+                        icon.className = 'fas fa-times';
+                        this.style.transform = 'rotate(90deg)';
+                    } else {
+                        icon.className = 'fas fa-bars';
+                        this.style.transform = 'rotate(0)';
+                    }
+                });
+                
+                // Close mobile menu when clicking outside
+                document.addEventListener('click', function(event) {
+                    if (!sidebar.contains(event.target) && 
+                        !mobileMenuTrigger.contains(event.target) && 
+                        sidebar.classList.contains('show')) {
+                        mobileMenuTrigger.click();
+                    }
+                });
+                
+                // Close mobile menu when clicking a link
+                const navLinks = document.querySelectorAll('.nav-link');
+                navLinks.forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (sidebar.classList.contains('show')) {
+                            mobileMenuTrigger.click();
+                        }
+                    });
+                });
+            }
+            
+            // Touch-friendly improvements
+            const touchElements = document.querySelectorAll('.nav-link, .btn, .action-btn');
+            touchElements.forEach(el => {
+                el.addEventListener('touchstart', function() {
+                    this.classList.add('active');
+                });
+                
+                el.addEventListener('touchend', function() {
+                    this.classList.remove('active');
+                });
+            });
+            
+            // Handle orientation change
+            function handleResize() {
+                const vh = window.innerHeight * 0.01;
+                document.documentElement.style.setProperty('--vh', `${vh}px`);
+                
+                // Reset mobile menu on large screens
+                if (window.innerWidth >= 992 && sidebar.classList.contains('show')) {
+                    sidebar.classList.remove('show');
+                    if (mobileMenuTrigger) {
+                        mobileMenuTrigger.querySelector('i').className = 'fas fa-bars';
+                        mobileMenuTrigger.style.transform = 'rotate(0)';
+                    }
+                }
+            }
+            
+            // Initialize and set up resize listener
+            handleResize();
+            window.addEventListener('resize', handleResize);
+            window.addEventListener('orientationchange', handleResize);
+            
+            // Prevent zoom on input focus (iOS)
+            document.addEventListener('touchstart', function() {}, {passive: true});
+            
+            // Update user info in top bar
+            function updateUserInfo() {
+                const userAvatar = document.querySelector('.user-avatar');
+                const userDetails = document.querySelector('.user-details strong');
+                const userAdmission = document.querySelector('.user-details small');
+                
+                // You can fetch actual user data here if needed
+                // This is just placeholder - actual data comes from template
+            }
+            
+            updateUserInfo();
+        });
+        
+        // Handle viewport height for mobile browsers
+        function setVH() {
+            let vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        }
+        
+        // Initialize and update on resize/orientation change
+        setVH();
+        window.addEventListener('resize', setVH);
+        window.addEventListener('orientationchange', setVH);
+    </script>
+</body>
+</html>

@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Teacher Portal{% endblock %} - ARNDALE CBT</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fonts/fonts.css') }}">
+    
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --teacher-primary: #10b981;      /* Green for teacher */
+            --teacher-primary-dark: #059669;
+            --teacher-primary-light: #d1fae5;
+            --teacher-secondary: #047857;
+            --teacher-success: #10b981;
+            --teacher-info: #0ea5e9;
+            --teacher-warning: #f59e0b;
+            --teacher-danger: #ef4444;
+            --teacher-light: #f8fafc;
+            --teacher-dark: #1e293b;
+            --teacher-sidebar: #064e3b;
+            --teacher-sidebar-hover: #047857;
+            --teacher-sidebar-active: #10b981;
+            --teacher-header: #ffffff;
+            --teacher-content: #f0fdf4;
+            --teacher-card: #ffffff;
+            --teacher-border: #d1fae5;
+            --teacher-text: #1e293b;
+            --teacher-text-light: #64748b;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--teacher-content);
+            color: var(--teacher-text);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 1000;
+            width: 260px;
+            background: linear-gradient(180deg, var(--teacher-sidebar) 0%, var(--teacher-secondary) 100%);
+            color: white;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateX(-100%);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar.show {
+            transform: translateX(0);
+        }
+        
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            flex-shrink: 0;
+        }
+        
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: white;
+            text-decoration: none;
+            margin-bottom: 1rem;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--teacher-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            color: white;
+        }
+        
+        .logo-text h4 {
+            font-weight: 700;
+            margin: 0;
+            color: white;
+            font-size: 1.1rem;
+            line-height: 1.2;
+        }
+        
+        .logo-text small {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.75rem;
+        }
+        
+        .teacher-info {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 0 1rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-shrink: 0;
+        }
+        
+        .teacher-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--teacher-primary) 0%, var(--teacher-primary-dark) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+        
+        .teacher-details {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .teacher-details h6 {
+            margin: 0;
+            font-weight: 600;
+            color: white;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .teacher-details small {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.8rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Navigation */
+        .sidebar-nav {
+            padding: 1rem 0;
+            overflow-y: auto;
+            flex: 1;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .sidebar-nav::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .sidebar-nav::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-nav::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+        }
+        
+        .nav-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .nav-title {
+            padding: 0.5rem 1.5rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .nav-item {
+            margin: 0.25rem 1rem;
+        }
+        
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+            font-size: 0.9rem;
+        }
+        
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border-left-color: rgba(255, 255, 255, 0.3);
+            transform: translateX(2px);
+        }
+        
+        .nav-link.active {
+            background: rgba(16, 185, 129, 0.25);
+            color: white;
+            border-left-color: var(--teacher-primary);
+            font-weight: 500;
+        }
+        
+        .nav-link i {
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+        
+        .nav-badge {
+            margin-left: auto;
+            background: var(--teacher-primary);
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        
+        /* Main Content */
+        .main-content {
+            min-height: 100vh;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        
+        /* Top Navbar */
+        .top-navbar {
+            background: var(--teacher-header);
+            border-bottom: 1px solid var(--teacher-border);
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            height: 70px;
+        }
+        
+        .navbar-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+        }
+        
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .page-title h4 {
+            font-weight: 600;
+            color: var(--teacher-text);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.1rem;
+        }
+        
+        .page-title h4 i {
+            color: var(--teacher-primary);
+        }
+        
+        .navbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .sidebar-toggle {
+            background: var(--teacher-light);
+            border: 1px solid var(--teacher-border);
+            color: var(--teacher-text);
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .sidebar-toggle:hover {
+            background: var(--teacher-primary-light);
+            color: var(--teacher-primary);
+        }
+        
+        .notification-btn {
+            background: none;
+            border: none;
+            color: var(--teacher-text);
+            font-size: 1.25rem;
+            cursor: pointer;
+            position: relative;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .notification-btn:hover {
+            background: var(--teacher-light);
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: var(--teacher-danger);
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.1rem 0.3rem;
+            border-radius: 50%;
+            min-width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .user-menu:hover {
+            background: var(--teacher-light);
+        }
+        
+        .user-avatar-small {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--teacher-primary) 0%, var(--teacher-primary-dark) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+        
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .user-info span {
+            font-weight: 500;
+            color: var(--teacher-text);
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        
+        .user-info small {
+            color: var(--teacher-text-light);
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+        
+        /* Content Area */
+        .content-area {
+            padding: 1.5rem;
+            min-height: calc(100vh - 70px);
+        }
+        
+        /* Breadcrumb */
+        .breadcrumb {
+            background: transparent;
+            padding: 0.75rem 0;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--teacher-border);
+        }
+        
+        .breadcrumb-item a {
+            color: var(--teacher-primary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        
+        .breadcrumb-item.active {
+            color: var(--teacher-text-light);
+            font-size: 0.9rem;
+        }
+        
+        .separator {
+            color: var(--teacher-text-light);
+            padding: 0 0.5rem;
+        }
+        
+        /* Cards */
+        .teacher-card {
+            background: var(--teacher-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--teacher-border);
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .teacher-card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--teacher-border);
+        }
+        
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--teacher-text);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .card-title i {
+            color: var(--teacher-primary);
+        }
+        
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        
+        .btn-primary {
+            background: var(--teacher-primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--teacher-primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+        
+        /* Alerts */
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid;
+            animation: slideIn 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .alert-success {
+            background: #d1fae5;
+            border-color: var(--teacher-success);
+            color: #065f46;
+        }
+        
+        .alert-warning {
+            background: #fef3c7;
+            border-color: var(--teacher-warning);
+            color: #92400e;
+        }
+        
+        .alert-danger {
+            background: #fee2e2;
+            border-color: var(--teacher-danger);
+            color: #991b1b;
+        }
+        
+        .alert-info {
+            background: #dbeafe;
+            border-color: var(--teacher-info);
+            color: #1e40af;
+        }
+        
+        /* Mobile Responsiveness */
+        @media (min-width: 769px) {
+            .sidebar {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 260px;
+            }
+            
+            .sidebar-toggle {
+                display: none;
+            }
+            
+            .top-navbar {
+                padding: 1rem 2rem;
+            }
+            
+            .content-area {
+                padding: 2rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .top-navbar {
+                padding: 0.75rem 1rem;
+            }
+            
+            .content-area {
+                padding: 1rem;
+            }
+            
+            .user-info {
+                display: none;
+            }
+            
+            .page-title h4 {
+                font-size: 1rem;
+            }
+            
+            .teacher-card {
+                padding: 1rem;
+            }
+            
+            .card-title {
+                font-size: 1.1rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .content-area {
+                padding: 0.75rem;
+            }
+            
+            .breadcrumb {
+                font-size: 0.8rem;
+            }
+            
+            .btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.85rem;
+            }
+        }
+        
+        /* Overlay for mobile sidebar */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .sidebar-overlay.show {
+            display: block;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Sidebar Overlay (Mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <div class="logo-icon">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <div class="logo-text">
+                    <h4>ARNDALE SSMS/CBE</h4>
+                    <small>Teacher Portal</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Teacher Info -->
+        {% if teacher %}
+        <div class="teacher-info">
+            <div class="teacher-avatar">
+                {{ teacher.first_name[0].upper() if teacher.first_name else 'T' }}
+            </div>
+            <div class="teacher-details">
+                <h6>{{ teacher.first_name }} {{ teacher.last_name }}</h6>
+                <small>{{ teacher.staff_id }}</small>
+                {% if teacher.form_class %}
+                <small>Form: {{ teacher.form_class.name }}</small>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Navigation -->
+        <nav class="sidebar-nav">
+            <!-- Main Section -->
+            <div class="nav-section">
+                <div class="nav-title">Main</div>
+                <div class="nav-item">
+                    <a href="{{ url_for('teacher.dashboard') }}" class="nav-link {% if request.endpoint == 'teacher.dashboard' %}active{% endif %}">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Teaching Section -->
+            <div class="nav-section">
+                <div class="nav-title">Teaching</div>
+                <div class="nav-item">
+                    <a href="{{ url_for('teacher.my_subjects') }}" class="nav-link {% if request.endpoint == 'teacher.my_subjects' %}active{% endif %}">
+                        <i class="fas fa-book"></i>
+                        <span>My Subjects</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ url_for('teacher.enter_comments') }}" class="nav-link {% if request.endpoint == 'teacher.enter_comments' %}active{% endif %}">
+                        <i class="fas fa-comment"></i>
+                        <span>Subject Comments</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ url_for('teacher.upload_notes') }}" class="nav-link {% if request.endpoint == 'teacher.upload_notes' %}active{% endif %}">
+                        <i class="fas fa-book-open"></i>
+                        <span>Upload Notes</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Form Teacher Section (if applicable) -->
+            {% if teacher and teacher.form_class_id %}
+            <div class="nav-section">
+                <div class="nav-title">Form Teacher</div>
+                <div class="nav-item">
+                    <a href="{{ url_for('teacher.attendance') }}" class="nav-link {% if request.endpoint == 'teacher.attendance' %}active{% endif %}">
+                        <i class="fas fa-clipboard-check"></i>
+                        <span>Attendance</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ url_for('teacher.form_teacher_comments') }}" class="nav-link {% if request.endpoint == 'teacher.form_teacher_comments' %}active{% endif %}">
+                        <i class="fas fa-comment-medical"></i>
+                        <span>Form Comments</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ url_for('teacher.domain_evaluation') }}" class="nav-link {% if request.endpoint == 'teacher.domain_evaluation' %}active{% endif %}">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Domain Evaluation</span>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Exams & Questions Section -->
+            <div class="nav-section">
+                <div class="nav-title">Exams & Questions</div>
+                <div class="nav-item">
+                    <a href="{{ url_for('teacher.exams') }}" class="nav-link {% if request.endpoint == 'teacher.exams' %}active{% endif %}">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Exams</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ url_for('teacher.question_bank') }}" class="nav-link {% if request.endpoint == 'teacher.question_bank' %}active{% endif %}">
+                        <i class="fas fa-database"></i>
+                        <span>Question Bank</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Tools Section -->
+            <div class="nav-section">
+                <div class="nav-title">Tools</div>
+                <div class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-calendar"></i>
+                        <span>Timetable</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ url_for('teacher.reports_dashboard') }}" 
+                    class="nav-link {% if request.endpoint in ['teacher.reports_dashboard', 'teacher.exam_report', 'teacher.student_report', 'teacher.view_report'] %}active{% endif %}">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Reports</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Account Section -->
+            <div class="nav-section">
+                <div class="nav-title">Account</div>
+                <div class="nav-item">
+                    <a href="{{ url_for('auth.logout') }}" class="nav-link text-danger">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <!-- Top Navbar -->
+        <header class="top-navbar">
+            <div class="navbar-content">
+                <div class="navbar-left">
+                    <button class="sidebar-toggle" id="sidebarToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="page-title">
+                        {% block page_title %}
+                        <h4><i class="fas fa-tachometer-alt"></i> Dashboard</h4>
+                        {% endblock %}
+                    </div>
+                </div>
+                
+                <div class="navbar-actions">
+                    <button class="notification-btn" id="notificationBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">0</span>
+                    </button>
+                    
+                    <a href="{{ url_for('auth.logout') }}" class="user-menu" title="Logout">
+                        <div class="user-avatar-small">
+                            {{ current_user.username[0].upper() if current_user.username else 'T' }}
+                        </div>
+                        <div class="user-info">
+                            <span>{{ current_user.username }}</span>
+                            <small>Teacher</small>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="breadcrumb">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="{{ url_for('teacher.dashboard') }}">Dashboard</a></li>
+                    {% block breadcrumb %}{% endblock %}
+                </ol>
+            </nav>
+            
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Page Content -->
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+    
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        // Toggle sidebar
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const mainContent = document.getElementById('mainContent');
+        
+        function toggleSidebar() {
+            sidebar.classList.toggle('show');
+            sidebarOverlay.classList.toggle('show');
+            document.body.style.overflow = sidebar.classList.contains('show') ? 'hidden' : '';
+        }
+        
+        sidebarToggle.addEventListener('click', toggleSidebar);
+        sidebarOverlay.addEventListener('click', toggleSidebar);
+        
+        // Close sidebar when clicking a link on mobile
+        const navLinks = document.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 768) {
+                    toggleSidebar();
+                }
+            });
+        });
+        
+        // Active nav link highlighting
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.nav-link[href]');
+            
+            navLinks.forEach(link => {
+                const linkPath = link.getAttribute('href');
+                // Remove active class from all links first
+                link.classList.remove('active');
+                
+                // Check if current path starts with link path (for nested routes)
+                if (linkPath && linkPath !== '/' && currentPath.startsWith(linkPath)) {
+                    link.classList.add('active');
+                } else if (linkPath === '/' && currentPath === '/') {
+                    link.classList.add('active');
+                }
+            });
+        });
+        
+        // Auto-dismiss alerts after 5 seconds
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                alert.style.opacity = '0';
+                alert.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => {
+                    if (alert.parentNode) {
+                        alert.parentNode.removeChild(alert);
+                    }
+                }, 500);
+            });
+        }, 5000);
+        
+        // Handle window resize
+        let resizeTimer;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function() {
+                if (window.innerWidth > 768) {
+                    sidebar.classList.remove('show');
+                    sidebarOverlay.classList.remove('show');
+                    document.body.style.overflow = '';
+                }
+            }, 250);
+        });
+        
+        // Initialize sidebar state based on screen size
+        function initSidebar() {
+            if (window.innerWidth > 768) {
+                sidebar.classList.add('show');
+            }
+        }
+        
+        // Call init on load
+        window.addEventListener('load', initSidebar);
+        
+        // Notification button functionality
+        document.getElementById('notificationBtn').addEventListener('click', function() {
+            alert('Notifications feature coming soon!');
+        });
+    </script>
+</body>
+</html>

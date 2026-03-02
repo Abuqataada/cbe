@@ -1,0 +1,541 @@
+2026-01-26 03:17:48,354 - __main__ - INFO - Starting server on 0.0.0.0:5000
+2026-01-26 03:17:48,365 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-01-26 03:18:01,689 - app - INFO - 10.167.151.192 - GET / - 302 FOUND
+2026-01-26 03:19:05,791 - app - INFO - 10.167.151.153 - GET / - 302 FOUND
+2026-01-26 03:20:25,954 - app - INFO - 10.167.151.192 - GET / - 302 FOUND
+2026-01-26 03:20:41,044 - app - INFO - 10.167.151.192 - GET / - 302 FOUND
+2026-01-26 03:20:53,445 - app - INFO - 10.167.151.153 - GET / - 302 FOUND
+2026-01-26 03:21:18,849 - __main__ - INFO - Starting server on 0.0.0.0:5000
+2026-01-26 03:21:18,860 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-01-26 03:21:56,216 - app - INFO - 10.167.151.153 - GET / - 302 FOUND
+2026-01-26 03:22:33,261 - app - INFO - 10.167.151.153 - GET / - 302 FOUND
+2026-01-26 03:27:34,153 - __main__ - INFO - Starting server on 0.0.0.0:5000
+2026-01-26 03:27:34,160 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-01-26 03:27:41,097 - app - INFO - 10.167.151.153 - GET / - 302 FOUND
+2026-01-26 03:27:41,920 - app - INFO - 10.167.151.153 - GET / - 302 FOUND
+2026-01-26 03:28:39,791 - app - INFO - 10.167.151.153 - GET / - 302 FOUND
+2026-01-26 03:28:40,789 - app - INFO - 10.167.151.153 - GET / - 302 FOUND
+2026-01-26 03:29:09,693 - app - INFO - 10.167.151.192 - GET / - 302 FOUND
+2026-01-26 03:30:22,754 - app - INFO - 10.167.151.192 - GET / - 302 FOUND
+2026-01-26 05:04:21,626 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 302 FOUND
+2026-01-26 05:05:21,466 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 302 FOUND
+2026-01-26 05:05:31,445 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 302 FOUND
+2026-01-26 05:06:31,442 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 302 FOUND
+2026-01-26 05:06:49,240 - app - INFO - 10.167.151.153 - GET / - 302 FOUND
+2026-01-26 05:07:16,935 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 302 FOUND
+2026-01-26 05:07:21,440 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 302 FOUND
+2026-01-26 05:07:22,448 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 302 FOUND
+2026-01-26 05:07:34,769 - app - INFO - 127.0.0.1 - GET /admin/students - 302 FOUND
+2026-01-26 05:07:51,438 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 302 FOUND
+2026-02-09 11:52:11,048 - __main__ - INFO - Starting server on 0.0.0.0:5000
+2026-02-09 11:52:11,057 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-02-09 11:52:35,453 - app - INFO - 192.168.1.188 - GET / - 200 OK
+2026-02-09 11:55:08,289 - __main__ - INFO - Starting server on 0.0.0.0:5000
+2026-02-09 11:55:08,298 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-02-09 11:57:16,475 - __main__ - INFO - Starting server on 0.0.0.0:5000
+2026-02-09 11:57:16,482 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-02-09 12:00:59,451 - __main__ - INFO - Starting server on 0.0.0.0:5000
+2026-02-09 12:00:59,459 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-02-09 12:01:10,671 - app - INFO - 192.168.1.188 - GET / - 200 OK
+2026-02-09 12:01:31,588 - app - INFO - 192.168.1.188 - GET /staff - 200 OK
+2026-02-09 12:01:38,724 - app - INFO - 192.168.1.188 - GET /administrator - 200 OK
+2026-02-09 12:11:56,259 - __main__ - INFO - Starting server on 0.0.0.0:5000
+2026-02-09 12:11:56,266 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-02-09 12:13:52,877 - __main__ - INFO - Starting server on 0.0.0.0:5000
+2026-02-09 12:13:52,884 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-02-09 12:14:14,518 - __main__ - INFO - Starting server on 0.0.0.0:5000
+2026-02-09 12:14:14,527 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-02-09 19:26:27,598 - __main__ - INFO - Starting server on 0.0.0.0:5000
+2026-02-09 19:26:27,607 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-02-09 19:27:01,364 - app - INFO - 10.34.98.192 - GET / - 200 OK
+2026-02-09 19:27:14,151 - app - INFO - 10.34.98.192 - GET /login - 302 FOUND
+2026-02-09 19:27:14,345 - app - INFO - 10.34.98.192 - GET /student-login - 200 OK
+2026-02-09 19:27:17,750 - app - INFO - 10.34.98.192 - POST /student-login - 302 FOUND
+2026-02-09 19:27:17,832 - app - INFO - 10.34.98.192 - GET /student/dashboard - 200 OK
+2026-02-09 19:27:20,185 - app - INFO - 10.34.98.192 - GET /student/exams-dashboard - 200 OK
+2026-02-09 19:27:23,826 - app - INFO - 10.34.98.192 - GET /student/exam/d8c7dc53-c6e2-429b-b81a-61d57bc7693f/result - 302 FOUND
+2026-02-09 19:27:23,901 - app - INFO - 10.34.98.192 - GET /student/exams - 200 OK
+2026-02-09 19:27:28,732 - app - INFO - 10.34.98.192 - GET /student/results - 200 OK
+2026-02-09 19:27:33,134 - app - INFO - 10.34.98.192 - GET /student/e-library - 200 OK
+2026-02-09 19:28:26,256 - app - INFO - 10.34.98.192 - GET / - 200 OK
+2026-02-09 20:15:30,884 - __main__ - INFO - Starting server on 0.0.0.0:5000
+2026-02-09 20:15:30,892 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-02-09 20:15:32,961 - app - INFO - 10.34.98.192 - GET / - 200 OK
+2026-02-09 20:15:37,417 - app - INFO - 10.34.98.192 - GET /login - 302 FOUND
+2026-02-09 20:15:37,445 - app - INFO - 10.34.98.192 - GET /redirect - 302 FOUND
+2026-02-09 20:15:37,661 - app - INFO - 10.34.98.192 - GET /student/dashboard - 200 OK
+2026-02-09 20:15:40,806 - app - INFO - 10.34.98.192 - GET /student/exams-dashboard - 200 OK
+2026-02-09 20:15:43,555 - app - INFO - 10.34.98.192 - GET /student/e-library - 200 OK
+2026-02-09 20:15:44,990 - app - INFO - 10.34.98.192 - GET /student/results - 200 OK
+2026-02-09 20:20:26,252 - __main__ - INFO - Starting server on 0.0.0.0:5000
+2026-02-09 20:20:26,262 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-02-09 20:22:00,099 - __main__ - INFO - Starting server on 0.0.0.0:5000
+2026-02-09 20:22:00,107 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-02-09 20:53:26,826 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-02-09 20:53:53,126 - app - INFO - 10.34.98.192 - GET / - 200 OK
+2026-02-09 20:53:55,887 - app - INFO - 10.34.98.192 - GET /login - 302 FOUND
+2026-02-09 20:53:55,921 - app - INFO - 10.34.98.192 - GET /redirect - 302 FOUND
+2026-02-09 20:53:56,035 - app - INFO - 10.34.98.192 - GET /student/dashboard - 200 OK
+2026-02-09 20:53:59,253 - app - INFO - 10.34.98.192 - GET /student/exams-dashboard - 200 OK
+2026-02-09 20:54:01,358 - app - INFO - 10.34.98.192 - GET /student/e-library - 200 OK
+2026-02-09 20:54:02,669 - app - INFO - 10.34.98.192 - GET /student/results - 200 OK
+2026-02-09 21:04:46,085 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-02-09 21:04:50,128 - app - INFO - 10.34.98.192 - GET / - 302 FOUND
+2026-02-09 21:04:50,207 - app - INFO - 10.34.98.192 - GET /expired - 200 OK
+2026-02-09 21:05:02,908 - app - INFO - 10.34.98.192 - GET / - 302 FOUND
+2026-02-09 21:05:02,931 - app - INFO - 10.34.98.192 - GET /expired - 200 OK
+2026-02-09 21:05:13,632 - app - INFO - 10.34.98.192 - GET /staff - 302 FOUND
+2026-02-09 21:05:13,656 - app - INFO - 10.34.98.192 - GET /expired - 200 OK
+2026-02-09 21:06:35,096 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-02-09 21:06:39,783 - app - INFO - 10.34.98.192 - GET / - 200 OK
+2026-02-09 21:06:43,789 - app - INFO - 10.34.98.192 - GET /expired - 200 OK
+2026-02-09 21:06:49,422 - app - INFO - 10.34.98.192 - GET /login - 302 FOUND
+2026-02-09 21:06:49,484 - app - INFO - 10.34.98.192 - GET /redirect - 302 FOUND
+2026-02-09 21:06:49,731 - app - INFO - 10.34.98.192 - GET /student/dashboard - 200 OK
+2026-02-09 21:06:52,294 - app - INFO - 10.34.98.192 - GET /student/exams-dashboard - 200 OK
+2026-02-09 21:06:55,470 - app - INFO - 10.34.98.192 - GET /student/exam/d8c7dc53-c6e2-429b-b81a-61d57bc7693f/result - 302 FOUND
+2026-02-09 21:06:55,584 - app - INFO - 10.34.98.192 - GET /student/exams - 200 OK
+2026-02-09 21:06:57,626 - app - INFO - 10.34.98.192 - GET /student-logout - 302 FOUND
+2026-02-09 21:06:57,645 - app - INFO - 10.34.98.192 - GET / - 200 OK
+2026-02-11 10:30:31,177 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-02-11 10:30:33,881 - app - INFO - 127.0.0.1 - GET / - 200 OK
+2026-02-11 10:30:50,264 - app - INFO - 127.0.0.1 - GET / - 200 OK
+2026-02-11 10:30:54,328 - app - INFO - 127.0.0.1 - GET /login - 302 FOUND
+2026-02-11 10:30:54,576 - app - INFO - 127.0.0.1 - GET /student-login - 200 OK
+2026-02-11 10:30:59,058 - app - INFO - 127.0.0.1 - POST /student-login - 302 FOUND
+2026-02-11 10:30:59,252 - app - INFO - 127.0.0.1 - GET /student/dashboard - 200 OK
+2026-02-11 10:31:02,956 - app - INFO - 127.0.0.1 - GET /student/e-library - 200 OK
+2026-02-11 10:31:04,052 - app - INFO - 127.0.0.1 - GET /student/exams-dashboard - 200 OK
+2026-02-11 10:31:24,597 - app - INFO - 127.0.0.1 - GET /student/exam/d8c7dc53-c6e2-429b-b81a-61d57bc7693f/result - 302 FOUND
+2026-02-11 10:31:24,665 - app - INFO - 127.0.0.1 - GET /student/exams - 200 OK
+2026-02-11 10:31:32,744 - app - INFO - 127.0.0.1 - GET /student-logout - 302 FOUND
+2026-02-11 10:31:32,759 - app - INFO - 127.0.0.1 - GET / - 200 OK
+2026-02-11 10:31:49,348 - app - INFO - 127.0.0.1 - GET /staff - 200 OK
+2026-02-11 10:31:52,683 - app - INFO - 127.0.0.1 - GET /login - 200 OK
+2026-02-11 10:32:26,273 - app - INFO - 127.0.0.1 - POST /login - 302 FOUND
+2026-02-11 10:32:26,302 - app - INFO - 127.0.0.1 - GET /redirect - 302 FOUND
+2026-02-11 10:32:26,579 - app - INFO - 127.0.0.1 - GET /teacher/dashboard - 200 OK
+2026-02-11 10:33:01,644 - app - INFO - 127.0.0.1 - GET /teacher/enter-scores/3e69c355-6dc4-4cd8-8db2-acc1749727ad/58ab21ae-aeee-45ff-afb9-ee362d0f7327 - 200 OK
+2026-02-11 10:33:19,309 - app - INFO - 127.0.0.1 - GET /teacher/exams - 200 OK
+2026-02-11 10:33:21,984 - app - INFO - 127.0.0.1 - GET /teacher/exams/view/c744b95f-d3c3-4be4-9c03-ec6bde200fcf - 200 OK
+2026-02-11 10:33:27,066 - app - INFO - 127.0.0.1 - GET /teacher/exams/edit/c744b95f-d3c3-4be4-9c03-ec6bde200fcf - 200 OK
+2026-02-11 10:33:33,295 - app - INFO - 127.0.0.1 - POST /teacher/exams/edit/c744b95f-d3c3-4be4-9c03-ec6bde200fcf - 302 FOUND
+2026-02-11 10:33:33,325 - app - INFO - 127.0.0.1 - GET /teacher/exams/edit/c744b95f-d3c3-4be4-9c03-ec6bde200fcf - 200 OK
+2026-02-11 10:33:42,757 - app - INFO - 127.0.0.1 - GET /logout - 302 FOUND
+2026-02-11 10:33:42,769 - app - INFO - 127.0.0.1 - GET /staff - 200 OK
+2026-02-11 10:33:47,204 - app - INFO - 127.0.0.1 - GET /login - 302 FOUND
+2026-02-11 10:33:47,226 - app - INFO - 127.0.0.1 - GET /student-login - 200 OK
+2026-02-11 10:33:52,784 - app - INFO - 127.0.0.1 - POST /student-login - 302 FOUND
+2026-02-11 10:33:52,812 - app - INFO - 127.0.0.1 - GET /student/dashboard - 200 OK
+2026-02-11 10:33:56,536 - app - INFO - 127.0.0.1 - GET /student/exams-dashboard - 200 OK
+2026-02-11 10:33:58,423 - app - INFO - 127.0.0.1 - GET /student/exam/d8c7dc53-c6e2-429b-b81a-61d57bc7693f/result - 200 OK
+2026-02-11 10:34:44,226 - app - INFO - 127.0.0.1 - GET /student-logout - 302 FOUND
+2026-02-11 10:34:44,259 - app - INFO - 127.0.0.1 - GET / - 200 OK
+2026-02-11 10:34:53,479 - app - INFO - 127.0.0.1 - GET /staff - 200 OK
+2026-02-11 10:34:55,131 - app - INFO - 127.0.0.1 - GET /login - 200 OK
+2026-02-11 10:35:14,470 - app - INFO - 127.0.0.1 - POST /login - 200 OK
+2026-02-11 10:35:27,482 - app - INFO - 127.0.0.1 - POST /login - 200 OK
+2026-02-11 10:35:40,303 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-02-11 10:36:07,510 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-02-11 10:36:29,689 - app - INFO - 192.168.1.186 - GET / - 200 OK
+2026-02-11 10:42:06,302 - app - INFO - 127.0.0.1 - POST /login - 302 FOUND
+2026-02-11 10:42:06,326 - app - INFO - 127.0.0.1 - GET /redirect - 302 FOUND
+2026-02-11 10:42:06,440 - app - INFO - 127.0.0.1 - GET /teacher/dashboard - 200 OK
+2026-02-11 10:43:13,679 - app - INFO - 127.0.0.1 - GET /teacher/dashboard - 200 OK
+2026-02-11 10:43:15,324 - app - INFO - 127.0.0.1 - GET /teacher/my-subjects/upload-notes - 200 OK
+2026-02-11 10:43:17,379 - app - INFO - 127.0.0.1 - GET /teacher/attendance - 200 OK
+2026-02-11 21:18:17,600 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-02-11 21:18:22,376 - app - INFO - 127.0.0.1 - GET / - 200 OK
+2026-02-11 21:18:42,384 - app - INFO - 127.0.0.1 - GET /administrator - 200 OK
+2026-02-11 21:18:45,061 - app - INFO - 127.0.0.1 - GET /login - 200 OK
+2026-02-11 21:18:48,431 - app - INFO - 127.0.0.1 - POST /login - 302 FOUND
+2026-02-11 21:18:48,469 - app - INFO - 127.0.0.1 - GET /redirect - 302 FOUND
+2026-02-11 21:18:48,692 - app - INFO - 127.0.0.1 - GET /admin/dashboard - 200 OK
+2026-02-11 21:18:49,377 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-11 21:19:19,404 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 200 OK
+2026-02-11 21:19:49,391 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 200 OK
+2026-02-11 21:20:19,394 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 200 OK
+2026-02-11 21:20:49,398 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 200 OK
+2026-02-11 21:21:19,398 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 200 OK
+2026-02-11 21:21:49,898 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 200 OK
+2026-02-11 21:22:19,866 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 200 OK
+2026-02-11 21:22:49,898 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-11 21:23:43,856 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 200 OK
+2026-02-11 21:24:16,993 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 200 OK
+2026-02-11 21:24:19,882 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 200 OK
+2026-02-11 21:24:23,451 - app - INFO - 127.0.0.1 - GET /admin/dashboard - 200 OK
+2026-02-11 21:24:24,205 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-11 21:24:50,666 - app - ERROR - Unhandled Exception: admin/question_bank.html
+2026-02-11 21:24:50,786 - app - ERROR - Traceback (most recent call last):
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\flask_login\utils.py", line 290, in decorated_view
+    return current_app.ensure_sync(func)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "c:\Users\BABAKAY\Documents\codes\arndale-cbtV2\utils\decorators.py", line 11, in decorated_function
+    return f(*args, **kwargs)
+  File "c:\Users\BABAKAY\Documents\codes\arndale-cbtV2\routes\admin_routes.py", line 4399, in manage_question_bank
+    return render_template('admin/question_bank.html',
+                         questions=questions,
+                         subjects=subjects,
+                         teachers=teachers)
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\flask\templating.py", line 149, in render_template
+    template = app.jinja_env.get_or_select_template(template_name_or_list)
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\jinja2\environment.py", line 1087, in get_or_select_template
+    return self.get_template(template_name_or_list, parent, globals)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\jinja2\environment.py", line 1016, in get_template
+    return self._load_template(name, globals)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\jinja2\environment.py", line 975, in _load_template
+    template = self.loader.load(self, name, self.make_globals(globals))
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\jinja2\loaders.py", line 126, in load
+    source, filename, uptodate = self.get_source(environment, name)
+                                 ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\flask\templating.py", line 65, in get_source
+    return self._get_source_fast(environment, template)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\flask\templating.py", line 99, in _get_source_fast
+    raise TemplateNotFound(template)
+jinja2.exceptions.TemplateNotFound: admin/question_bank.html
+
+2026-02-11 21:24:50,787 - app - INFO - 127.0.0.1 - GET /admin/question-bank - 500 INTERNAL SERVER ERROR
+2026-02-11 21:24:54,229 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 200 OK
+2026-02-11 21:24:55,272 - app - INFO - 127.0.0.1 - GET /admin/assessment-config - 200 OK
+2026-02-11 21:24:55,473 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-11 21:25:05,359 - app - INFO - 127.0.0.1 - GET /logout - 302 FOUND
+2026-02-11 21:25:05,373 - app - INFO - 127.0.0.1 - GET /administrator - 200 OK
+2026-02-11 21:25:07,702 - app - INFO - 127.0.0.1 - GET /login - 200 OK
+2026-02-11 21:25:10,201 - app - INFO - 127.0.0.1 - POST /login - 302 FOUND
+2026-02-11 21:25:10,346 - app - INFO - 127.0.0.1 - POST /login - 302 FOUND
+2026-02-11 21:25:10,374 - app - INFO - 127.0.0.1 - GET /redirect - 302 FOUND
+2026-02-11 21:25:10,389 - app - INFO - 127.0.0.1 - GET /admin/dashboard - 200 OK
+2026-02-11 21:25:10,553 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-11 21:25:23,596 - app - INFO - 127.0.0.1 - GET / - 200 OK
+2026-02-11 21:26:08,073 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-02-11 21:26:10,752 - app - INFO - 127.0.0.1 - GET / - 200 OK
+2026-02-11 21:26:18,628 - app - INFO - 127.0.0.1 - GET /administrator - 200 OK
+2026-02-11 21:26:20,333 - app - INFO - 127.0.0.1 - GET /login - 302 FOUND
+2026-02-11 21:26:20,374 - app - INFO - 127.0.0.1 - GET /redirect - 302 FOUND
+2026-02-11 21:26:20,554 - app - INFO - 127.0.0.1 - GET /admin/dashboard - 200 OK
+2026-02-11 21:26:20,730 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-11 21:26:50,859 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 200 OK
+2026-02-11 21:27:20,870 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 200 OK
+2026-02-11 21:27:51,084 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 200 OK
+2026-02-11 21:28:20,859 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 200 OK
+2026-02-11 21:28:50,854 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 200 OK
+2026-02-11 21:29:20,851 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 200 OK
+2026-02-11 21:30:21,866 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-11 21:30:43,852 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 200 OK
+2026-02-11 21:31:43,858 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 200 OK
+2026-02-11 21:32:20,900 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-11 21:32:44,058 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 200 OK
+2026-02-11 21:33:14,053 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 200 OK
+2026-02-11 21:33:15,459 - app - INFO - 127.0.0.1 - GET /admin/dashboard - 200 OK
+2026-02-11 21:33:16,019 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:43:23,193 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-02-22 12:43:46,132 - app - INFO - 127.0.0.1 - GET / - 200 OK
+2026-02-22 12:44:08,982 - app - INFO - 127.0.0.1 - GET /staff - 200 OK
+2026-02-22 12:44:19,476 - app - INFO - 127.0.0.1 - GET /administrator - 200 OK
+2026-02-22 12:44:20,680 - app - INFO - 127.0.0.1 - GET /administrator - 200 OK
+2026-02-22 12:44:33,126 - app - INFO - 127.0.0.1 - GET /login - 200 OK
+2026-02-22 12:44:38,254 - app - INFO - 127.0.0.1 - POST /login - 302 FOUND
+2026-02-22 12:44:38,499 - app - INFO - 127.0.0.1 - GET /redirect - 302 FOUND
+2026-02-22 12:44:41,060 - app - ERROR - Unhandled Exception: Could not build url for endpoint 'finance.dashboard'. Did you mean 'finance.dashboard_stats' instead?
+2026-02-22 12:44:41,212 - app - ERROR - Traceback (most recent call last):
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\flask_login\utils.py", line 290, in decorated_view
+    return current_app.ensure_sync(func)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "c:\Users\BABAKAY\Documents\codes\arndale-cbtV2\utils\decorators.py", line 11, in decorated_function
+    return f(*args, **kwargs)
+  File "c:\Users\BABAKAY\Documents\codes\arndale-cbtV2\routes\admin_routes.py", line 50, in dashboard
+    return render_template('admin/dashboard.html', stats=stats, recent_logs=recent_logs)
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\flask\templating.py", line 150, in render_template
+    return _render(app, template, context)
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\flask\templating.py", line 131, in _render
+    rv = template.render(context)
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "c:\Users\BABAKAY\Documents\codes\arndale-cbtV2\templates\admin\dashboard.html", line 1, in top-level template code
+    {% extends "admin/admin_base.html" %}
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\BABAKAY\Documents\codes\arndale-cbtV2\templates\admin\admin_base.html", line 1008, in top-level template code
+    <a href="{{ url_for('finance.dashboard') }}" class="menu-link {% if request.endpoint.startswith('finance.dashboard') %}active{% endif %}">
+    ^
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\flask\app.py", line 1121, in url_for
+    return self.handle_url_build_error(error, endpoint, values)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\flask\app.py", line 1110, in url_for
+    rv = url_adapter.build(  # type: ignore[union-attr]
+        endpoint,
+    ...<3 lines>...
+        force_external=_external,
+    )
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\werkzeug\routing\map.py", line 924, in build
+    raise BuildError(endpoint, values, method, self)
+werkzeug.routing.exceptions.BuildError: Could not build url for endpoint 'finance.dashboard'. Did you mean 'finance.dashboard_stats' instead?
+
+2026-02-22 12:44:41,217 - app - INFO - 127.0.0.1 - GET /admin/dashboard - 500 INTERNAL SERVER ERROR
+2026-02-22 12:48:36,111 - app - INFO - 127.0.0.1 - GET /login - 302 FOUND
+2026-02-22 12:48:36,165 - app - INFO - 127.0.0.1 - GET /redirect - 302 FOUND
+2026-02-22 12:48:36,250 - app - ERROR - Unhandled Exception: Could not build url for endpoint 'finance.dashboard'. Did you mean 'finance.dashboard_stats' instead?
+2026-02-22 12:48:36,363 - app - ERROR - Traceback (most recent call last):
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\flask_login\utils.py", line 290, in decorated_view
+    return current_app.ensure_sync(func)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "c:\Users\BABAKAY\Documents\codes\arndale-cbtV2\utils\decorators.py", line 11, in decorated_function
+    return f(*args, **kwargs)
+  File "c:\Users\BABAKAY\Documents\codes\arndale-cbtV2\routes\admin_routes.py", line 50, in dashboard
+    return render_template('admin/dashboard.html', stats=stats, recent_logs=recent_logs)
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\flask\templating.py", line 150, in render_template
+    return _render(app, template, context)
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\flask\templating.py", line 131, in _render
+    rv = template.render(context)
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "c:\Users\BABAKAY\Documents\codes\arndale-cbtV2\templates\admin\dashboard.html", line 1, in top-level template code
+    {% extends "admin/admin_base.html" %}
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\BABAKAY\Documents\codes\arndale-cbtV2\templates\admin\admin_base.html", line 1008, in top-level template code
+    <li class="menu-item">
+    ^^^^^
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\flask\app.py", line 1121, in url_for
+    return self.handle_url_build_error(error, endpoint, values)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\flask\app.py", line 1110, in url_for
+    rv = url_adapter.build(  # type: ignore[union-attr]
+        endpoint,
+    ...<3 lines>...
+        force_external=_external,
+    )
+  File "C:\Users\BABAKAY\AppData\Roaming\Python\Python313\site-packages\werkzeug\routing\map.py", line 924, in build
+    raise BuildError(endpoint, values, method, self)
+werkzeug.routing.exceptions.BuildError: Could not build url for endpoint 'finance.dashboard'. Did you mean 'finance.dashboard_stats' instead?
+
+2026-02-22 12:48:36,364 - app - INFO - 127.0.0.1 - GET /admin/dashboard - 500 INTERNAL SERVER ERROR
+2026-02-22 12:48:39,067 - app - INFO - 127.0.0.1 - GET /administrator - 200 OK
+2026-02-22 12:49:17,201 - waitress - INFO - Serving on http://0.0.0.0:5000
+2026-02-22 12:49:19,267 - app - INFO - 127.0.0.1 - GET / - 200 OK
+2026-02-22 12:49:27,888 - app - INFO - 127.0.0.1 - GET /administrator - 200 OK
+2026-02-22 12:49:29,928 - app - INFO - 127.0.0.1 - GET /login - 302 FOUND
+2026-02-22 12:49:29,982 - app - INFO - 127.0.0.1 - GET /redirect - 302 FOUND
+2026-02-22 12:49:30,083 - app - INFO - 127.0.0.1 - GET /admin/dashboard - 200 OK
+2026-02-22 12:49:30,777 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:50:00,798 - app - INFO - 127.0.0.1 - GET /admin/dashboard/recent-activities - 200 OK
+2026-02-22 12:50:11,839 - app - INFO - 127.0.0.1 - GET /admin/system-config - 200 OK
+2026-02-22 12:50:12,067 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:51:00,418 - app - INFO - 127.0.0.1 - POST /admin/upload-principal-signature - 302 FOUND
+2026-02-22 12:51:00,435 - app - INFO - 127.0.0.1 - GET /admin/system-config - 200 OK
+2026-02-22 12:51:00,701 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:51:20,135 - app - INFO - 127.0.0.1 - POST /admin/update-resumption-date - 302 FOUND
+2026-02-22 12:51:20,151 - app - INFO - 127.0.0.1 - GET /admin/system-config - 200 OK
+2026-02-22 12:51:20,348 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:51:36,947 - app - INFO - 127.0.0.1 - GET /admin/academic-sessions - 200 OK
+2026-02-22 12:51:37,135 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:51:50,986 - app - INFO - 127.0.0.1 - GET /admin/academic-terms - 200 OK
+2026-02-22 12:51:51,155 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:51:59,774 - app - INFO - 127.0.0.1 - GET /admin/academic-terms - 200 OK
+2026-02-22 12:51:59,958 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:52:14,634 - app - INFO - 127.0.0.1 - POST /admin/academic-terms/activate - 200 OK
+2026-02-22 12:52:15,688 - app - INFO - 127.0.0.1 - GET /admin/academic-terms - 200 OK
+2026-02-22 12:52:15,854 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:52:23,282 - app - INFO - 127.0.0.1 - POST /admin/academic-terms/activate - 200 OK
+2026-02-22 12:52:24,342 - app - INFO - 127.0.0.1 - GET /admin/academic-terms - 200 OK
+2026-02-22 12:52:24,497 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:52:30,184 - app - INFO - 127.0.0.1 - GET /admin/academic-terms/52c9e342-cd14-4733-b9f1-c8892de2c964/data - 200 OK
+2026-02-22 12:53:02,299 - app - INFO - 127.0.0.1 - GET /admin/classes - 200 OK
+2026-02-22 12:53:02,518 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:53:27,765 - app - INFO - 127.0.0.1 - POST /admin/classes/add - 200 OK
+2026-02-22 12:53:28,850 - app - INFO - 127.0.0.1 - GET /admin/classes - 200 OK
+2026-02-22 12:53:29,023 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:53:39,256 - app - INFO - 127.0.0.1 - GET /admin/teachers - 200 OK
+2026-02-22 12:53:39,463 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:54:10,530 - app - INFO - 127.0.0.1 - POST /admin/teachers/add - 200 OK
+2026-02-22 12:54:11,428 - app - INFO - 127.0.0.1 - GET /admin/teachers - 200 OK
+2026-02-22 12:54:11,668 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:54:15,535 - app - INFO - 127.0.0.1 - GET /admin/classes - 200 OK
+2026-02-22 12:54:15,755 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:54:18,046 - app - INFO - 127.0.0.1 - GET /admin/classes/b99b41d9-c43e-4bd5-b9e1-18e67d85b80a/data - 200 OK
+2026-02-22 12:54:23,465 - app - INFO - 127.0.0.1 - POST /admin/classes/update - 200 OK
+2026-02-22 12:54:24,582 - app - INFO - 127.0.0.1 - GET /admin/classes - 200 OK
+2026-02-22 12:54:24,747 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:54:30,553 - app - INFO - 127.0.0.1 - GET /admin/teachers - 200 OK
+2026-02-22 12:54:30,740 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:54:39,278 - app - INFO - 127.0.0.1 - GET /admin/students - 200 OK
+2026-02-22 12:54:39,468 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:54:46,501 - app - INFO - 127.0.0.1 - GET /admin/subjects - 200 OK
+2026-02-22 12:54:46,683 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:55:09,259 - app - INFO - 127.0.0.1 - POST /admin/subjects/add - 200 OK
+2026-02-22 12:55:10,339 - app - INFO - 127.0.0.1 - GET /admin/subjects - 200 OK
+2026-02-22 12:55:10,567 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:55:14,604 - app - INFO - 127.0.0.1 - GET /admin/subject-assignments - 200 OK
+2026-02-22 12:55:14,823 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:55:31,528 - app - INFO - 127.0.0.1 - POST /admin/subject-assignments/add - 200 OK
+2026-02-22 12:55:32,571 - app - INFO - 127.0.0.1 - GET /admin/subject-assignments - 200 OK
+2026-02-22 12:55:32,894 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:55:53,706 - app - INFO - 127.0.0.1 - GET /admin/students - 200 OK
+2026-02-22 12:55:53,900 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:56:21,563 - app - INFO - 127.0.0.1 - GET /admin/students/7bde4574-fd87-4d6d-968a-200c9b7e304f/profile - 200 OK
+2026-02-22 12:56:21,758 - app - INFO - 127.0.0.1 - GET /admin/dashboard/stats - 200 OK
+2026-02-22 12:57:21,486 - app - INFO - 127.0.0.1 - GET /logout - 302 FOUND
+2026-02-22 12:57:21,498 - app - INFO - 127.0.0.1 - GET /administrator - 200 OK
+2026-02-22 12:57:24,578 - app - INFO - 127.0.0.1 - GET /login - 200 OK
+2026-02-22 12:57:40,347 - app - INFO - 127.0.0.1 - POST /login - 302 FOUND
+2026-02-22 12:57:40,380 - app - INFO - 127.0.0.1 - GET /redirect - 302 FOUND
+2026-02-22 12:57:40,605 - app - INFO - 127.0.0.1 - GET /teacher/dashboard - 200 OK
+2026-02-22 12:57:52,400 - app - INFO - 127.0.0.1 - GET /teacher/my-subjects - 200 OK
+2026-02-22 12:58:06,666 - app - INFO - 127.0.0.1 - GET /teacher/enter-comments - 200 OK
+2026-02-22 12:58:31,354 - app - INFO - 127.0.0.1 - POST /teacher/save-subject-comment - 200 OK
+2026-02-22 12:58:55,054 - app - INFO - 127.0.0.1 - GET /teacher/enter-comments - 200 OK
+2026-02-22 12:59:01,011 - app - INFO - 127.0.0.1 - GET /teacher/my-subjects - 200 OK
+2026-02-22 12:59:03,433 - app - INFO - 127.0.0.1 - GET /teacher/enter-scores/3e69c355-6dc4-4cd8-8db2-acc1749727ad/58ab21ae-aeee-45ff-afb9-ee362d0f7327 - 200 OK
+2026-02-22 12:59:36,996 - app - INFO - 127.0.0.1 - POST /teacher/save-scores - 200 OK
+2026-02-22 12:59:48,968 - app - INFO - 127.0.0.1 - GET /teacher/enter-scores/3e69c355-6dc4-4cd8-8db2-acc1749727ad/58ab21ae-aeee-45ff-afb9-ee362d0f7327 - 200 OK
+2026-02-22 13:01:26,941 - app - INFO - 127.0.0.1 - GET /teacher/my-subjects - 200 OK
+2026-02-22 13:01:37,427 - app - INFO - 127.0.0.1 - GET /teacher/my-subjects/upload-notes - 200 OK
+2026-02-22 13:06:08,669 - app - INFO - 127.0.0.1 - POST /teacher/upload-material - 302 FOUND
+2026-02-22 13:06:08,703 - app - INFO - 127.0.0.1 - GET /teacher/my-subjects/upload-notes - 200 OK
+2026-02-22 13:06:45,672 - app - INFO - 127.0.0.1 - POST /teacher/upload-material - 302 FOUND
+2026-02-22 13:06:45,737 - app - INFO - 127.0.0.1 - GET /teacher/my-subjects/upload-notes - 200 OK
+2026-02-22 13:07:01,067 - app - INFO - 127.0.0.1 - GET /teacher/edit-material/ab4c1a11-80e6-4b65-a632-1f3370de2a8e - 200 OK
+2026-02-22 13:07:17,587 - app - INFO - 127.0.0.1 - GET /teacher/attendance - 200 OK
+2026-02-22 13:07:34,104 - app - INFO - 127.0.0.1 - POST /teacher/mark-attendance - 200 OK
+2026-02-22 13:07:42,825 - app - INFO - 127.0.0.1 - POST /teacher/mark-attendance - 200 OK
+2026-02-22 13:07:59,143 - app - INFO - 127.0.0.1 - GET /teacher/my-subjects - 200 OK
+2026-02-22 13:08:06,553 - app - INFO - 127.0.0.1 - GET /teacher/domain-evaluation - 200 OK
+2026-02-22 13:08:33,230 - app - INFO - 127.0.0.1 - POST /teacher/save-domain-evaluation - 200 OK
+2026-02-22 13:08:40,757 - app - INFO - 127.0.0.1 - GET /teacher/exams - 200 OK
+2026-02-22 13:08:45,933 - app - INFO - 127.0.0.1 - GET /teacher/question-bank - 200 OK
+2026-02-22 13:09:17,183 - app - INFO - 127.0.0.1 - GET /logout - 302 FOUND
+2026-02-22 13:09:17,217 - app - INFO - 127.0.0.1 - GET /staff - 200 OK
+2026-02-22 13:09:19,498 - app - INFO - 127.0.0.1 - GET /login - 302 FOUND
+2026-02-22 13:09:19,653 - app - INFO - 127.0.0.1 - GET /student-login - 200 OK
+2026-02-22 13:09:27,371 - app - INFO - 127.0.0.1 - POST /student-login - 302 FOUND
+2026-02-22 13:09:27,553 - app - INFO - 127.0.0.1 - GET /student/dashboard - 200 OK
+2026-02-22 13:09:44,605 - app - INFO - 127.0.0.1 - GET /student/exams-dashboard - 200 OK
+2026-02-22 13:09:49,475 - app - INFO - 127.0.0.1 - GET /student/e-library - 200 OK
+2026-02-22 13:09:57,955 - app - INFO - 127.0.0.1 - GET /student/e-library/view/ab4c1a11-80e6-4b65-a632-1f3370de2a8e - 200 OK
+2026-02-22 13:10:15,600 - app - INFO - 127.0.0.1 - GET /student/e-library/download/ab4c1a11-80e6-4b65-a632-1f3370de2a8e - 200 OK
+2026-02-22 13:10:34,318 - app - INFO - 127.0.0.1 - GET /student/e-library - 200 OK
+2026-02-22 13:10:43,739 - app - INFO - 127.0.0.1 - GET /student/results - 200 OK
+2026-02-22 13:10:47,141 - app - INFO - 127.0.0.1 - GET /student-logout - 302 FOUND
+2026-02-22 13:10:47,151 - app - INFO - 127.0.0.1 - GET / - 200 OK
+2026-02-22 13:10:55,884 - app - INFO - 127.0.0.1 - GET /staff - 200 OK
+2026-02-22 13:10:57,939 - app - INFO - 127.0.0.1 - GET /login - 200 OK
+2026-02-22 13:11:00,159 - app - INFO - 127.0.0.1 - POST /login - 302 FOUND
+2026-02-22 13:11:00,203 - app - INFO - 127.0.0.1 - GET /redirect - 302 FOUND
+2026-02-22 13:11:00,228 - app - INFO - 127.0.0.1 - GET /teacher/dashboard - 200 OK
+2026-02-22 13:11:04,230 - app - INFO - 127.0.0.1 - GET /teacher/exams - 200 OK
+2026-02-22 13:11:57,479 - app - INFO - 127.0.0.1 - GET /teacher/exams/view/5c8c8328-107b-4979-8e3f-2cb3ed6ecbb4 - 200 OK
+2026-02-22 13:12:12,124 - app - INFO - 127.0.0.1 - GET /teacher/exams/edit/5c8c8328-107b-4979-8e3f-2cb3ed6ecbb4 - 200 OK
+2026-02-22 13:12:58,385 - app - INFO - 127.0.0.1 - GET /teacher/question-bank - 200 OK
+2026-02-22 13:13:20,042 - app - INFO - 127.0.0.1 - GET /teacher/exams - 200 OK
+2026-02-22 13:13:42,072 - app - INFO - 127.0.0.1 - GET /teacher/exams - 200 OK
+2026-02-22 13:14:30,026 - app - INFO - 127.0.0.1 - GET /teacher/exams - 200 OK
+2026-02-22 13:15:07,868 - app - INFO - 127.0.0.1 - POST /teacher/exams/create - 302 FOUND
+2026-02-22 13:15:07,909 - app - INFO - 127.0.0.1 - GET /teacher/exams - 200 OK
+2026-02-22 13:15:19,360 - app - INFO - 127.0.0.1 - GET /teacher/exams/view/ebd69282-56d3-44a6-a12e-b1c06a5254fb - 200 OK
+2026-02-22 13:15:24,391 - app - INFO - 127.0.0.1 - GET /teacher/exams/edit/ebd69282-56d3-44a6-a12e-b1c06a5254fb - 200 OK
+2026-02-22 13:15:41,733 - app - INFO - 127.0.0.1 - POST /teacher/exams/edit/ebd69282-56d3-44a6-a12e-b1c06a5254fb - 302 FOUND
+2026-02-22 13:15:41,767 - app - INFO - 127.0.0.1 - GET /teacher/exams/edit/ebd69282-56d3-44a6-a12e-b1c06a5254fb - 200 OK
+2026-02-22 13:15:50,493 - app - INFO - 127.0.0.1 - POST /teacher/exams/ebd69282-56d3-44a6-a12e-b1c06a5254fb/add-questions - 200 OK
+2026-02-22 13:15:50,582 - app - INFO - 127.0.0.1 - GET /teacher/exams/edit/ebd69282-56d3-44a6-a12e-b1c06a5254fb - 200 OK
+2026-02-22 13:15:56,393 - app - INFO - 127.0.0.1 - POST /teacher/exams/publish/ebd69282-56d3-44a6-a12e-b1c06a5254fb - 200 OK
+2026-02-22 13:15:56,445 - app - INFO - 127.0.0.1 - GET /teacher/exams/edit/ebd69282-56d3-44a6-a12e-b1c06a5254fb - 200 OK
+2026-02-22 13:15:58,376 - app - INFO - 127.0.0.1 - GET /teacher/exams/view/ebd69282-56d3-44a6-a12e-b1c06a5254fb - 200 OK
+2026-02-22 13:16:01,700 - app - INFO - 127.0.0.1 - POST /teacher/exams/activate/ebd69282-56d3-44a6-a12e-b1c06a5254fb - 200 OK
+2026-02-22 13:16:01,749 - app - INFO - 127.0.0.1 - GET /teacher/exams/view/ebd69282-56d3-44a6-a12e-b1c06a5254fb - 200 OK
+2026-02-22 13:16:04,585 - app - INFO - 127.0.0.1 - GET /logout - 302 FOUND
+2026-02-22 13:16:04,595 - app - INFO - 127.0.0.1 - GET /staff - 200 OK
+2026-02-22 13:16:06,403 - app - INFO - 127.0.0.1 - GET /login - 302 FOUND
+2026-02-22 13:16:06,432 - app - INFO - 127.0.0.1 - GET /student-login - 200 OK
+2026-02-22 13:16:09,931 - app - INFO - 127.0.0.1 - POST /student-login - 302 FOUND
+2026-02-22 13:16:09,959 - app - INFO - 127.0.0.1 - GET /student/dashboard - 200 OK
+2026-02-22 13:16:14,820 - app - INFO - 127.0.0.1 - GET /student/take-exam/ebd69282-56d3-44a6-a12e-b1c06a5254fb - 200 OK
+2026-02-22 13:16:38,899 - app - INFO - 127.0.0.1 - POST /student/save-answer - 200 OK
+2026-02-22 13:16:43,845 - app - INFO - 127.0.0.1 - POST /student/log-tab-switch - 200 OK
+2026-02-22 13:16:58,087 - app - INFO - 127.0.0.1 - POST /student/save-answer - 200 OK
+2026-02-22 13:17:00,665 - app - INFO - 127.0.0.1 - POST /student/log-tab-switch - 200 OK
+2026-02-22 13:17:04,598 - app - INFO - 127.0.0.1 - POST /student/submit-exam - 200 OK
+2026-02-22 13:17:04,623 - app - INFO - 127.0.0.1 - GET /student/exam/ebd69282-56d3-44a6-a12e-b1c06a5254fb/result - 404 NOT FOUND
+2026-02-22 13:17:12,853 - app - INFO - 127.0.0.1 - GET /student/take-exam/ebd69282-56d3-44a6-a12e-b1c06a5254fb - 302 FOUND
+2026-02-22 13:17:12,876 - app - INFO - 127.0.0.1 - GET /student/exams-dashboard - 200 OK
+2026-02-22 13:17:23,458 - app - INFO - 127.0.0.1 - GET /student/exam/a8ac7817-2fb7-4192-8f40-3713e3e84474/result - 200 OK
+2026-02-22 13:18:00,646 - app - INFO - 127.0.0.1 - GET /student/dashboard - 200 OK
+2026-02-22 13:18:04,437 - app - INFO - 127.0.0.1 - GET /student/dashboard - 200 OK
+2026-02-22 13:18:05,938 - app - INFO - 127.0.0.1 - GET /student/exams-dashboard - 200 OK
+2026-02-22 13:18:07,704 - app - INFO - 127.0.0.1 - GET /student/exam/a8ac7817-2fb7-4192-8f40-3713e3e84474/result - 200 OK
+2026-02-22 13:18:11,109 - app - INFO - 127.0.0.1 - GET /student/exams-dashboard - 200 OK
+2026-02-22 13:18:13,194 - app - INFO - 127.0.0.1 - GET /student/exam/a8ac7817-2fb7-4192-8f40-3713e3e84474/result - 200 OK
+2026-02-22 13:18:23,229 - app - INFO - 127.0.0.1 - GET /student/results - 200 OK
+2026-02-22 13:18:30,165 - app - INFO - 127.0.0.1 - GET /student/exams-dashboard - 200 OK
+2026-02-22 13:18:36,252 - app - INFO - 127.0.0.1 - GET /student/exam/a8ac7817-2fb7-4192-8f40-3713e3e84474/result - 200 OK
+2026-02-22 13:19:11,482 - app - INFO - 127.0.0.1 - GET /student/exams-dashboard - 200 OK
+2026-02-22 13:20:26,078 - app - INFO - 127.0.0.1 - GET /student/exams-dashboard - 200 OK
+2026-02-22 13:20:29,307 - app - INFO - 127.0.0.1 - GET /student/dashboard - 200 OK
+2026-02-22 13:20:32,585 - app - INFO - 127.0.0.1 - GET /student/dashboard - 200 OK
+2026-02-22 13:20:35,878 - app - INFO - 127.0.0.1 - GET /student/exams-dashboard - 200 OK
+2026-02-22 13:21:58,354 - app - INFO - 127.0.0.1 - GET /student/exams-dashboard - 200 OK
+2026-02-22 13:22:01,573 - app - INFO - 127.0.0.1 - GET /student-logout - 302 FOUND
+2026-02-22 13:22:01,584 - app - INFO - 127.0.0.1 - GET / - 200 OK
+2026-02-22 13:22:03,717 - app - INFO - 127.0.0.1 - GET /login - 302 FOUND
+2026-02-22 13:22:03,732 - app - INFO - 127.0.0.1 - GET /student-login - 200 OK
+2026-02-22 13:22:06,756 - app - INFO - 127.0.0.1 - POST /student-login - 302 FOUND
+2026-02-22 13:22:06,786 - app - INFO - 127.0.0.1 - GET /student/dashboard - 200 OK
+2026-02-22 13:22:09,760 - app - INFO - 127.0.0.1 - GET /student/exams-dashboard - 200 OK
+2026-02-22 13:22:17,000 - app - INFO - 127.0.0.1 - GET /student-logout - 302 FOUND
+2026-02-22 13:22:17,010 - app - INFO - 127.0.0.1 - GET / - 200 OK
+2026-02-22 13:22:22,481 - app - INFO - 127.0.0.1 - GET /staff - 200 OK
+2026-02-22 13:22:24,976 - app - INFO - 127.0.0.1 - GET /login - 200 OK
+2026-02-22 13:22:27,428 - app - INFO - 127.0.0.1 - POST /login - 302 FOUND
+2026-02-22 13:22:27,461 - app - INFO - 127.0.0.1 - GET /redirect - 302 FOUND
+2026-02-22 13:22:27,498 - app - INFO - 127.0.0.1 - GET /teacher/dashboard - 200 OK
+2026-02-22 13:22:32,769 - app - INFO - 127.0.0.1 - GET /teacher/exams - 200 OK
+2026-02-22 13:22:56,156 - app - INFO - 127.0.0.1 - POST /teacher/exams/create - 302 FOUND
+2026-02-22 13:22:56,206 - app - INFO - 127.0.0.1 - GET /teacher/exams - 200 OK
+2026-02-22 13:23:03,325 - app - INFO - 127.0.0.1 - GET /teacher/exams/view/354b7e50-918e-4974-a272-0adb467b0dc4 - 200 OK
+2026-02-22 13:23:08,153 - app - INFO - 127.0.0.1 - GET /teacher/exams/edit/354b7e50-918e-4974-a272-0adb467b0dc4 - 200 OK
+2026-02-22 13:23:20,821 - app - INFO - 127.0.0.1 - POST /teacher/exams/edit/354b7e50-918e-4974-a272-0adb467b0dc4 - 302 FOUND
+2026-02-22 13:23:20,857 - app - INFO - 127.0.0.1 - GET /teacher/exams/edit/354b7e50-918e-4974-a272-0adb467b0dc4 - 200 OK
+2026-02-22 13:23:25,890 - app - INFO - 127.0.0.1 - POST /teacher/exams/354b7e50-918e-4974-a272-0adb467b0dc4/add-questions - 200 OK
+2026-02-22 13:23:25,960 - app - INFO - 127.0.0.1 - GET /teacher/exams/edit/354b7e50-918e-4974-a272-0adb467b0dc4 - 200 OK
+2026-02-22 13:23:30,994 - app - INFO - 127.0.0.1 - POST /teacher/exams/publish/354b7e50-918e-4974-a272-0adb467b0dc4 - 200 OK
+2026-02-22 13:23:31,125 - app - INFO - 127.0.0.1 - GET /teacher/exams/edit/354b7e50-918e-4974-a272-0adb467b0dc4 - 200 OK
+2026-02-22 13:23:32,274 - app - INFO - 127.0.0.1 - GET /teacher/exams/view/354b7e50-918e-4974-a272-0adb467b0dc4 - 200 OK
+2026-02-22 13:23:34,574 - app - INFO - 127.0.0.1 - POST /teacher/exams/activate/354b7e50-918e-4974-a272-0adb467b0dc4 - 200 OK
+2026-02-22 13:23:34,619 - app - INFO - 127.0.0.1 - GET /teacher/exams/view/354b7e50-918e-4974-a272-0adb467b0dc4 - 200 OK
+2026-02-22 13:23:40,803 - app - INFO - 127.0.0.1 - GET /logout - 302 FOUND
+2026-02-22 13:23:40,816 - app - INFO - 127.0.0.1 - GET /staff - 200 OK
+2026-02-22 13:23:42,695 - app - INFO - 127.0.0.1 - GET /login - 302 FOUND
+2026-02-22 13:23:42,712 - app - INFO - 127.0.0.1 - GET /student-login - 200 OK
+2026-02-22 13:23:45,559 - app - INFO - 127.0.0.1 - POST /student-login - 302 FOUND
+2026-02-22 13:23:45,588 - app - INFO - 127.0.0.1 - GET /student/dashboard - 200 OK
+2026-02-22 13:23:56,954 - app - INFO - 127.0.0.1 - GET /student/exams-dashboard - 200 OK
+2026-02-22 13:23:59,404 - app - INFO - 127.0.0.1 - GET /student/take-exam/354b7e50-918e-4974-a272-0adb467b0dc4 - 200 OK
+2026-02-22 13:24:57,473 - app - INFO - 127.0.0.1 - POST /student/log-tab-switch - 200 OK
+2026-02-22 13:25:24,257 - app - INFO - 127.0.0.1 - POST /student/log-tab-switch - 200 OK
+2026-02-22 13:25:48,817 - app - INFO - 127.0.0.1 - POST /student/save-answer - 200 OK
+2026-02-22 13:25:59,312 - app - INFO - 127.0.0.1 - POST /student/save-answer - 200 OK
+2026-02-22 13:27:33,502 - app - INFO - 127.0.0.1 - POST /student/save-answer - 200 OK
+2026-02-22 13:29:04,683 - app - INFO - 127.0.0.1 - POST /student/log-tab-switch - 200 OK
+2026-02-22 13:29:05,856 - app - INFO - 127.0.0.1 - POST /student/submit-exam - 200 OK
+2026-02-22 13:29:05,937 - app - INFO - 127.0.0.1 - GET /student/exam/354b7e50-918e-4974-a272-0adb467b0dc4/result - 404 NOT FOUND

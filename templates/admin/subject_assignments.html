@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<!-- templates/admin/subject_assignments.html -->
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Subject Assignments - Admin Panel{% endblock %}
+
+{% block page_title %}
+<h1><i class="fas fa-tasks"></i> Subject Assignments</h1>
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="separator">/</span>
+<a href="{{ url_for('admin.manage_subjects') }}">Subjects</a>
+<span class="separator">/</span>
+<span>Assignments</span>
+{% endblock %}
+
+{% block content %}
+<!-- Search and Filter Bar -->
+<div class="search-filter-bar">
+    <div class="filter-row">
+        <div class="filter-group">
+            <label class="form-label">Filter by Teacher</label>
+            <select id="teacherFilter" class="form-control">
+                <option value="all">All Teachers</option>
+                {% for teacher in teachers %}
+                <option value="{{ teacher.id }}">{{ teacher.first_name }} {{ teacher.last_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label class="form-label">Filter by Subject</label>
+            <select id="subjectFilter" class="form-control">
+                <option value="all">All Subjects</option>
+                {% for subject in subjects %}
+                <option value="{{ subject.id }}">{{ subject.name }} ({{ subject.code }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label class="form-label">Filter by Class</label>
+            <select id="classFilter" class="form-control">
+                <option value="all">All Classes</option>
+                {% for class in classes %}
+                <option value="{{ class.id }}">{{ class.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label class="form-label">Filter by Term</label>
+            <select id="termFilter" class="form-control">
+                <option value="all">All Terms</option>
+                {% for term in terms %}
+                <option value="{{ term.id }}">{{ term.name }} - {{ term.session.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div>
+            <button class="btn btn-primary" id="addAssignmentBtn">
+                <i class="fas fa-plus"></i> Assign Subject
+            </button>
+        </div>
+    </div>
+    
+    <div class="mt-3">
+        <div class="input-group">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search assignments...">
+            <button class="btn btn-secondary" type="button" id="searchBtn">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Assignment Statistics -->
+<div class="assignment-stats">
+    <div class="stat-card">
+        <div class="stat-value">{{ assignments|length }}</div>
+        <div class="stat-label">Total Assignments</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ active_assignments }}</div>
+        <div class="stat-label">Active Assignments</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ unique_teachers }}</div>
+        <div class="stat-label">Teachers Assigned</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ unique_subjects }}</div>
+        <div class="stat-label">Subjects Covered</div>
+    </div>
+</div>
+
+<!-- Assignments Grid -->
+<div class="assignments-grid" id="assignmentsGrid">
+    {% if assignments %}
+        {% for assignment in assignments %}
+        <div class="assignment-card draggable-assignment" 
+             data-teacher="{{ assignment.teacher_id }}"
+             data-subject="{{ assignment.subject_id }}"
+             data-class="{{ assignment.class_id }}"
+             data-term="{{ assignment.academic_term_id }}"
+             data-status="{{ 'active' if assignment.is_active else 'inactive' }}">
+            <div class="assignment-header">
+                <div class="assignment-info">
+                    <h5 class="mb-0">
+                        <span class="teacher-badge">
+                            <i class="fas fa-user-tie"></i>
+                            {{ assignment.teacher.first_name }} {{ assignment.teacher.last_name }}
+                        </span>
+                    </h5>
+                    <div class="d-flex gap-2 align-items-center">
+                        <span class="subject-badge">
+                            <i class="fas fa-book"></i>
+                            {{ assignment.subject.name }}
+                        </span>
+                        <span class="class-badge">
+                            <i class="fas fa-chalkboard"></i>
+                            {{ assignment.classroom.name }}
+                        </span>
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-sm btn-secondary edit-assignment-btn" 
+                            data-id="{{ assignment.id }}"
+                            title="Edit Assignment">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    {% if assignment.is_active %}
+                    <button class="btn btn-sm btn-warning deactivate-assignment-btn" 
+                            data-id="{{ assignment.id }}"
+                            data-name="{{ assignment.teacher.first_name }} - {{ assignment.subject.name }}"
+                            title="Deactivate">
+                        <i class="fas fa-pause"></i>
+                    </button>
+                    {% else %}
+                    <button class="btn btn-sm btn-success activate-assignment-btn" 
+                            data-id="{{ assignment.id }}"
+                            data-name="{{ assignment.teacher.first_name }} - {{ assignment.subject.name }}"
+                            title="Activate">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    {% endif %}
+                    <button class="btn btn-sm btn-danger delete-assignment-btn" 
+                            data-id="{{ assignment.id }}"
+                            data-name="{{ assignment.teacher.first_name }} - {{ assignment.subject.name }}"
+                            title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="assignment-details">
+                <div class="detail-item">
+                    <span class="detail-label">Academic Term</span>
+                    <span class="detail-value">
+                        <span class="term-badge">
+                            <i class="fas fa-calendar-week"></i>
+                            {{ assignment.academic_term.name }} (Term {{ assignment.academic_term.term_number }})
+                        </span>
+                    </span>
+                </div>
+                
+                <div class="detail-item">
+                    <span class="detail-label">Session</span>
+                    <span class="detail-value">
+                        {{ assignment.academic_term.session.name }}
+                    </span>
+                </div>
+                
+                <div class="detail-item">
+                    <span class="detail-label">Subject Code</span>
+                    <span class="detail-value">
+                        <code>{{ assignment.subject.code }}</code>
+                    </span>
+                </div>
+                
+                <div class="detail-item">
+                    <span class="detail-label">Subject Category</span>
+                    <span class="detail-value">
+                        {{ assignment.subject.category or 'Not specified' }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="mt-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="status-badge status-{{ 'active' if assignment.is_active else 'inactive' }}">
+                        <i class="fas fa-{{ 'check-circle' if assignment.is_active else 'times-circle' }}"></i>
+                        {{ 'Active' if assignment.is_active else 'Inactive' }}
+                    </span>
+                </div>
+                <div class="text-muted small">
+                    <i class="fas fa-history"></i>
+                    Assigned on {{ assignment.created_at.strftime('%d %b %Y') if assignment.created_at else 'Date not available' }}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="fas fa-tasks"></i>
+        </div>
+        <h4>No Subject Assignments</h4>
+        <p class="text-muted">Start by assigning subjects to teachers for different classes and terms.</p>
+        <button class="btn btn-primary mt-2" id="addFirstAssignmentBtn">
+            <i class="fas fa-plus"></i> Create First Assignment
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add/Edit Assignment Modal -->
+<div class="modal-overlay" id="assignmentModal">
+    <div class="modal" style="max-width: 600px;">
+        <div class="card-header">
+            <h3 class="card-title" id="modalTitle">
+                <i class="fas fa-tasks"></i> Assign Subject to Teacher
+            </h3>
+            <button class="btn btn-secondary btn-sm" id="closeModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form id="assignmentForm" class="assignment-form">
+            <input type="hidden" name="assignment_id" id="assignmentId">
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Teacher *</label>
+                    <select name="teacher_id" class="form-control" required id="teacherSelect">
+                        <option value="">Select Teacher</option>
+                        {% for teacher in teachers %}
+                        <option value="{{ teacher.id }}">
+                            {{ teacher.first_name }} {{ teacher.last_name }} 
+                            ({{ teacher.staff_id }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Subject *</label>
+                    <select name="subject_id" class="form-control" required id="subjectSelect">
+                        <option value="">Select Subject</option>
+                        {% for subject in subjects %}
+                        <option value="{{ subject.id }}">
+                            {{ subject.name }} ({{ subject.code }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Class *</label>
+                    <select name="class_id" class="form-control" required id="classSelect">
+                        <option value="">Select Class</option>
+                        {% for class in classes %}
+                        <option value="{{ class.id }}">
+                            {{ class.name }}
+                            {% if class.level %} - {{ class.level }}{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Academic Term *</label>
+                    <select name="academic_term_id" class="form-control" required id="termSelect">
+                        <option value="">Select Term</option>
+                        {% for term in terms %}
+                        <option value="{{ term.id }}">
+                            {{ term.name }} - {{ term.session.name }} 
+                            (Term {{ term.term_number }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <div class="form-check">
+                    <input type="checkbox" name="is_active" id="isActive" class="form-check-input" checked>
+                    <label for="isActive" class="form-check-label">
+                        <strong>Active Assignment</strong>
+                    </label>
+                </div>
+                <small class="text-muted">
+                    <i class="fas fa-info-circle"></i> Active assignments are available for use in the system.
+                </small>
+            </div>
+            
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <button type="button" class="btn btn-secondary" id="cancelBtn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <i class="fas fa-save"></i> Save Assignment
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay confirmation-modal" id="deleteModal">
+    <div class="modal">
+        <div class="confirmation-content">
+            <div class="confirmation-icon" style="color: var(--admin-danger);">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h4>Delete Assignment</h4>
+            <p id="deleteMessage">Are you sure you want to delete this subject assignment?</p>
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Warning:</strong> This will remove the teacher's access to teach this subject in the specified class and term.
+            </div>
+            
+            <div class="confirmation-actions">
+                <button type="button" class="btn btn-secondary" id="cancelDeleteBtn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activation/Deactivation Modal -->
+<div class="modal-overlay confirmation-modal" id="statusModal">
+    <div class="modal">
+        <div class="confirmation-content">
+            <div class="confirmation-icon" id="statusIcon">
+                <i class="fas fa-question-circle"></i>
+            </div>
+            <h4 id="statusTitle">Change Assignment Status</h4>
+            <p id="statusMessage">Are you sure you want to change the status of this assignment?</p>
+            
+            <div class="confirmation-actions">
+                <button type="button" class="btn btn-secondary" id="cancelStatusBtn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn" id="confirmStatusBtn">
+                    <i class="fas fa-check"></i> Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Stats Cards - Mobile Optimized */
+    .assignment-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-card {
+        background: var(--admin-card);
+        border-radius: 8px;
+        padding: 0.75rem;
+        text-align: center;
+        border: 1px solid var(--admin-border);
+        transition: transform 0.2s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stat-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--admin-primary);
+        margin-bottom: 0.2rem;
+        line-height: 1.2;
+    }
+    
+    .stat-label {
+        font-size: 0.75rem;
+        color: var(--admin-text-light);
+        margin: 0;
+    }
+    
+    /* Search and Filter Bar - Mobile First */
+    .search-filter-bar {
+        background: var(--admin-card);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid var(--admin-border);
+    }
+    
+    .filter-row {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .filter-group {
+        width: 100%;
+    }
+    
+    .filter-group .form-label {
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-bottom: 0.3rem;
+        display: block;
+        color: var(--admin-text);
+    }
+    
+    .filter-group select {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--admin-border);
+        border-radius: 6px;
+        font-size: 0.9rem;
+        background: var(--admin-bg);
+        color: var(--admin-text);
+    }
+    
+    #addAssignmentBtn {
+        width: 100%;
+        padding: 0.5rem;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+    
+    .search-filter-bar .input-group {
+        display: flex;
+        margin-top: 0.5rem;
+    }
+    
+    .search-filter-bar .form-control {
+        flex: 1;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--admin-border);
+        border-radius: 6px 0 0 6px;
+        font-size: 0.9rem;
+    }
+    
+    .search-filter-bar .input-group .btn {
+        padding: 0.5rem 0.75rem;
+        border-radius: 0 6px 6px 0;
+        font-size: 0.9rem;
+    }
+    
+    /* Assignment Card - Mobile Optimized */
+    .assignment-card {
+        background: var(--admin-card);
+        border-radius: 10px;
+        padding: 1rem;
+        border: 1px solid var(--admin-border);
+        margin-bottom: 0.75rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .assignment-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-color: var(--admin-primary-light);
+    }
+    
+    .assignment-header {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--admin-border);
+    }
+    
+    .assignment-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .assignment-info h5 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--admin-text);
+    }
+    
+    /* Badges - Compact */
+    .teacher-badge,
+    .subject-badge,
+    .class-badge,
+    .term-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.3rem 0.75rem;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        margin-right: 0.4rem;
+        margin-bottom: 0.4rem;
+    }
+    
+    .teacher-badge {
+        background: linear-gradient(135deg, var(--admin-primary-light), #3b82f6);
+        color: white;
+    }
+    
+    .subject-badge {
+        background: linear-gradient(135deg, #f3e8ff, #7c3aed);
+        color: white;
+    }
+    
+    .class-badge {
+        background: linear-gradient(135deg, #d1fae5, #10b981);
+        color: white;
+    }
+    
+    .term-badge {
+        background: linear-gradient(135deg, #fef3c7, #f59e0b);
+        color: #92400e;
+    }
+    
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.3rem;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+    }
+    
+    .action-buttons .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        min-width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Assignment Details Grid */
+    .assignment-details {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+        margin: 0.75rem 0;
+    }
+    
+    .detail-item {
+        background: rgba(0, 0, 0, 0.02);
+        border-radius: 6px;
+        padding: 0.6rem;
+    }
+    
+    .detail-label {
+        font-size: 0.75rem;
+        color: var(--admin-text-light);
+        margin-bottom: 0.2rem;
+        display: block;
+    }
+    
+    .detail-value {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--admin-text);
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
+    
+    .detail-value code {
+        font-size: 0.8rem;
+        padding: 0.1rem 0.3rem;
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 3px;
+    }
+    
+    /* Status Badge */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
+    .status-active {
+        background: linear-gradient(135deg, #d1fae5, #10b981);
+        color: white;
+    }
+    
+    .status-inactive {
+        background: linear-gradient(135deg, #e2e8f0, #94a3b8);
+        color: white;
+    }
+    
+    /* Footer */
+    .assignment-card > div:last-child {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--admin-border-light);
+    }
+    
+    .assignment-card > div:last-child .text-muted {
+        font-size: 0.75rem;
+        color: var(--admin-text-light);
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    
+    /* Assignments Grid */
+    .assignments-grid {
+        display: grid;
+        gap: 0.75rem;
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 2rem 1rem;
+        background: var(--admin-card);
+        border-radius: 10px;
+        border: 1px solid var(--admin-border);
+        margin-top: 0.5rem;
+    }
+    
+    .empty-state-icon {
+        font-size: 2.5rem;
+        color: var(--admin-border);
+        margin-bottom: 0.75rem;
+        opacity: 0.5;
+    }
+    
+    .empty-state h4 {
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+        color: var(--admin-text);
+    }
+    
+    .empty-state p {
+        font-size: 0.9rem;
+        color: var(--admin-text-light);
+        margin-bottom: 1rem;
+        line-height: 1.4;
+    }
+    
+    .empty-state .btn {
+        padding: 0.5rem 1.5rem;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    
+    /* Modal Styles */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem;
+        backdrop-filter: blur(4px);
+    }
+    
+    .modal-overlay.active {
+        display: flex;
+        animation: fadeIn 0.2s ease;
+    }
+    
+    .modal {
+        background: var(--admin-card);
+        border-radius: 12px;
+        width: 100%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--admin-border);
+        animation: slideUp 0.3s ease;
+    }
+    
+    .modal .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid var(--admin-border);
+        position: sticky;
+        top: 0;
+        background: var(--admin-card);
+        z-index: 1;
+    }
+    
+    .modal .card-title {
+        margin: 0;
+        font-size: 1.1rem;
+        color: var(--admin-text);
+    }
+    
+    /* Assignment Form */
+    .assignment-form {
+        padding: 1rem;
+    }
+    
+    .form-group {
+        margin-bottom: 0.75rem;
+    }
+    
+    .form-group label {
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-bottom: 0.3rem;
+        color: var(--admin-text);
+        display: block;
+    }
+    
+    .form-group select {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+        border: 1px solid var(--admin-border);
+        border-radius: 6px;
+        background: var(--admin-bg);
+        color: var(--admin-text);
+        transition: border-color 0.2s ease;
+    }
+    
+    .form-group select:focus {
+        outline: none;
+        border-color: var(--admin-primary);
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    }
+    
+    .form-row {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .form-row .form-group {
+        flex: 1;
+        margin-bottom: 0;
+    }
+    
+    .form-check {
+        margin: 0.75rem 0;
+        padding-left: 1.75rem;
+    }
+    
+    .form-check-input {
+        margin-left: -1.75rem;
+        margin-top: 0.25rem;
+    }
+    
+    .form-check-label {
+        font-size: 0.9rem;
+        color: var(--admin-text);
+        font-weight: 500;
+    }
+    
+    small.text-muted {
+        font-size: 0.75rem;
+        color: var(--admin-text-light);
+        display: block;
+        margin-top: 0.2rem;
+        line-height: 1.4;
+    }
+    
+    /* Confirmation Modal */
+    .confirmation-modal .modal {
+        max-width: 400px;
+    }
+    
+    .confirmation-content {
+        text-align: center;
+        padding: 1.5rem 1rem;
+    }
+    
+    .confirmation-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        opacity: 0.9;
+    }
+    
+    .confirmation-content h4 {
+        font-size: 1.2rem;
+        margin-bottom: 0.75rem;
+        color: var(--admin-text);
+    }
+    
+    .confirmation-content p {
+        font-size: 0.95rem;
+        color: var(--admin-text-light);
+        margin-bottom: 1rem;
+        line-height: 1.4;
+    }
+    
+    .alert {
+        padding: 0.75rem;
+        font-size: 0.85rem;
+        border-radius: 6px;
+        margin-bottom: 1rem;
+        background: rgba(254, 226, 226, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        color: var(--admin-text);
+        line-height: 1.4;
+    }
+    
+    .alert i {
+        margin-right: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .confirmation-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .confirmation-actions .btn {
+        padding: 0.5rem 1.25rem;
+        font-size: 0.9rem;
+        width: 100%;
+        justify-content: center;
+    }
+    
+    /* Animations */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    
+    /* Responsive Breakpoints */
+    @media (min-width: 640px) {
+        .assignment-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .filter-row {
+            flex-direction: row;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 180px;
+        }
+        
+        #addAssignmentBtn {
+            width: auto;
+            min-width: 140px;
+            margin-top: 0;
+        }
+        
+        .assignments-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .assignment-details {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .assignment-card > div:last-child {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .confirmation-actions {
+            flex-direction: row;
+        }
+        
+        .confirmation-actions .btn {
+            width: auto;
+            min-width: 100px;
+        }
+    }
+    
+    @media (min-width: 768px) {
+        .assignment-stats {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        
+        .assignments-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        
+        .assignment-details {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .assignment-header {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        
+        .assignment-info {
+            flex: 1;
+        }
+        
+        .form-row {
+            flex-direction: row;
+            gap: 0.75rem;
+        }
+        
+        .modal[style*="max-width: 600px"] {
+            max-width: 500px;
+        }
+    }
+    
+    @media (min-width: 1024px) {
+        .assignments-grid {
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        }
+    }
+    
+    @media (max-width: 639px) {
+        .assignments-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .assignment-details {
+            grid-template-columns: 1fr;
+        }
+        
+        .teacher-badge,
+        .subject-badge,
+        .class-badge {
+            display: block;
+            margin-bottom: 0.3rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .stats-summary {
+            grid-template-columns: 1fr;
+            gap: 0.4rem;
+        }
+        
+        .stat-card {
+            padding: 0.6rem;
+        }
+        
+        .stat-value {
+            font-size: 1.1rem;
+        }
+        
+        .search-filter-bar {
+            padding: 0.75rem;
+        }
+        
+        .assignment-card {
+            padding: 0.75rem;
+        }
+        
+        .modal {
+            max-width: 95%;
+        }
+        
+        .action-buttons {
+            justify-content: space-between;
+        }
+        
+        .action-buttons .btn {
+            flex: 1;
+            max-width: 60px;
+        }
+    }
+    
+    /* Touch-friendly improvements */
+    .btn {
+        touch-action: manipulation;
+        user-select: none;
+        cursor: pointer;
+    }
+    
+    select, input {
+        font-size: 16px; /* Prevents iOS zoom on focus */
+    }
+    
+    /* Scrollbar styling */
+    .modal::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .modal::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    .modal::-webkit-scrollbar-thumb {
+        background: var(--admin-border);
+        border-radius: 3px;
+    }
+    
+    .modal::-webkit-scrollbar-thumb:hover {
+        background: var(--admin-text-light);
+    }
+    
+    /* Clear Filters Button */
+    #clearFiltersBtn {
+        margin-top: 0.5rem;
+        padding: 0.4rem 1rem;
+        font-size: 0.85rem;
+    }
+    
+    /* Badge adjustments for smaller screens */
+    @media (max-width: 380px) {
+        .teacher-badge,
+        .subject-badge,
+        .class-badge,
+        .term-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        
+        .status-badge {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.5rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Elements
+        const assignmentModal = document.getElementById('assignmentModal');
+        const deleteModal = document.getElementById('deleteModal');
+        const statusModal = document.getElementById('statusModal');
+        const assignmentForm = document.getElementById('assignmentForm');
+        const assignmentsGrid = document.getElementById('assignmentsGrid');
+        
+        // Filter elements
+        const teacherFilter = document.getElementById('teacherFilter');
+        const subjectFilter = document.getElementById('subjectFilter');
+        const classFilter = document.getElementById('classFilter');
+        const termFilter = document.getElementById('termFilter');
+        const searchInput = document.getElementById('searchInput');
+        
+        // State variables
+        let assignmentToDelete = null;
+        let assignmentToChangeStatus = null;
+        let newStatus = null;
+        
+        // Filter assignments
+        function filterAssignments() {
+            const selectedTeacher = teacherFilter.value;
+            const selectedSubject = subjectFilter.value;
+            const selectedClass = classFilter.value;
+            const selectedTerm = termFilter.value;
+            const searchTerm = searchInput.value.toLowerCase();
+            
+            document.querySelectorAll('.assignment-card').forEach(card => {
+                const teacherId = card.getAttribute('data-teacher');
+                const subjectId = card.getAttribute('data-subject');
+                const classId = card.getAttribute('data-class');
+                const termId = card.getAttribute('data-term');
+                const status = card.getAttribute('data-status');
+                
+                const teacherName = card.querySelector('.teacher-badge').textContent.toLowerCase();
+                const subjectName = card.querySelector('.subject-badge').textContent.toLowerCase();
+                const className = card.querySelector('.class-badge').textContent.toLowerCase();
+                
+                let show = true;
+                
+                // Filter by teacher
+                if (selectedTeacher !== 'all' && teacherId !== selectedTeacher) {
+                    show = false;
+                }
+                
+                // Filter by subject
+                if (selectedSubject !== 'all' && subjectId !== selectedSubject) {
+                    show = false;
+                }
+                
+                // Filter by class
+                if (selectedClass !== 'all' && classId !== selectedClass) {
+                    show = false;
+                }
+                
+                // Filter by term
+                if (selectedTerm !== 'all' && termId !== selectedTerm) {
+                    show = false;
+                }
+                
+                // Filter by search
+                if (searchTerm && !teacherName.includes(searchTerm) && 
+                    !subjectName.includes(searchTerm) && !className.includes(searchTerm)) {
+                    show = false;
+                }
+                
+                card.style.display = show ? '' : 'none';
+            });
+            
+            // Check if any assignments are visible
+            const visibleCards = document.querySelectorAll('.assignment-card[style=""]').length;
+            if (visibleCards === 0 && assignmentsGrid.querySelector('.empty-state') === null) {
+                const emptyState = document.createElement('div');
+                emptyState.className = 'empty-state';
+                emptyState.innerHTML = `
+                    <div class="empty-state-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h4>No Assignments Found</h4>
+                    <p class="text-muted">Try changing your search or filter criteria.</p>
+                    <button class="btn btn-outline-primary mt-2" id="clearFiltersBtn">
+                        <i class="fas fa-times"></i> Clear Filters
+                    </button>
+                `;
+                assignmentsGrid.appendChild(emptyState);
+                
+                // Add event listener to clear filters button
+                document.getElementById('clearFiltersBtn')?.addEventListener('click', function() {
+                    teacherFilter.value = 'all';
+                    subjectFilter.value = 'all';
+                    classFilter.value = 'all';
+                    termFilter.value = 'all';
+                    searchInput.value = '';
+                    filterAssignments();
+                    this.parentElement.remove();
+                });
+            } else if (visibleCards > 0) {
+                const emptyState = assignmentsGrid.querySelector('.empty-state');
+                if (emptyState && emptyState.id !== 'defaultEmptyState') {
+                    emptyState.remove();
+                }
+            }
+        }
+        
+        // Event listeners for filters
+        teacherFilter?.addEventListener('change', filterAssignments);
+        subjectFilter?.addEventListener('change', filterAssignments);
+        classFilter?.addEventListener('change', filterAssignments);
+        termFilter?.addEventListener('change', filterAssignments);
+        searchInput?.addEventListener('input', filterAssignments);
+        document.getElementById('searchBtn')?.addEventListener('click', filterAssignments);
+        
+        // Show alert message
+        function showAlert(type, message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            const flashMessages = document.querySelector('.flash-messages');
+            if (!flashMessages) {
+                const container = document.createElement('div');
+                container.className = 'flash-messages';
+                document.querySelector('.admin-content').prepend(container);
+            }
+            
+            document.querySelector('.flash-messages').prepend(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.style.opacity = '0';
+                alertDiv.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => alertDiv.remove(), 500);
+            }, 5000);
+        }
+        
+        // Open modal for adding new assignment
+        function openAddModal() {
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-tasks"></i> Assign Subject to Teacher';
+            assignmentForm.reset();
+            document.getElementById('assignmentId').value = '';
+            document.getElementById('isActive').checked = true;
+            assignmentModal.classList.add('active');
+        }
+        
+        // Open modal for editing assignment
+        function openEditModal(assignmentId) {
+            fetch(`/admin/subject-assignments/${assignmentId}/data`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to fetch assignment data');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit"></i> Edit Assignment';
+                        document.getElementById('assignmentId').value = data.assignment.id;
+                        
+                        // Fill form fields
+                        document.getElementById('teacherSelect').value = data.assignment.teacher_id;
+                        document.getElementById('subjectSelect').value = data.assignment.subject_id;
+                        document.getElementById('classSelect').value = data.assignment.class_id;
+                        document.getElementById('termSelect').value = data.assignment.academic_term_id;
+                        document.getElementById('isActive').checked = data.assignment.is_active;
+                        
+                        assignmentModal.classList.add('active');
+                    } else {
+                        throw new Error(data.message);
+                    }
+                })
+                .catch(error => {
+                    showAlert('danger', `Error: ${error.message}`);
+                });
+        }
+        
+        // Handle form submission
+        assignmentForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            submitBtn.disabled = true;
+            
+            try {
+                const formData = new FormData(assignmentForm);
+                const isEdit = !!formData.get('assignment_id');
+                const endpoint = isEdit ? '/admin/subject-assignments/update' : '/admin/subject-assignments/add';
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('success', data.message);
+                    assignmentModal.classList.remove('active');
+                    
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                showAlert('danger', `Error: ${error.message}`);
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+        
+        // Handle assignment deletion
+        function handleDeleteAssignment(assignmentId, assignmentName) {
+            assignmentToDelete = assignmentId;
+            document.getElementById('deleteMessage').textContent = 
+                `Are you sure you want to delete "${assignmentName}"? This action cannot be undone.`;
+            deleteModal.classList.add('active');
+        }
+        
+        // Handle assignment status change
+        function handleStatusChange(assignmentId, assignmentName, activate) {
+            assignmentToChangeStatus = assignmentId;
+            newStatus = activate;
+            
+            if (activate) {
+                document.getElementById('statusIcon').className = 'confirmation-icon';
+                document.getElementById('statusIcon').innerHTML = '<i class="fas fa-check-circle" style="color: var(--admin-success);"></i>';
+                document.getElementById('statusTitle').textContent = 'Activate Assignment';
+                document.getElementById('statusMessage').textContent = `Are you sure you want to activate "${assignmentName}"?`;
+                document.getElementById('confirmStatusBtn').className = 'btn btn-success';
+                document.getElementById('confirmStatusBtn').innerHTML = '<i class="fas fa-check"></i> Activate';
+            } else {
+                document.getElementById('statusIcon').className = 'confirmation-icon';
+                document.getElementById('statusIcon').innerHTML = '<i class="fas fa-pause-circle" style="color: var(--admin-warning);"></i>';
+                document.getElementById('statusTitle').textContent = 'Deactivate Assignment';
+                document.getElementById('statusMessage').textContent = `Are you sure you want to deactivate "${assignmentName}"?`;
+                document.getElementById('confirmStatusBtn').className = 'btn btn-warning';
+                document.getElementById('confirmStatusBtn').innerHTML = '<i class="fas fa-pause"></i> Deactivate';
+            }
+            
+            statusModal.classList.add('active');
+        }
+        
+        // Event listeners for buttons
+        document.getElementById('addAssignmentBtn')?.addEventListener('click', openAddModal);
+        
+        const addFirstAssignmentBtn = document.getElementById('addFirstAssignmentBtn');
+        if (addFirstAssignmentBtn) {
+            addFirstAssignmentBtn.addEventListener('click', openAddModal);
+        }
+        
+        // Edit assignment buttons
+        document.querySelectorAll('.edit-assignment-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const assignmentId = this.getAttribute('data-id');
+                openEditModal(assignmentId);
+            });
+        });
+        
+        // Delete assignment buttons
+        document.querySelectorAll('.delete-assignment-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const assignmentId = this.getAttribute('data-id');
+                const assignmentName = this.getAttribute('data-name');
+                handleDeleteAssignment(assignmentId, assignmentName);
+            });
+        });
+        
+        // Activate/deactivate buttons
+        document.querySelectorAll('.activate-assignment-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const assignmentId = this.getAttribute('data-id');
+                const assignmentName = this.getAttribute('data-name');
+                handleStatusChange(assignmentId, assignmentName, true);
+            });
+        });
+        
+        document.querySelectorAll('.deactivate-assignment-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const assignmentId = this.getAttribute('data-id');
+                const assignmentName = this.getAttribute('data-name');
+                handleStatusChange(assignmentId, assignmentName, false);
+            });
+        });
+        
+        // Modal close buttons
+        document.getElementById('closeModal')?.addEventListener('click', () => assignmentModal.classList.remove('active'));
+        document.getElementById('cancelBtn')?.addEventListener('click', () => assignmentModal.classList.remove('active'));
+        document.getElementById('cancelDeleteBtn')?.addEventListener('click', () => deleteModal.classList.remove('active'));
+        document.getElementById('cancelStatusBtn')?.addEventListener('click', () => statusModal.classList.remove('active'));
+        
+        // Confirm delete
+        document.getElementById('confirmDeleteBtn')?.addEventListener('click', async function() {
+            const deleteBtn = this;
+            const originalText = deleteBtn.innerHTML;
+            
+            deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+            deleteBtn.disabled = true;
+            
+            try {
+                const response = await fetch(`/admin/subject-assignments/delete/${assignmentToDelete}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('success', data.message);
+                    deleteModal.classList.remove('active');
+                    
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                showAlert('danger', `Error: ${error.message}`);
+                deleteBtn.innerHTML = originalText;
+                deleteBtn.disabled = false;
+            }
+        });
+        
+        // Confirm status change
+        document.getElementById('confirmStatusBtn')?.addEventListener('click', async function() {
+            const statusBtn = this;
+            const originalText = statusBtn.innerHTML;
+            
+            statusBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+            statusBtn.disabled = true;
+            
+            try {
+                const endpoint = newStatus ? 
+                    `/admin/subject-assignments/activate/${assignmentToChangeStatus}` :
+                    `/admin/subject-assignments/deactivate/${assignmentToChangeStatus}`;
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('success', data.message);
+                    statusModal.classList.remove('active');
+                    
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                showAlert('danger', `Error: ${error.message}`);
+                statusBtn.innerHTML = originalText;
+                statusBtn.disabled = false;
+            }
+        });
+        
+        // Close modals when clicking outside
+        [assignmentModal, deleteModal, statusModal].forEach(modal => {
+            modal?.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+        
+        // Initialize drag and drop for assignments
+        initializeDragAndDrop();
+        
+        function initializeDragAndDrop() {
+            const assignmentCards = document.querySelectorAll('.draggable-assignment');
+            
+            assignmentCards.forEach(card => {
+                card.setAttribute('draggable', 'true');
+                
+                card.addEventListener('dragstart', function(e) {
+                    this.classList.add('dragging');
+                    e.dataTransfer.setData('text/plain', this.getAttribute('data-id'));
+                });
+                
+                card.addEventListener('dragend', function() {
+                    this.classList.remove('dragging');
+                });
+            });
+            
+            // Handle drop zones if needed for reordering
+        }
+    });
+</script>
+{% endblock %}

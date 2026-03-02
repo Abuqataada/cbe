@@ -1,0 +1,704 @@
+{% extends "student/student_base.html" %}
+
+{% block title %}Exam Result - {{ exam.name }}{% endblock %}
+
+{% block content %}
+<div class="result-container">
+    <div class="container">
+        <!-- Header - More Compact -->
+        <div class="result-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3">
+            <div>
+                <h1 class="mb-1">{{ exam.name }} - Result</h1>
+                <div class="result-subtitle">
+                    {{ exam.subject.name if exam.subject else 'No Subject' }} • 
+                    Submitted {{ exam_session.end_time.strftime('%b %d, %Y') }}
+                </div>
+            </div>
+            <a href="{{ url_for('student.exams_dashboard') }}" class="btn btn-outline-primary btn-sm mt-2 mt-md-0">
+                <i class="fas fa-arrow-left me-1"></i> Back to Exams
+            </a>
+        </div>
+
+        <!-- Summary Card - More Compact -->
+        <div class="summary-card">
+            <div class="score-circle">
+                <div class="score-percentage">{{ "%.1f"|format(percentage) }}%</div>
+                <div class="score-grade">{{ grade[0] if grade else 'N/A' }}</div>
+            </div>
+            <h3 class="h4 mb-2 text-center">{{ grade[1] if grade else 'No Grade' }}</h3>
+            
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value">{{ obtained_marks|round(1) }}</div>
+                    <div class="stat-label">Marks Obtained</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">{{ total_marks|round(1) }}</div>
+                    <div class="stat-label">Total Marks</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">{{ questions_data|length }}</div>
+                    <div class="stat-label">Questions</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Results - More Compact -->
+        <div class="result-card">
+            <h3 class="h4 mb-3">Question-wise Results</h3>
+            
+            {% for item in questions_data %}
+            {% set eq = item.exam_question %}
+            {% set question = item.question %}
+            {% set response = response_map.get(eq.id) %}
+            
+            <div class="question-item 
+                {% if question.question_type in ['short_answer', 'essay'] %}partial
+                {% elif response and response.answer == question.correct_answer %}correct
+                {% elif response and response.answer %}incorrect
+                {% endif %}">
+                
+                <!-- Question Header - More Compact -->
+                <div class="question-header">
+                    <div class="question-number">Q{{ loop.index }}</div>
+                    <div class="question-meta">
+                        <span class="badge bg-light text-dark">{{ item.marks }} marks</span>
+                        <span class="status-badge 
+                            {% if question.question_type in ['short_answer', 'essay'] %}partial-badge
+                            {% elif response and response.answer == question.correct_answer %}correct-badge
+                            {% elif response and response.answer %}incorrect-badge
+                            {% endif %}">
+                            {% if question.question_type in ['short_answer', 'essay'] %}
+                                To grade
+                            {% elif response and response.answer == question.correct_answer %}
+                                Correct
+                            {% elif response and response.answer %}
+                                Incorrect
+                            {% else %}
+                                No answer
+                            {% endif %}
+                        </span>
+                        <span class="text-muted ms-auto">
+                            {{ question.question_type|replace('_', ' ')|title }}
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Question Text -->
+                <div class="mb-2">
+                    <p class="mb-1">{{ question.question_text }}</p>
+                    {% if question.question_image %}
+                    <img src="{{ url_for('static', filename='uploads/' + question.question_image) if question.question_image.startswith('uploads/') else question.question_image }}" 
+                         alt="Question image" 
+                         class="question-image">
+                    {% endif %}
+                </div>
+                
+                <!-- Options (for multiple choice/true false) -->
+                {% if question.question_type in ['multiple_choice', 'true_false'] and question.options %}
+                <div class="mb-2">
+                    {% for option in question.options %}
+                    <div class="form-check mb-1">
+                        <input class="form-check-input" 
+                               type="radio" 
+                               disabled
+                               {% if response and response.answer == option.text %}checked{% endif %}>
+                        <label class="form-check-label {% if option.is_correct %}correct-answer{% endif %}">
+                            {{ option.text }}
+                            {% if option.is_correct %}
+                            <span class="badge bg-success ms-1">✓</span>
+                            {% endif %}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Text answers (for short answer/essay) -->
+                {% if question.question_type in ['short_answer', 'essay'] %}
+                <div class="answer-section">
+                    <div class="mb-1">
+                        <div class="your-answer mb-1">Your Answer:</div>
+                        <div class="small">{{ response.answer if response and response.answer else 'No answer provided' }}</div>
+                    </div>
+                    {% if question.correct_answer and question.question_type == 'short_answer' %}
+                    <div>
+                        <div class="correct-answer mb-1">Expected Answer:</div>
+                        <div class="small">{{ question.correct_answer }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <!-- Explanation -->
+                {% if question.explanation %}
+                <div class="explanation">
+                    <div class="fw-semibold mb-1">Explanation:</div>
+                    <div class="small">{{ question.explanation }}</div>
+                </div>
+                {% endif %}
+                
+                <!-- Response details - Compact Table Layout -->
+                <div class="response-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Your Answer:</span>
+                        <span class="detail-value">{{ response.answer if response and response.answer else 'Not answered' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Correct Answer:</span>
+                        <span class="detail-value">{{ question.correct_answer if question.correct_answer else 'Manual grading' }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            {% if not questions_data %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-info-circle"></i>
+                </div>
+                <h4 class="h5 mb-1">No questions found</h4>
+                <p class="text-muted small">There are no questions available for this exam.</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Actions Section - Mobile Optimized -->
+        <div class="actions-section d-flex flex-column flex-sm-row justify-content-between align-items-stretch align-items-sm-center gap-2">
+            <a href="{{ url_for('student.exams_dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-list me-1"></i> All Exams
+            </a>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary" onclick="window.print()">
+                    <i class="fas fa-print me-1"></i> Print
+                </button>
+                <a href="{{ url_for('student.dashboard') }}" class="btn btn-primary">
+                    <i class="fas fa-home me-1"></i> Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Container & Layout */
+    .result-container {
+        background: #f8fafc;
+        min-height: 100vh;
+        padding: 1rem 0;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    /* Cards */
+    .result-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1rem;
+    }
+
+    .summary-card {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Score Circle - Smaller */
+    .score-circle {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .score-percentage {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #1e40af;
+        line-height: 1;
+    }
+
+    .score-grade {
+        font-size: 0.9rem;
+        color: #64748b;
+        margin-top: 0.15rem;
+    }
+
+    /* Question Items - More Compact */
+    .question-item {
+        background: white;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        border: 1px solid #e2e8f0;
+        font-size: 0.875rem;
+    }
+
+    .question-item.correct {
+        border-color: #10b981;
+        background: #f0fdf4;
+    }
+
+    .question-item.incorrect {
+        border-color: #ef4444;
+        background: #fef2f2;
+    }
+
+    .question-item.partial {
+        border-color: #f59e0b;
+        background: #fffbeb;
+    }
+
+    /* Badges - Smaller */
+    .status-badge {
+        padding: 0.15rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+
+    .correct-badge {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .incorrect-badge {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .partial-badge {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    /* Answer Sections - More Compact */
+    .answer-section {
+        background: #f8fafc;
+        border-radius: 6px;
+        padding: 0.75rem;
+        margin-top: 0.75rem;
+        font-size: 0.85rem;
+    }
+
+    .correct-answer {
+        color: #10b981;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    .your-answer {
+        color: #3b82f6;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    /* Explanation - Smaller */
+    .explanation {
+        background: #f0f9ff;
+        border-left: 3px solid #3b82f6;
+        padding: 0.75rem;
+        margin-top: 0.75rem;
+        border-radius: 0 6px 6px 0;
+        font-size: 0.85rem;
+    }
+
+    /* Form Elements - Smaller */
+    .form-check-input {
+        width: 14px;
+        height: 14px;
+        margin-top: 0.15rem;
+    }
+
+    .form-check-label {
+        font-size: 0.85rem;
+        margin-left: 0.25rem;
+    }
+
+    /* Typography - Smaller */
+    h1, h2, h3, h4, h5, h6 {
+        margin-bottom: 0.5rem;
+    }
+
+    .h2 {
+        font-size: 1.5rem;
+    }
+
+    .h4 {
+        font-size: 1.1rem;
+    }
+
+    .h5 {
+        font-size: 1rem;
+    }
+
+    .text-muted {
+        font-size: 0.85rem;
+    }
+
+    /* Buttons - Smaller */
+    .btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.85rem;
+        border-radius: 6px;
+    }
+
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    /* Header Section - More Compact */
+    .result-header {
+        margin-bottom: 1rem;
+    }
+
+    .result-header h1 {
+        font-size: 1.4rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .result-subtitle {
+        font-size: 0.85rem;
+        color: #64748b;
+    }
+
+    /* Stats Grid - More Compact */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+        margin-top: 0.75rem;
+    }
+
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: white;
+        margin-bottom: 0.15rem;
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+        opacity: 0.9;
+    }
+
+    /* Question Header - More Compact */
+    .question-header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+        align-items: center;
+    }
+
+    .question-number {
+        background: #3b82f6;
+        color: white;
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .question-meta {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    /* Images - Responsive */
+    .question-image {
+        max-width: 100%;
+        height: auto;
+        border-radius: 6px;
+        margin: 0.5rem 0;
+        max-height: 200px;
+        object-fit: contain;
+    }
+
+    /* Responsive Table Layout */
+    .response-details {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #e2e8f0;
+        font-size: 0.8rem;
+    }
+
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .detail-label {
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .detail-value {
+        color: #1e293b;
+        text-align: right;
+        max-width: 60%;
+        word-break: break-word;
+    }
+
+    /* Actions Section - Mobile Optimized */
+    .actions-section {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    /* Empty State - Smaller */
+    .empty-state {
+        text-align: center;
+        padding: 2rem 1rem;
+    }
+
+    .empty-state-icon {
+        font-size: 2rem;
+        color: #e2e8f0;
+        margin-bottom: 0.75rem;
+    }
+
+    /* Mobile Responsive Breakpoints */
+    @media (max-width: 768px) {
+        .result-container {
+            padding: 0.75rem 0;
+        }
+
+        .container {
+            padding: 0 0.75rem;
+        }
+
+        .result-card,
+        .summary-card {
+            padding: 1rem;
+            border-radius: 10px;
+        }
+
+        .score-circle {
+            width: 90px;
+            height: 90px;
+        }
+
+        .score-percentage {
+            font-size: 1.5rem;
+        }
+
+        .score-grade {
+            font-size: 0.8rem;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1rem;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+        }
+
+        .question-item {
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .question-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.25rem;
+        }
+
+        .question-meta {
+            flex-wrap: wrap;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .result-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+        }
+
+        .actions-section {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .actions-section .btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .question-image {
+            max-height: 150px;
+        }
+
+        .detail-item {
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+
+        .detail-value {
+            text-align: left;
+            max-width: 100%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .score-circle {
+            width: 80px;
+            height: 80px;
+        }
+
+        .score-percentage {
+            font-size: 1.25rem;
+        }
+
+        .result-card,
+        .summary-card {
+            padding: 0.75rem;
+        }
+
+        .form-check-input {
+            width: 12px;
+            height: 12px;
+        }
+
+        .form-check-label {
+            font-size: 0.8rem;
+        }
+    }
+
+    /* Print Styles */
+    @media print {
+        .result-container {
+            background: white;
+            padding: 0;
+        }
+
+        .result-card,
+        .summary-card {
+            box-shadow: none;
+            border: 1px solid #ddd;
+            page-break-inside: avoid;
+        }
+
+        .btn {
+            display: none !important;
+        }
+    }
+</style>
+
+<script>
+    // Mobile-specific enhancements
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add touch feedback for mobile
+        const questionItems = document.querySelectorAll('.question-item');
+        questionItems.forEach(item => {
+            item.addEventListener('touchstart', function() {
+                this.style.transform = 'scale(0.99)';
+            });
+            
+            item.addEventListener('touchend', function() {
+                this.style.transform = '';
+            });
+        });
+        
+        // Handle long press for options on mobile
+        let touchTimer;
+        const optionLabels = document.querySelectorAll('.form-check-label');
+        
+        optionLabels.forEach(label => {
+            label.addEventListener('touchstart', function(e) {
+                touchTimer = setTimeout(() => {
+                    // Show more details on long press
+                    this.classList.add('text-decoration-underline');
+                }, 500);
+            });
+            
+            label.addEventListener('touchend', function(e) {
+                clearTimeout(touchTimer);
+                this.classList.remove('text-decoration-underline');
+            });
+            
+            label.addEventListener('touchmove', function(e) {
+                clearTimeout(touchTimer);
+                this.classList.remove('text-decoration-underline');
+            });
+        });
+        
+        // Adjust layout for mobile
+        function adjustForMobile() {
+            if (window.innerWidth < 576) {
+                // Make cards flush on very small screens
+                document.querySelectorAll('.result-card, .summary-card').forEach(card => {
+                    card.style.marginLeft = '-0.75rem';
+                    card.style.marginRight = '-0.75rem';
+                    card.style.borderRadius = '0';
+                });
+            } else {
+                // Reset on larger screens
+                document.querySelectorAll('.result-card, .summary-card').forEach(card => {
+                    card.style.marginLeft = '';
+                    card.style.marginRight = '';
+                    card.style.borderRadius = '';
+                });
+            }
+        }
+        
+        // Run on load and resize
+        adjustForMobile();
+        window.addEventListener('resize', adjustForMobile);
+        
+        // Smooth scroll for better mobile experience
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

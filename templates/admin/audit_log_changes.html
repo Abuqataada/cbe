@@ -1,0 +1,50 @@
+<div class="audit-log-changes">
+    <div class="details-grid">
+        <div class="detail-card">
+            <div class="label">Action</div>
+            <div class="value">{{ log.action }}</div>
+        </div>
+        
+        <div class="detail-card">
+            <div class="label">Table</div>
+            <div class="value">{{ log.table_name or 'N/A' }}</div>
+        </div>
+        
+        <div class="detail-card">
+            <div class="label">Record ID</div>
+            <div class="value">{{ log.record_id or 'N/A' }}</div>
+        </div>
+    </div>
+    
+    {% if log.old_values or log.new_values %}
+    <div class="diff-container">
+        <div class="diff-title">Changes Made</div>
+        
+        <div class="diff-row">
+            {% if log.old_values %}
+            <div class="diff-column old">
+                <h4>Old Values</h4>
+                <div class="json-view">
+                    {{ log.old_values|tojson(indent=2) }}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if log.new_values %}
+            <div class="diff-column new">
+                <h4>New Values</h4>
+                <div class="json-view">
+                    {{ log.new_values|tojson(indent=2) }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-exchange-alt"></i>
+        <h4>No Changes Recorded</h4>
+        <p>This log entry doesn't contain change data.</p>
+    </div>
+    {% endif %}
+</div>

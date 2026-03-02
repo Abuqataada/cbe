@@ -1,0 +1,870 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Manage Teachers{% endblock %}
+
+{% block page_title %}
+<h1><i class="fas fa-chalkboard-teacher"></i> Teachers</h1>
+{% endblock %}
+
+{% block content %}
+<!-- Search and Filter -->
+<div class="search-filter-bar">
+    <div class="filter-row">
+        <div class="filter-group">
+            <label>Search</label>
+            <div class="input-group">
+                <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Name, ID, email...">
+                <button class="btn btn-secondary btn-sm" id="searchBtn">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="filter-group">
+            <label>Subject</label>
+            <select id="subjectFilter" class="form-control form-control-sm">
+                <option value="all">All Subjects</option>
+                <option value="no_subject">No Subjects</option>
+                {% for subject in subjects %}
+                <option value="{{ subject.id }}">{{ subject.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label>Sort</label>
+            <select id="sortFilter" class="form-control form-control-sm">
+                <option value="name_asc">Name (A-Z)</option>
+                <option value="name_desc">Name (Z-A)</option>
+                <option value="recent">Recent</option>
+                <option value="most_subjects">Most Subjects</option>
+            </select>
+        </div>
+        
+        <div class="d-flex gap-1">
+            <button class="btn btn-primary btn-sm" id="addTeacherBtn">
+                <i class="fas fa-plus"></i> Add
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" id="exportBtn">
+                <i class="fas fa-file-export"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="teacher-quick-stats">
+    <div class="quick-stat">
+        <div class="quick-stat-value">{{ teachers|length }}</div>
+        <div class="quick-stat-label">Total</div>
+    </div>
+    <div class="quick-stat">
+        <div class="quick-stat-value">{{ form_teachers }}</div>
+        <div class="quick-stat-label">Form Teachers</div>
+    </div>
+    <div class="quick-stat">
+        <div class="quick-stat-value">{{ teachers_with_subjects }}</div>
+        <div class="quick-stat-label">With Subjects</div>
+    </div>
+    <div class="quick-stat">
+        <div class="quick-stat-value">{{ average_subjects_per_teacher|round(1) }}</div>
+        <div class="quick-stat-label">Avg/Teacher</div>
+    </div>
+</div>
+
+<!-- Teachers Grid -->
+<div class="teachers-grid" id="teachersGrid">
+    {% if teachers %}
+        {% for teacher in teachers %}
+        <div class="teacher-card" 
+             data-name="{{ teacher.first_name }} {{ teacher.last_name }}"
+             data-subjects="{{ teacher.subject_assignments|length }}"
+             data-specialization="{{ teacher.specialization or '' }}"
+             data-qualification="{{ teacher.qualification or '' }}">
+            <div class="teacher-header">
+                <div class="teacher-info">
+                    <div class="teacher-avatar">
+                        {{ teacher.first_name[0] }}{{ teacher.last_name[0] }}
+                    </div>
+                    <div class="teacher-details">
+                        <div class="teacher-name">{{ teacher.first_name }} {{ teacher.last_name }}</div>
+                        <div class="teacher-id">{{ teacher.staff_id }}</div>
+                        <div class="teacher-email">
+                            <i class="fas fa-envelope"></i> {{ teacher.email }}
+                        </div>
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-sm btn-outline-secondary edit-teacher-btn" 
+                            data-id="{{ teacher.id }}"
+                            title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger delete-teacher-btn" 
+                            data-id="{{ teacher.id }}"
+                            data-name="{{ teacher.first_name }} {{ teacher.last_name }}"
+                            title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            
+            {% if teacher.qualification or teacher.specialization %}
+            <div class="teacher-badges">
+                {% if teacher.qualification %}
+                <span class="badge-qualification">
+                    <i class="fas fa-graduation-cap"></i> {{ teacher.qualification }}
+                </span>
+                {% endif %}
+                {% if teacher.specialization %}
+                <span class="badge-specialization">
+                    <i class="fas fa-star"></i> {{ teacher.specialization }}
+                </span>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            {% if teacher.phone %}
+            <div class="mt-1 small">
+                <i class="fas fa-phone"></i> {{ teacher.phone }}
+            </div>
+            {% endif %}
+            
+            {% if teacher.form_class_assignment %}
+            <div class="mt-1 small">
+                <i class="fas fa-chalkboard"></i>
+                Form: <strong>{{ teacher.form_class_assignment.name }}</strong>
+            </div>
+            {% endif %}
+            
+            <div class="teacher-stats">
+                <div class="stat-box">
+                    <div class="stat-value">{{ teacher.subject_assignments|length }}</div>
+                    <div class="stat-label">Subjects</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">{{ teacher.classes_taught|length if teacher.classes_taught else 0 }}</div>
+                    <div class="stat-label">Classes</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">{{ teacher.exams_created|length if teacher.exams_created else 0 }}</div>
+                    <div class="stat-label">Exams</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">
+                        {% if teacher.user and teacher.user.is_active %}
+                        <i class="fas fa-check-circle text-success"></i>
+                        {% else %}
+                        <i class="fas fa-times-circle text-danger"></i>
+                        {% endif %}
+                    </div>
+                    <div class="stat-label">Active</div>
+                </div>
+            </div>
+            
+            {% if teacher.subject_assignments %}
+            <div class="teacher-subjects mt-1">
+                <div class="small">Assigned Subjects:</div>
+                <div class="subject-list">
+                    {% for assignment in teacher.subject_assignments[:4] %}
+                    <span class="subject-tag">
+                        <i class="fas fa-book"></i> {{ assignment.subject.name }}
+                    </span>
+                    {% endfor %}
+                    {% if teacher.subject_assignments|length > 4 %}
+                    <span class="subject-tag">+{{ teacher.subject_assignments|length - 4 }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="mt-2 d-flex gap-1">
+                <a href="{{ url_for('admin.view_teacher', teacher_id=teacher.id) }}" 
+                   class="btn btn-sm btn-outline-primary flex-grow-1">
+                    <i class="fas fa-eye"></i> View
+                </a>
+                <a href="{{ url_for('admin.manage_subject_assignments') }}?teacher_id={{ teacher.id }}" 
+                   class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-tasks"></i>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="fas fa-chalkboard-teacher"></i>
+        </div>
+        <h5>No Teachers</h5>
+        <p class="text-muted small">Add your first teacher</p>
+        <button class="btn btn-primary btn-sm mt-1" id="addFirstTeacherBtn">
+            <i class="fas fa-plus"></i> Add Teacher
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modals (keeping same logic, just smaller) -->
+<div class="modal-overlay" id="teacherModal">
+    <div class="modal" style="max-width: 600px;">
+        <div class="card-header py-2">
+            <h6 class="mb-0" id="modalTitle">
+                <i class="fas fa-user-plus"></i> Add Teacher
+            </h6>
+            <button class="btn btn-sm btn-outline-secondary" id="closeModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form id="teacherForm" class="teacher-form">
+            <input type="hidden" name="teacher_id" id="teacherId">
+            
+            <div class="small mb-2">Personal Info</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="small">First Name *</label>
+                    <input type="text" name="first_name" class="form-control form-control-sm" required>
+                </div>
+                <div class="form-group">
+                    <label class="small">Last Name *</label>
+                    <input type="text" name="last_name" class="form-control form-control-sm" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="small">Staff ID *</label>
+                    <input type="text" name="staff_id" class="form-control form-control-sm" required>
+                    <small class="text-muted small">Unique ID</small>
+                </div>
+                <div class="form-group">
+                    <label class="small">Email *</label>
+                    <input type="email" name="email" class="form-control form-control-sm" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="small">Phone</label>
+                    <input type="tel" name="phone" class="form-control form-control-sm">
+                </div>
+                <div class="form-group">
+                    <label class="small">Form Class</label>
+                    <select name="form_class_id" class="form-control form-control-sm">
+                        <option value="">Select</option>
+                        {% for class in classes %}
+                        <option value="{{ class.id }}">{{ class.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="small mb-2 mt-3">Professional Info</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="small">Qualification</label>
+                    <input type="text" name="qualification" class="form-control form-control-sm">
+                </div>
+                <div class="form-group">
+                    <label class="small">Specialization</label>
+                    <input type="text" name="specialization" class="form-control form-control-sm">
+                </div>
+            </div>
+            
+            <div class="form-group mb-2">
+                <label class="small">Address</label>
+                <textarea name="address" class="form-control form-control-sm" rows="2"></textarea>
+            </div>
+            
+            <div class="form-group mb-3">
+                <div class="form-check form-check-sm">
+                    <input type="checkbox" name="create_user_account" id="createUserAccount" 
+                           class="form-check-input" checked>
+                    <label for="createUserAccount" class="form-check-label small">
+                        Create user account
+                    </label>
+                </div>
+                <small class="text-muted small">Staff ID as username</small>
+            </div>
+            
+            <div class="d-flex justify-content-end gap-1">
+                <button type="button" class="btn btn-secondary btn-sm" id="cancelBtn">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-primary btn-sm" id="submitBtn">
+                    <i class="fas fa-save"></i> Save
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay confirmation-modal" id="deleteModal">
+    <div class="modal">
+        <div class="confirmation-content">
+            <div class="confirmation-icon" style="color: var(--admin-danger);">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h6>Delete Teacher</h6>
+            <p class="small" id="deleteMessage">Delete this teacher?</p>
+            <div class="alert alert-warning py-2 small">
+                <i class="fas fa-exclamation-triangle"></i>
+                Warning: Cannot be undone
+            </div>
+            
+            <div class="confirmation-actions">
+                <button type="button" class="btn btn-secondary btn-sm" id="cancelDeleteBtn">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-danger btn-sm" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .teacher-card {
+        background: var(--admin-card);
+        border-radius: 8px;
+        padding: 1rem;
+        border: 1px solid var(--admin-border);
+        margin-bottom: 0.75rem;
+        transition: all 0.2s;
+    }
+    
+    .teacher-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .teacher-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 0.75rem;
+    }
+    
+    .teacher-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .teacher-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--admin-primary), var(--admin-secondary));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1rem;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+    
+    .teacher-name {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.125rem;
+        color: var(--admin-dark);
+    }
+    
+    .teacher-id {
+        color: var(--admin-primary);
+        font-size: 0.85rem;
+        margin-bottom: 0.125rem;
+    }
+    
+    .teacher-email {
+        color: var(--admin-text-light);
+        font-size: 0.8rem;
+    }
+    
+    .teacher-badges {
+        display: flex;
+        gap: 0.25rem;
+        margin-top: 0.25rem;
+        flex-wrap: wrap;
+    }
+    
+    .badge-specialization,
+    .badge-qualification {
+        padding: 0.125rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+    
+    .badge-specialization {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+    
+    .badge-qualification {
+        background: #f3e8ff;
+        color: #7c3aed;
+    }
+    
+    .teacher-stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+    }
+    
+    .stat-box {
+        text-align: center;
+        padding: 0.5rem;
+        background: rgba(0,0,0,0.02);
+        border-radius: 6px;
+    }
+    
+    .stat-value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--admin-primary);
+    }
+    
+    .stat-label {
+        font-size: 0.7rem;
+        color: var(--admin-text-light);
+    }
+    
+    .search-filter-bar {
+        background: var(--admin-card);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid var(--admin-border);
+    }
+    
+    .filter-row {
+        display: flex;
+        gap: 0.75rem;
+        align-items: end;
+        flex-wrap: wrap;
+    }
+    
+    .filter-group {
+        flex: 1;
+        min-width: 180px;
+    }
+    
+    .filter-group label {
+        font-size: 0.85rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .teachers-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 0.75rem;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 2rem 1rem;
+        grid-column: 1 / -1;
+    }
+    
+    .empty-state-icon {
+        font-size: 2rem;
+        color: var(--admin-border);
+        margin-bottom: 0.75rem;
+    }
+    
+    .teacher-form {
+        background: var(--admin-card);
+        border-radius: 8px;
+        padding: 1rem;
+        border: 1px solid var(--admin-border);
+    }
+    
+    .form-row {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .form-group label {
+        font-size: 0.85rem;
+    }
+    
+    .subject-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        margin-top: 0.25rem;
+    }
+    
+    .subject-tag {
+        padding: 0.125rem 0.5rem;
+        background: var(--admin-primary-light);
+        color: var(--admin-primary);
+        border-radius: 10px;
+        font-size: 0.7rem;
+    }
+    
+    .teacher-quick-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+    
+    .quick-stat {
+        background: var(--admin-card);
+        border-radius: 8px;
+        padding: 0.75rem;
+        text-align: center;
+        border: 1px solid var(--admin-border);
+    }
+    
+    .quick-stat-value {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--admin-primary);
+    }
+    
+    .quick-stat-label {
+        font-size: 0.8rem;
+        color: var(--admin-text-light);
+    }
+    
+    /* Reduce button sizes */
+    .btn {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.85rem;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
+    
+    /* Reduce modal size */
+    .modal {
+        max-width: 600px;
+    }
+    
+    /* Reduce card header */
+    .card-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    /* Reduce margins */
+    h5 {
+        font-size: 1.1rem;
+        margin: 0.5rem 0;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .teachers-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .filter-group {
+            min-width: 100%;
+        }
+        
+        .teacher-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .teacher-quick-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .teacher-header {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .action-buttons {
+            align-self: flex-end;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // All your JavaScript logic remains EXACTLY the same
+        // Only CSS sizes have been reduced
+        const teacherModal = document.getElementById('teacherModal');
+        const deleteModal = document.getElementById('deleteModal');
+        const teacherForm = document.getElementById('teacherForm');
+        const teachersGrid = document.getElementById('teachersGrid');
+        
+        const searchInput = document.getElementById('searchInput');
+        const subjectFilter = document.getElementById('subjectFilter');
+        const sortFilter = document.getElementById('sortFilter');
+        
+        let teacherToDelete = null;
+        
+        function filterTeachers() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const selectedSubject = subjectFilter.value;
+            const sortBy = sortFilter.value;
+            
+            const teacherCards = Array.from(document.querySelectorAll('.teacher-card'));
+            
+            teacherCards.forEach(card => {
+                const teacherName = card.getAttribute('data-name').toLowerCase();
+                const subjects = parseInt(card.getAttribute('data-subjects'));
+                const specialization = card.getAttribute('data-specialization').toLowerCase();
+                const qualification = card.getAttribute('data-qualification').toLowerCase();
+                
+                let show = true;
+                
+                if (searchTerm && !teacherName.includes(searchTerm) && 
+                    !specialization.includes(searchTerm) && !qualification.includes(searchTerm)) {
+                    show = false;
+                }
+                
+                if (selectedSubject === 'no_subject' && subjects > 0) {
+                    show = false;
+                }
+                
+                card.style.display = show ? '' : 'none';
+            });
+            
+            const visibleCards = teacherCards.filter(card => card.style.display !== 'none');
+            
+            visibleCards.sort((a, b) => {
+                const nameA = a.getAttribute('data-name').toLowerCase();
+                const nameB = b.getAttribute('data-name').toLowerCase();
+                const subjectsA = parseInt(a.getAttribute('data-subjects'));
+                const subjectsB = parseInt(b.getAttribute('data-subjects'));
+                
+                switch(sortBy) {
+                    case 'name_asc':
+                        return nameA.localeCompare(nameB);
+                    case 'name_desc':
+                        return nameB.localeCompare(nameA);
+                    case 'most_subjects':
+                        return subjectsB - subjectsA;
+                    default:
+                        return 0;
+                }
+            });
+            
+            visibleCards.forEach(card => {
+                teachersGrid.appendChild(card);
+            });
+            
+            if (visibleCards.length === 0 && teachersGrid.querySelector('.empty-state') === null) {
+                const emptyState = document.createElement('div');
+                emptyState.className = 'empty-state';
+                emptyState.innerHTML = `
+                    <div class="empty-state-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h6>No Results</h6>
+                    <p class="text-muted small">Try different search</p>
+                    <button class="btn btn-outline-primary btn-sm mt-1" id="clearFiltersBtn">
+                        Clear Filters
+                    </button>
+                `;
+                teachersGrid.appendChild(emptyState);
+                
+                document.getElementById('clearFiltersBtn')?.addEventListener('click', function() {
+                    searchInput.value = '';
+                    subjectFilter.value = 'all';
+                    sortFilter.value = 'name_asc';
+                    filterTeachers();
+                    this.parentElement.remove();
+                });
+            } else if (visibleCards.length > 0) {
+                const emptyState = teachersGrid.querySelector('.empty-state');
+                if (emptyState && emptyState.id !== 'defaultEmptyState') {
+                    emptyState.remove();
+                }
+            }
+        }
+        
+        searchInput?.addEventListener('input', filterTeachers);
+        subjectFilter?.addEventListener('change', filterTeachers);
+        sortFilter?.addEventListener('change', filterTeachers);
+        document.getElementById('searchBtn')?.addEventListener('click', filterTeachers);
+        
+        function showAlert(type, message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} py-2`;
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                ${message}
+                <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+            `;
+            
+            const flashMessages = document.querySelector('.flash-messages');
+            if (!flashMessages) {
+                const container = document.createElement('div');
+                container.className = 'flash-messages';
+                document.querySelector('.admin-content').prepend(container);
+            }
+            
+            document.querySelector('.flash-messages').prepend(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.style.opacity = '0';
+                alertDiv.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => alertDiv.remove(), 500);
+            }, 3000);
+        }
+        
+        function openAddModal() {
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-user-plus"></i> Add Teacher';
+            teacherForm.reset();
+            document.getElementById('teacherId').value = '';
+            teacherModal.classList.add('active');
+        }
+        
+        function openEditModal(teacherId) {
+            fetch(`/admin/teachers/${teacherId}/data`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to fetch teacher data');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit"></i> Edit Teacher';
+                        document.getElementById('teacherId').value = data.teacher.id;
+                        
+                        document.querySelector('input[name="first_name"]').value = data.teacher.first_name;
+                        document.querySelector('input[name="last_name"]').value = data.teacher.last_name;
+                        document.querySelector('input[name="staff_id"]').value = data.teacher.staff_id;
+                        document.querySelector('input[name="email"]').value = data.teacher.email;
+                        document.querySelector('input[name="phone"]').value = data.teacher.phone || '';
+                        document.querySelector('select[name="form_class_id"]').value = data.teacher.form_class_id || '';
+                        document.querySelector('input[name="qualification"]').value = data.teacher.qualification || '';
+                        document.querySelector('input[name="specialization"]').value = data.teacher.specialization || '';
+                        document.querySelector('textarea[name="address"]').value = data.teacher.address || '';
+                        
+                        teacherModal.classList.add('active');
+                    } else {
+                        throw new Error(data.message);
+                    }
+                })
+                .catch(error => {
+                    showAlert('danger', `Error: ${error.message}`);
+                });
+        }
+        
+        teacherForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            submitBtn.disabled = true;
+            
+            try {
+                const formData = new FormData(teacherForm);
+                const isEdit = !!formData.get('teacher_id');
+                const endpoint = isEdit ? '/admin/teachers/update' : '/admin/teachers/add';
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('success', data.message);
+                    teacherModal.classList.remove('active');
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                showAlert('danger', `Error: ${error.message}`);
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+        
+        function handleDeleteTeacher(teacherId, teacherName) {
+            teacherToDelete = teacherId;
+            document.getElementById('deleteMessage').textContent = `Delete "${teacherName}"?`;
+            deleteModal.classList.add('active');
+        }
+        
+        document.getElementById('addTeacherBtn')?.addEventListener('click', openAddModal);
+        
+        const addFirstTeacherBtn = document.getElementById('addFirstTeacherBtn');
+        if (addFirstTeacherBtn) {
+            addFirstTeacherBtn.addEventListener('click', openAddModal);
+        }
+        
+        document.getElementById('exportBtn')?.addEventListener('click', function() {
+            alert('Export to be implemented');
+        });
+        
+        document.querySelectorAll('.edit-teacher-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const teacherId = this.getAttribute('data-id');
+                openEditModal(teacherId);
+            });
+        });
+        
+        document.querySelectorAll('.delete-teacher-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const teacherId = this.getAttribute('data-id');
+                const teacherName = this.getAttribute('data-name');
+                handleDeleteTeacher(teacherId, teacherName);
+            });
+        });
+        
+        document.getElementById('closeModal')?.addEventListener('click', () => teacherModal.classList.remove('active'));
+        document.getElementById('cancelBtn')?.addEventListener('click', () => teacherModal.classList.remove('active'));
+        document.getElementById('cancelDeleteBtn')?.addEventListener('click', () => deleteModal.classList.remove('active'));
+        
+        document.getElementById('confirmDeleteBtn')?.addEventListener('click', async function() {
+            const deleteBtn = this;
+            const originalText = deleteBtn.innerHTML;
+            
+            deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            deleteBtn.disabled = true;
+            
+            try {
+                const response = await fetch(`/admin/teachers/delete/${teacherToDelete}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('success', data.message);
+                    deleteModal.classList.remove('active');
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                showAlert('danger', `Error: ${error.message}`);
+                deleteBtn.innerHTML = originalText;
+                deleteBtn.disabled = false;
+            }
+        });
+        
+        [teacherModal, deleteModal].forEach(modal => {
+            modal?.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+        
+        filterTeachers();
+    });
+</script>
+{% endblock %}

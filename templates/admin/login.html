@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrator Login - ARNDALE CBT</title>
+    
+    <!-- Bootstrap 5 CSS (Local) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+
+    <!-- Font Awesome (Local) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+        
+    <style>
+        body {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f0ff 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        
+        /* Admin Login Card */
+        .login-container {
+            max-width: 440px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e2e8f0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%);
+        }
+
+        /* Admin Header */
+        .admin-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .admin-icon {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin: 0 auto 1rem;
+            color: white;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            box-shadow: 0 4px 20px rgba(37, 99, 235, 0.2);
+            border: 4px solid white;
+        }
+
+        .admin-title {
+            font-size: 1.75rem;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .admin-subtitle {
+            color: #475569;
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        /* Admin-specific styling */
+        .admin-input:focus {
+            border-color: #2563eb !important;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+        }
+
+        .admin-btn {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            padding: 0.875rem 1.5rem;
+            border-radius: 10px;
+            width: 100%;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .admin-btn:hover {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .admin-notice {
+            background: #f0f7ff;
+            border-left: 4px solid #2563eb;
+            color: #334155;
+        }
+
+        /* Security warning for admin */
+        .security-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 2px solid #f59e0b;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            text-align: center;
+            color: #92400e;
+            font-weight: 500;
+        }
+        
+        /* Form styling */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            color: #334155;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .form-label i {
+            color: #2563eb;
+        }
+        
+        .form-control {
+            padding: 0.875rem 1rem;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+        }
+        
+        .form-control:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        /* Flash messages */
+        .alert {
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        /* CAPTCHA styling */
+        .captcha-section {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        .captcha-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #1e293b;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+        
+        .captcha-image {
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin: 1rem 0;
+            text-align: center;
+        }
+        
+        /* Back link */
+        .text-center a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .text-center a:hover {
+            color: #1d4ed8;
+        }
+        
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 2rem 1.5rem;
+            }
+            
+            .admin-icon {
+                width: 75px;
+                height: 75px;
+                font-size: 2rem;
+            }
+            
+            .admin-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <!-- Admin Header -->
+            <div class="admin-header">
+                <div class="admin-icon">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <h2 class="admin-title">Administrator Access</h2>
+                <p class="admin-subtitle">System Control & Management Portal</p>
+            </div>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} mb-3">
+                                <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Admin Login Form -->
+            <form method="POST" action="{{ url_for('auth.login') }}" class="login-form">
+                <input type="hidden" name="role" value="admin">
+                
+                <!-- Username Field -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-user-shield"></i>
+                        Administrator Username
+                    </label>
+                    <div class="input-group">
+                        <input type="text" 
+                               name="username" 
+                               class="form-control admin-input" 
+                               placeholder="Enter administrator username"
+                               value="{{ username or '' }}"
+                               required
+                               autofocus>
+                    </div>
+                </div>
+
+                <!-- Password Field -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-lock"></i>
+                        Secure Password
+                    </label>
+                    <div class="input-group">
+                        <input type="password" 
+                               name="password" 
+                               class="form-control admin-input" 
+                               placeholder="Enter secure password"
+                               required>
+                    </div>
+                </div>
+
+                <!-- CAPTCHA Section -->
+                {% if show_captcha and captcha %}
+                <div class="captcha-section admin-notice">
+                    <div class="captcha-header">
+                        <i class="fas fa-shield-alt"></i>
+                        <strong>Enhanced Security Verification</strong>
+                    </div>
+                    <p class="mb-2">Administrator access requires additional verification:</p>
+                    
+                    <div class="captcha-image">
+                        <img src="{{ captcha.image }}" alt="CAPTCHA Code">
+                    </div>
+                    
+                    <input type="hidden" name="captcha_id" value="{{ captcha.id }}">
+                    
+                    <div class="input-group">
+                        <i class="fas fa-key"></i>
+                        <input type="text" 
+                               name="captcha" 
+                               class="form-control admin-input" 
+                               placeholder="Enter security code"
+                               required
+                               maxlength="6">
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Login Button -->
+                <button type="submit" class="admin-btn" id="loginBtn">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Sign In
+                </button>
+            </form>
+
+            <!-- Admin Notice -->
+            <div class="admin-notice p-3 rounded mt-3">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Important:</strong> This portal provides full system access. Ensure you are using secure, private network connection.
+            </div>
+        </div>
+
+        <!-- Security Warning -->
+        <div class="security-warning mt-3">
+            <i class="fas fa-exclamation-circle"></i>
+            <strong>Security Alert:</strong> Administrator access is restricted to authorized personnel only. 
+            All activities are logged and monitored.
+        </div>
+
+        <!-- Back Link -->
+        <div class="text-center mt-4">
+            <a href="{{ url_for('admin_index') }}">
+                <i class="fas fa-arrow-left"></i>
+                Return to Welcome Page
+            </a>
+        </div>
+    </div>
+    
+    <!-- No JavaScript added - keeping original functionality -->
+</body>
+</html>

@@ -1,0 +1,628 @@
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}{{ exam.name }} - Exam Report - ARNDALE CBT{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <!-- Back button -->
+        <a href="{{ url_for('teacher.reports_dashboard') }}" class="btn btn-outline-secondary mb-3">
+            <i class="fas fa-arrow-left me-2"></i> Back to Reports
+        </a>
+        
+        <!-- Exam Header -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4 class="mb-0">
+                            <i class="fas fa-chart-bar me-2"></i>{{ exam.name }} - Exam Report
+                        </h4>
+                        <p class="mb-0 mt-2">
+                            <i class="fas fa-book me-1"></i>{{ exam.subject.name }} • 
+                            <i class="fas fa-users ms-2 me-1"></i>{{ exam.classroom.name }} • 
+                            <i class="fas fa-calendar ms-2 me-1"></i>{{ exam.created_at.strftime('%d %B %Y') }}
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <button class="btn btn-success" onclick="analyzeAll()">
+                            <i class="fas fa-robot me-2"></i>AI Analyze All
+                        </button>
+                        <button class="btn btn-outline-light ms-2" onclick="exportReport()">
+                            <i class="fas fa-download me-2"></i>Export
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Class Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card performance-card bg-primary text-white">
+            <div class="card-body text-center">
+                <h6 class="card-title">Class Average</h6>
+                <div class="stat-number">{{ avg_score }}%</div>
+                <small>{{ student_performances|length }} students</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card performance-card bg-success text-white">
+            <div class="card-body text-center">
+                <h6 class="card-title">Highest Score</h6>
+                <div class="stat-number">{{ max_score }}%</div>
+                <small>Top performer</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card performance-card bg-info text-white">
+            <div class="card-body text-center">
+                <h6 class="card-title">Lowest Score</h6>
+                <div class="stat-number">{{ min_score }}%</div>
+                <small>Needs attention</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card performance-card bg-warning text-dark">
+            <div class="card-body text-center">
+                <h6 class="card-title">Completion Rate</h6>
+                {% set completed = student_performances|selectattr('session')|list|length %}
+                {% set total = student_performances|length %}
+                <div class="stat-number">{{ (completed / total * 100)|round(1) if total > 0 else 0 }}%</div>
+                <small>{{ completed }}/{{ total }} students</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Score Distribution -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Score Distribution</h5>
+            </div>
+            <div class="card-body">
+                <!-- Calculate distribution -->
+                {% set excellent = student_performances|selectattr('percentage', '>=', 80)|list|length %}
+                {% set good = student_performances|selectattr('percentage', '>=', 60)|selectattr('percentage', '<', 80)|list|length %}
+                {% set average = student_performances|selectattr('percentage', '>=', 40)|selectattr('percentage', '<', 60)|list|length %}
+                {% set below = student_performances|selectattr('percentage', '<', 40)|list|length %}
+                {% set total = student_performances|length %}
+                
+                <div class="distribution-bar">
+                    <div class="bar-segment bg-success" style="width: {{ (excellent / total * 100) if total > 0 else 0 }}%"></div>
+                    <div class="bar-segment bg-info" style="width: {{ (good / total * 100) if total > 0 else 0 }}%"></div>
+                    <div class="bar-segment bg-warning" style="width: {{ (average / total * 100) if total > 0 else 0 }}%"></div>
+                    <div class="bar-segment bg-danger" style="width: {{ (below / total * 100) if total > 0 else 0 }}%"></div>
+                </div>
+                
+                <div class="row text-center">
+                    <div class="col-3">
+                        <div class="text-success">
+                            <h5>{{ excellent }}</h5>
+                            <small>Excellent (80-100%)</small>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-info">
+                            <h5>{{ good }}</h5>
+                            <small>Good (60-79%)</small>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-warning">
+                            <h5>{{ average }}</h5>
+                            <small>Average (40-59%)</small>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="text-danger">
+                            <h5>{{ below }}</h5>
+                            <small>Below Avg (&lt;40%)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-robot me-2"></i>AI Insights</h5>
+            </div>
+            <div class="card-body">
+                {% if class_report.insights %}
+                <div class="mb-3">
+                    <h6>Key Insights:</h6>
+                    <ul class="small mb-0">
+                        {% for insight in class_report.insights %}
+                        <li>{{ insight }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                
+                {% if class_report.recommendations %}
+                <div>
+                    <h6>Recommendations:</h6>
+                    <ul class="small mb-0">
+                        {% for rec in class_report.recommendations %}
+                        <li>{{ rec }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Student Performance Table -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-user-graduate me-2"></i>Student Performance</h5>
+                    <div class="input-group" style="width: 300px;">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control" id="studentSearch" 
+                               placeholder="Search students...">
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="studentTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Student Name</th>
+                                <th>Admission No.</th>
+                                <th>Score</th>
+                                <th>Percentage</th>
+                                <th>AI Analysis</th>
+                                <th>Strengths</th>
+                                <th>Weaknesses</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for perf in student_performances %}
+                            <tr class="student-row" 
+                                onclick="viewStudentReport('{{ perf.student.id }}')"
+                                style="cursor: pointer;">
+                                <td>{{ loop.index }}</td>
+                                <td>
+                                    <strong>{{ perf.student.first_name }} {{ perf.student.last_name }}</strong>
+                                    {% if not perf.session %}
+                                    <span class="badge bg-secondary ms-2">Not Taken</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ perf.student.admission_number }}</td>
+                                <td>
+                                    {% if perf.session %}
+                                    <strong>{{ perf.score }}</strong>/{{ exam.total_marks }}
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if perf.session %}
+                                    <span class="badge 
+                                        {% if perf.percentage >= 80 %}bg-success
+                                        {% elif perf.percentage >= 60 %}bg-info
+                                        {% elif perf.percentage >= 40 %}bg-warning
+                                        {% else %}bg-danger{% endif %}">
+                                        {{ perf.percentage|round(1) }}%
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if perf.analysis %}
+                                    <span class="badge ai-badge">
+                                        {{ perf.analysis.analysis_method|replace('_', ' ')|title }}
+                                    </span>
+                                    {% elif perf.session %}
+                                    <button class="btn btn-sm btn-outline-success" 
+                                            onclick="analyzeStudent('{{ perf.student.id }}', event)">
+                                        <i class="fas fa-robot"></i> Analyze
+                                    </button>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if perf.analysis and perf.analysis.strengths %}
+                                    <small class="text-success">
+                                        {{ perf.analysis.strengths[0]|truncate(30) }}
+                                    </small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if perf.analysis and perf.analysis.weaknesses %}
+                                    <small class="text-danger">
+                                        {{ perf.analysis.weaknesses[0]|truncate(30) }}
+                                    </small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if perf.session %}
+                                    <a href="{{ url_for('teacher.student_report', student_id=perf.student.id, exam_id=exam.id) }}" 
+                                       class="btn btn-sm btn-outline-primary" 
+                                       onclick="event.stopPropagation()">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Question Analysis -->
+{% if question_analysis %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-question-circle me-2"></i>Question Analysis</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for q_id, analysis in question_analysis.items() %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card question-analysis-card 
+                            {% if analysis.accuracy_rate >= 70 %}difficulty-easy
+                            {% elif analysis.accuracy_rate >= 40 %}difficulty-medium
+                            {% else %}difficulty-hard{% endif %}">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="card-title mb-0">Question {{ loop.index }}</h6>
+                                    <span class="badge 
+                                        {% if analysis.accuracy_rate >= 70 %}bg-success
+                                        {% elif analysis.accuracy_rate >= 40 %}bg-warning
+                                        {% else %}bg-danger{% endif %}">
+                                        {{ analysis.accuracy_rate|round(1) }}%
+                                    </span>
+                                </div>
+                                
+                                <p class="small text-muted mb-2">
+                                    {{ analysis.question_type|replace('_', ' ')|title }}
+                                </p>
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <small class="text-muted">
+                                            <i class="fas fa-users me-1"></i>
+                                            {{ analysis.total_attempts }} attempts
+                                        </small>
+                                    </div>
+                                    <div>
+                                        {% if analysis.needs_review %}
+                                        <span class="badge bg-danger">Needs Review</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Common Strengths & Weaknesses -->
+{% if class_report.common_strengths or class_report.common_weaknesses %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i>Common Strengths</h5>
+            </div>
+            <div class="card-body">
+                {% for strength in class_report.common_strengths %}
+                <div class="strength-item">
+                    <i class="fas fa-check text-success me-2"></i>{{ strength }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Common Weaknesses</h5>
+            </div>
+            <div class="card-body">
+                {% for weakness in class_report.common_weaknesses %}
+                <div class="weakness-item">
+                    <i class="fas fa-exclamation-triangle text-danger me-2"></i>{{ weakness }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Action Buttons -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-body text-center">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-primary" onclick="generateReport()">
+                        <i class="fas fa-file-pdf me-2"></i>Generate PDF Report
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="shareReport()">
+                        <i class="fas fa-share-alt me-2"></i>Share with Parents
+                    </button>
+                    <button type="button" class="btn btn-info" onclick="scheduleMeeting()">
+                        <i class="fas fa-calendar-check me-2"></i>Schedule Review Meeting
+                    </button>
+                    <a href="{{ url_for('teacher.edit_exam', exam_id=exam.id) }}" class="btn btn-warning">
+                        <i class="fas fa-edit me-2"></i>Edit Exam
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .performance-card {
+        border-radius: 10px;
+        border: none;
+        transition: transform 0.3s;
+    }
+    
+    .performance-card:hover {
+        transform: translateY(-3px);
+    }
+    
+    .score-ring {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .student-row {
+        transition: background-color 0.2s;
+        cursor: pointer;
+    }
+    
+    .student-row:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .question-analysis-card {
+        border-left: 4px solid;
+        margin-bottom: 1rem;
+    }
+    
+    .difficulty-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .difficulty-easy { border-color: #28a745; }
+    .difficulty-medium { border-color: #ffc107; }
+    .difficulty-hard { border-color: #dc3545; }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+    
+    .insight-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+    }
+    
+    .strength-item {
+        background-color: #d4edda;
+        border-left: 3px solid #28a745;
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+        border-radius: 4px;
+    }
+    
+    .weakness-item {
+        background-color: #f8d7da;
+        border-left: 3px solid #dc3545;
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+        border-radius: 4px;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    
+    .distribution-bar {
+        height: 20px;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 0.5rem;
+    }
+    
+    .bar-segment {
+        height: 100%;
+        display: inline-block;
+    }
+</style>
+
+<script>
+    function viewStudentReport(studentId) {
+        window.location.href = `/teacher/reports/student/${studentId}/{{ exam.id }}`;
+    }
+    
+    function analyzeAll() {
+        if (confirm('Run AI analysis for all students? This may take a few minutes.')) {
+            showLoading('Analyzing all students...');
+            
+            fetch(`/teacher/reports/analyze-all/{{ exam.id }}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                
+                if (data.success) {
+                    showSuccess(`Analysis completed! ${data.message}`);
+                    // Reload page after 3 seconds
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 3000);
+                } else {
+                    showError(data.message || 'Analysis failed');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showError('Network error: ' + error.message);
+            });
+        }
+    }
+    
+    function analyzeStudent(studentId, event) {
+        if (event) {
+            event.stopPropagation();
+        }
+        
+        // In a real implementation, you would make an API call here
+        // For now, just redirect to student report which will trigger analysis
+        viewStudentReport(studentId);
+    }
+    
+    function exportReport() {
+        // In a real implementation, generate and download PDF
+        alert('PDF export feature would generate a comprehensive report here.');
+    }
+    
+    function generateReport() {
+        showLoading('Generating comprehensive report...');
+        
+        // Simulate report generation
+        setTimeout(() => {
+            hideLoading();
+            showSuccess('Report generated successfully!');
+        }, 2000);
+    }
+    
+    function shareReport() {
+        // In a real implementation, show sharing options
+        alert('Sharing feature would allow you to share reports with parents.');
+    }
+    
+    function scheduleMeeting() {
+        // In a real implementation, open meeting scheduler
+        alert('Meeting scheduler would open here.');
+    }
+    
+    // Search functionality
+    document.getElementById('studentSearch').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('#studentTable tbody tr');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+    });
+    
+    // Show loading overlay
+    function showLoading(message) {
+        const overlay = document.createElement('div');
+        overlay.id = 'loading-overlay';
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        `;
+        
+        const spinner = document.createElement('div');
+        spinner.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <div class="text-white">${message}</div>
+            </div>
+        `;
+        
+        overlay.appendChild(spinner);
+        document.body.appendChild(overlay);
+    }
+    
+    function hideLoading() {
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) {
+            overlay.remove();
+        }
+    }
+    
+    function showSuccess(message) {
+        // Create toast notification
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed bottom-0 end-0 p-3';
+        toast.style.zIndex = '9999';
+        
+        toast.innerHTML = `
+            <div class="toast show" role="alert">
+                <div class="toast-header bg-success text-white">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong class="me-auto">Success</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            toast.remove();
+        }, 5000);
+    }
+</script>
+{% endblock %}

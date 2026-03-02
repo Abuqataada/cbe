@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}Parent Login - ARNDALE CBT{% endblock %}
+{% block body_class %}parent-login-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    .parent-login-page {
+        background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    .parent-login-page .main-header,
+    .parent-login-page .main-footer {
+        display: none;
+    }
+
+    .parent-login-page .main-content {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* Parent Login Card */
+    .login-container {
+        max-width: 440px;
+        width: 100%;
+        margin: 0 auto;
+    }
+
+    .login-card {
+        background: white;
+        border-radius: var(--border-radius-lg);
+        padding: 2.5rem;
+        box-shadow: var(--shadow-xl);
+        border: 2px solid #ddd6fe;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .login-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 6px;
+        background: linear-gradient(90deg, #8b5cf6 0%, #7c3aed 100%);
+    }
+
+    /* Parent Header */
+    .parent-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .parent-icon {
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        margin: 0 auto 1rem;
+        color: white;
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        box-shadow: var(--shadow-lg);
+        border: 4px solid white;
+    }
+
+    .parent-title {
+        font-size: 1.75rem;
+        color: #4c1d95;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+    }
+
+    .parent-subtitle {
+        color: #6d28d9;
+        font-size: 1rem;
+        opacity: 0.9;
+    }
+
+    /* Parent-specific styling */
+    .parent-input:focus {
+        border-color: #8b5cf6 !important;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1) !important;
+    }
+
+    .parent-btn {
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        color: white;
+    }
+
+    .parent-btn:hover {
+        background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+        box-shadow: 0 10px 25px -5px rgba(124, 58, 237, 0.4);
+    }
+
+    .parent-notice {
+        background: #f5f3ff;
+        border-left: 4px solid #8b5cf6;
+        color: #4c1d95;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <!-- Parent Header -->
+        <div class="parent-header">
+            <div class="parent-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <h2 class="parent-title">Parent Portal</h2>
+            <p class="parent-subtitle">Child Performance Monitoring System</p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} mb-3">
+                            <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Parent Login Form -->
+        <form method="POST" action="{{ url_for('auth.login') }}" class="login-form">
+            <input type="hidden" name="role" value="parent">
+            
+            <!-- Username Field -->
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="fas fa-user-friends"></i>
+                    Parent Username / Email
+                </label>
+                <div class="input-group">
+                    <input type="text" 
+                           name="username" 
+                           class="form-control parent-input" 
+                           placeholder="Enter your username or email"
+                           value="{{ username or '' }}"
+                           required
+                           autofocus>
+                </div>
+            </div>
+
+            <!-- Password Field -->
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="fas fa-lock"></i>
+                    Password
+                </label>
+                <div class="input-group">
+                    <input type="password" 
+                           name="password" 
+                           class="form-control parent-input" 
+                           placeholder="Enter your password"
+                           required>
+                </div>
+            </div>
+
+            <!-- CAPTCHA Section -->
+            {% if show_captcha and captcha %}
+            <div class="captcha-section parent-notice">
+                <div class="captcha-header">
+                    <i class="fas fa-shield-alt"></i>
+                    <strong>Parent Verification</strong>
+                </div>
+                <p class="mb-2">For security, please verify:</p>
+                
+                <div class="captcha-image">
+                    <img src="{{ captcha.image }}" alt="CAPTCHA Code">
+                </div>
+                
+                <input type="hidden" name="captcha_id" value="{{ captcha.id }}">
+                
+                <div class="input-group">
+                    <i class="fas fa-key"></i>
+                    <input type="text" 
+                           name="captcha" 
+                           class="form-control parent-input" 
+                           placeholder="Enter verification code"
+                           required
+                           maxlength="6">
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Login Button -->
+            <button type="submit" class="login-btn parent-btn" id="loginBtn">
+                <i class="fas fa-sign-in-alt"></i>
+                Access Parent Portal
+            </button>
+        </form>
+
+        <!-- Parent Notice -->
+        <div class="parent-notice p-3 rounded mt-3">
+            <i class="fas fa-info-circle"></i>
+            <strong>Welcome Parents!</strong> This portal allows you to:
+            <ul class="mt-1 mb-0 pl-4">
+                <li>View your child's exam results</li>
+                <li>Monitor attendance records</li>
+                <li>Access report cards</li>
+                <li>Communicate with teachers</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Parent Help Information -->
+    <div class="card mt-3">
+        <div class="card-body">
+            <h5 class="card-title">
+                <i class="fas fa-question-circle text-purple-600"></i>
+                Need Assistance?
+            </h5>
+            <p class="mb-2">If you haven't received your login credentials:</p>
+            <ul class="mb-0">
+                <li>Contact the school administration office</li>
+                <li>Email: arndaleacademy@gmail.com</li>
+                <li>Phone: +234 812 345 6789</li>
+                <li>Office Hours: 8:00 AM - 4:00 PM</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Back Link -->
+    <div class="text-center mt-4">
+        <a href="{{ url_for('index') }}" class="text-purple-600">
+            <i class="fas fa-arrow-left"></i>
+            Return to Welcome Page
+        </a>
+    </div>
+</div>
+{% endblock %}
