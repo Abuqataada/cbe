@@ -210,6 +210,18 @@ def create_app(config_name='default'):
 # Create app instance
 app = create_app(os.getenv('FLASK_ENV') or 'default')
 
+with app.app_context():
+    # Create tables and seed default data - only if not in serverless or using persistent DB
+    try:
+        db.create_all()
+        # Only call seed functions here
+        from utils.seed import create_default_finance_admin, create_default_admin, create_default_academic_session
+        create_default_admin()
+        create_default_finance_admin()
+        create_default_academic_session()
+    except Exception as e:
+        app.logger.error(f"Database initialization error: {str(e)}")
+        
 def create_upload_directories():
     """Create necessary upload directories"""
     directories = [
@@ -237,16 +249,6 @@ def check_trial_expiry():
 
 @app.route('/')
 def index():
-    try:
-        db.create_all()
-        # Only call seed functions here
-        from utils.seed import create_default_finance_admin, create_default_admin, create_default_academic_session
-        create_default_admin()
-        create_default_finance_admin()
-        create_default_academic_session()
-    except Exception as e:
-        app.logger.error(f"Database initialization error: {str(e)}")
-
     return render_template('index.html')
 
 @app.route('/administrator')
