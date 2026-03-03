@@ -21,13 +21,28 @@ from flask_talisman import Talisman
 # Add CSP headers
 csp = {
     'default-src': ["'self'"],
-    'style-src': ["'self'", "'unsafe-inline'"],
-    'script-src': ["'self'", "'unsafe-inline'"],
-    'font-src': ["'self'"],
+    'style-src': [
+        "'self'",
+        "'unsafe-inline'",
+        "https://cdn.jsdelivr.net",
+        "https://cdnjs.cloudflare.com",
+        "https://fonts.googleapis.com"
+    ],
+    'font-src': [
+        "'self'",
+        "https://cdn.jsdelivr.net",
+        "https://cdnjs.cloudflare.com",
+        "https://fonts.gstatic.com"
+    ],
+    'script-src': [
+        "'self'",
+        "'unsafe-inline'",
+        "https://cdn.jsdelivr.net",
+        "https://cdnjs.cloudflare.com"
+    ],
     'img-src': ["'self'", "data:", "https:", "res.cloudinary.com"],
     'connect-src': ["'self'", "https://api.cloudinary.com", "https://res.cloudinary.com"],
 }
-
 
 
 login_manager = LoginManager()
