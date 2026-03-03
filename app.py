@@ -9,7 +9,7 @@ from flask_migrate import Migrate
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from config import config
-from models import db,User
+from models import db, User
 
 from datetime import datetime
 
@@ -212,16 +212,13 @@ app = create_app(os.getenv('FLASK_ENV') or 'default')
 
 with app.app_context():
     # Create tables and seed default data - only if not in serverless or using persistent DB
-    try:
-        db.create_all()
-        # Only call seed functions here
-        from utils.seed import create_default_finance_admin, create_default_admin, create_default_academic_session
-        create_default_admin()
-        create_default_finance_admin()
-        create_default_academic_session()
-    except Exception as e:
-        app.logger.error(f"Database initialization error: {str(e)}")
-        
+    db.create_all()
+    # Only call seed functions here
+    from utils.seed import create_default_finance_admin, create_default_admin, create_default_academic_session
+    create_default_admin()
+    create_default_finance_admin()
+    create_default_academic_session()
+
 def create_upload_directories():
     """Create necessary upload directories"""
     directories = [
