@@ -33,3 +33,4 @@ flask-session
 ttkbootstrap
 pystray
 cloudinary
+openai
