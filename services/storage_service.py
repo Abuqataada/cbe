@@ -2,7 +2,7 @@ import os
 from werkzeug.utils import secure_filename
 from flask import current_app
 import uuid
-from datetime import datetime
+import tempfile
 
 class StorageService:
     """Unified storage service - handles both local and cloud storage"""
@@ -22,6 +22,11 @@ class StorageService:
             dict: {'success': bool, 'url': str, 'filename': str, 'public_id': str (for cloud)}
         """
         storage_type = current_app.config.get('STORAGE_TYPE', 'local')
+        is_serverless = os.environ.get('VERCEL_ENV') is not None
+        
+        # Force cloud storage in serverless environment
+        if is_serverless:
+            storage_type = 'cloudinary'
         
         if storage_type == 'cloudinary':
             return StorageService._save_to_cloud(file, folder, filename, subfolder)
@@ -37,12 +42,18 @@ class StorageService:
                 ext = os.path.splitext(file.filename)[1]
                 filename = f"{uuid.uuid4().hex}{ext}"
             
-            # Build path
-            upload_path = current_app.config.get('UPLOAD_FOLDER', 'uploads')
-            if subfolder:
-                save_dir = os.path.join(upload_path, folder, subfolder)
+            # Use temp directory if in serverless environment
+            is_serverless = os.environ.get('VERCEL_ENV') is not None
+            if is_serverless:
+                base_path = tempfile.gettempdir()
             else:
-                save_dir = os.path.join(upload_path, folder)
+                base_path = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+            
+            # Build path
+            if subfolder:
+                save_dir = os.path.join(base_path, folder, subfolder)
+            else:
+                save_dir = os.path.join(base_path, folder)
             
             # Create directory if it doesn't exist
             os.makedirs(save_dir, exist_ok=True)
@@ -50,6 +61,14 @@ class StorageService:
             # Save file
             file_path = os.path.join(save_dir, secure_filename(filename))
             file.save(file_path)
+            
+            # In serverless, we need to return the file path for later upload to cloud
+            if is_serverless:
+                return {
+                    'success': True,
+                    'temp_path': file_path,
+                    'filename': filename
+                }
             
             # Return relative URL for web access
             if subfolder:
@@ -98,29 +117,6 @@ class StorageService:
                 'success': False,
                 'error': str(e)
             }
-    
-    @staticmethod
-    def delete_file(file_url, file_type='local'):
-        """Delete a file from storage"""
-        if file_type == 'cloudinary':
-            from utils.cloudinary_helper import cloudinary_helper
-            # Extract public_id from URL
-            import re
-            match = re.search(r'/([^/]+)\.(?:jpg|jpeg|png|gif|pdf|docx?)$', file_url)
-            if match:
-                public_id = match.group(1)
-                return cloudinary_helper.delete_file(public_id)
-        
-        elif file_type == 'local':
-            # Delete local file
-            try:
-                if os.path.exists(file_url):
-                    os.remove(file_url)
-                    return {'success': True}
-            except Exception as e:
-                current_app.logger.error(f"Local file delete error: {str(e)}")
-        
-        return {'success': False, 'error': 'File not found or invalid type'}
 
 # Global instance
 storage = StorageService()

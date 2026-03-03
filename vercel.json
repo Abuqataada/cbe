@@ -8,11 +8,17 @@
   ],
   "routes": [
     {
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "app.py"
     }
   ],
   "env": {
-    "PYTHON_VERSION": "3.11"
+    "STORAGE_TYPE": "cloudinary",
+    "FLASK_ENV": "production",
+    "VERCEL_ENV": "true"
   }
 }
