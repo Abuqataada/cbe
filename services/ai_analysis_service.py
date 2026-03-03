@@ -18,7 +18,7 @@ class StudentAnalysis(BaseModel):
 
 class AIAnalysisService:
     def __init__(self):
-        self.huggingface_api_key = '***REDACTED***'  # os.getenv("HUGGINGFACE_API_KEY")
+        self.huggingface_api_key = os.getenv("HUGGINGFACE_API_KEY")
         self.openai_client = None
         
         # Default models to try (free and open source)
