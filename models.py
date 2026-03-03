@@ -59,7 +59,7 @@ class StudentPromotion(db.Model):
     term = db.Column(db.Integer, nullable=False)
     promotion_type = db.Column(db.String(20), default='promotion')
     reason = db.Column(db.Text)
-    promoted_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    promoted_by = db.Column(db.String(36), db.ForeignKey('users.id'))
     promoted_at = db.Column(db.DateTime(timezone=True), default=datetime.now(timezone.utc))
     
     # Relationships
@@ -282,9 +282,9 @@ class QuestionBank(db.Model):
     question_image = db.Column(db.String(500))  # Path to question image
     question_image_alt = db.Column(db.String(200))  # Alt text for accessibility
     
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_by = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=True)
+    approved_by = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=True)
     is_approved = db.Column(db.Boolean, default=False)
-    approved_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime(timezone=True), default=datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime(timezone=True), default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     usage_count = db.Column(db.Integer, default=0)
@@ -568,7 +568,7 @@ class ExamResult(db.Model):
     grade = db.Column(db.String(5))
     remark = db.Column(db.String(100))
     position_in_class = db.Column(db.Integer)
-    entered_by = db.Column(db.Integer, db.ForeignKey('teachers.id'))
+    entered_by = db.Column(db.String(36), db.ForeignKey('teachers.id'))
     is_locked = db.Column(db.Boolean, default=False)
     
     # NEW: Add exam session reference
