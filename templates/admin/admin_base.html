@@ -871,8 +871,6 @@
             color: #3f51b5;
         }
     </style>
-    
-    {% block extra_css %}{% endblock %}
 </head>
 <body>
     <div class="admin-container">
@@ -1108,6 +1106,15 @@
         </div>
     </div>
     
+    <style>
+        /* Force our custom modal system to show the modal content */
+        .modal-overlay.active .modal {
+        display: block !important;
+        }
+    </style>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
     <!-- JavaScript -->
     <script>
         // Toggle Sidebar
@@ -1234,6 +1241,5 @@
         });
     </script>
     
-    {% block extra_js %}{% endblock %}
 </body>
 </html>
