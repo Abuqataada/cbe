@@ -237,6 +237,16 @@ def check_trial_expiry():
 
 @app.route('/')
 def index():
+    try:
+        db.create_all()
+        # Only call seed functions here
+        from utils.seed import create_default_finance_admin, create_default_admin, create_default_academic_session
+        create_default_admin()
+        create_default_finance_admin()
+        create_default_academic_session()
+    except Exception as e:
+        app.logger.error(f"Database initialization error: {str(e)}")
+
     return render_template('index.html')
 
 @app.route('/administrator')
