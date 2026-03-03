@@ -2085,8 +2085,7 @@ def add_teacher():
             teacher_data['phone'] = request.form.get('phone')
         
         if hasattr(Teacher, 'form_class_id'):
-            teacher_data['form_class_id'] = request.form.get('form_class_id')
-            form_class_id = request.form.get("form_class_id") or None   # '' -> None
+            teacher_data['form_class_id'] = request.form.get('form_class_id') or None   # '' -> None
         
         if hasattr(Teacher, 'qualification'):
             teacher_data['qualification'] = request.form.get('qualification')
