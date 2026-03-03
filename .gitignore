@@ -8,3 +8,21 @@ env/
 *.env
 .DS_Store
 instance/
+
+# Python
+*.pyo
+*.pyd
+*.log
+.env.*
+
+# Virtualenv
+.venv/
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# OS / IDE
+.vscode/
+.idea/
