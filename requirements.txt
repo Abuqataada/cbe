@@ -32,3 +32,4 @@ flask-bcrypt
 flask-session
 ttkbootstrap
 pystray
+cloudinary

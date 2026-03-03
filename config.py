@@ -18,23 +18,30 @@ class Config:
         'pool_pre_ping': True,
     }
     
-    # Session (LAN specific - no HTTPS)
+    # Session
     PERMANENT_SESSION_LIFETIME = timedelta(hours=8)
     SESSION_COOKIE_NAME = 'arndale_session'
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SECURE = False  # No HTTPS in LAN
+    SESSION_COOKIE_SECURE = False  # Will be overridden in production if HTTPS
     SESSION_COOKIE_SAMESITE = 'Lax'
-    REMEMBER_COOKIE_SECURE = False  # No HTTPS in LAN
+    REMEMBER_COOKIE_SECURE = False
     
-    # File uploads
-    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'svg'}
+    # File uploads - Default to local (will be overridden in production)
+    STORAGE_TYPE = 'local'  # 'local' or 'cloudinary'
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'svg', 'pdf', 'doc', 'docx'}
     UPLOAD_FOLDER = str(BASE_DIR / 'uploads')
     REPORT_FOLDER = str(BASE_DIR / 'reports')
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
     
-    # Rate limiting (in-memory for LAN)
+    # Cloudinary configuration (will be used when STORAGE_TYPE='cloudinary')
+    CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME')
+    CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY')
+    CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET')
+    CLOUDINARY_FOLDER = 'arndale-cbt'  # Base folder in Cloudinary
+    
+    # Rate limiting
     RATELIMIT_ENABLED = True
-    RATELIMIT_STORAGE_URI = "memory://" # Simple for LAN
+    RATELIMIT_STORAGE_URI = os.environ.get('RATELIMIT_STORAGE_URI', "memory://")
     RATELIMIT_STRATEGY = 'fixed-window'
     RATELIMIT_DEFAULT = ["1000 per day", "200 per hour", "50 per minute"]
     RATELIMIT_HEADERS_ENABLED = True
@@ -42,10 +49,10 @@ class Config:
     # Application settings
     DEBUG = False
     TESTING = False
-    PORT = 5000
-    HOST = '0.0.0.0'  # Listen on all interfaces
+    PORT = int(os.environ.get('PORT', 5000))
+    HOST = '0.0.0.0'
     
-    # Admin credentials (CHANGE THESE IN PRODUCTION!)
+    # Admin credentials
     ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME') or 'admin'
     ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD') or 'admin123'
     ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL') or 'admin@arndaleacademy.edu'
@@ -72,124 +79,141 @@ class Config:
         'require_uppercase': True,
         'require_lowercase': True,
         'require_numbers': True,
-        'require_special': False,  # Keep simple for students
-        'expiry_days': 90,  # Password expires after 90 days
+        'require_special': False,
+        'expiry_days': 90,
     }
     
     # Exam settings
-    EXAM_DEFAULT_DURATION = 60  # minutes
-    EXAM_MAX_DURATION = 180  # 3 hours maximum
+    EXAM_DEFAULT_DURATION = 60
+    EXAM_MAX_DURATION = 180
     EXAM_ALLOW_LATE_SUBMISSION = False
     EXAM_RANDOMIZE_QUESTIONS = True
     EXAM_SHOW_RESULTS_IMMEDIATELY = False
     
-    # Network settings (LAN specific)
-    ALLOWED_HOSTS = ['*']  # Accept connections from any IP in LAN
-    SERVER_NAME = None  # Don't set for LAN
+    # Network settings
+    ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
+    SERVER_NAME = os.environ.get('SERVER_NAME')
     
     # Logging
-    LOG_LEVEL = 'INFO'
+    LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
     LOG_FILE = str(BASE_DIR / 'logs' / 'server.log')
     LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     
     # Backup settings
     BACKUP_ENABLED = True
     BACKUP_FOLDER = str(BASE_DIR / 'backups')
-    BACKUP_SCHEDULE = 'daily'  # daily, weekly, monthly
-    KEEP_BACKUPS = 7  # Keep last 7 backups
+    BACKUP_SCHEDULE = 'daily'
+    KEEP_BACKUPS = 7
     
     # Performance
-    JSONIFY_PRETTYPRINT_REGULAR = False  # Disable for production
-    TEMPLATES_AUTO_RELOAD = False  # Disable for production
-    SEND_FILE_MAX_AGE_DEFAULT = 31536000  # 1 year cache for static files
+    JSONIFY_PRETTYPRINT_REGULAR = False
+    TEMPLATES_AUTO_RELOAD = False
+    SEND_FILE_MAX_AGE_DEFAULT = 31536000
+
 
 class DevelopmentConfig(Config):
-    """Development configuration"""
+    """Development configuration - local file storage"""
     DEBUG = True
     TEMPLATES_AUTO_RELOAD = True
-    SQLALCHEMY_ECHO = False  # Set to True for SQL debugging
+    SQLALCHEMY_ECHO = False
     
-    # Development security (relaxed)
+    # Use local storage in development
+    STORAGE_TYPE = 'local'
     SESSION_COOKIE_SECURE = False
     REMEMBER_COOKIE_SECURE = False
     
     # Development rate limits (higher)
     RATELIMIT_DEFAULT = ["5000 per day", "1000 per hour"]
 
+
 class ProductionConfig(Config):
-    """Production configuration for LAN deployment"""
+    """Production configuration for Vercel - cloud storage"""
     DEBUG = False
     TESTING = False
     
-    # LAN-specific settings (NO HTTPS)
-    PREFERRED_URL_SCHEME = 'http'  # Force HTTP scheme
-    SESSION_COOKIE_SECURE = False  # Allow cookies over HTTP
-    REMEMBER_COOKIE_SECURE = False
+    # Use Cloudinary in production
+    STORAGE_TYPE = os.environ.get('STORAGE_TYPE', 'cloudinary')
     
-    # Disable HTTPS redirects
-    FORCE_HTTPS = False
+    # Production security (HTTPS)
+    SESSION_COOKIE_SECURE = True
+    REMEMBER_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = 'Strict'
     
     # Database
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///database/arndale_cbt.db'
-    
-    # Network settings
-    SERVER_NAME = None  # Don't set for LAN
-    
-    # Security (relaxed for LAN)
-    SECURITY_SSL_REDIRECT = False
-    
-    """Production configuration for LAN deployment"""
-    DEBUG = False
-    TESTING = False
-    
-    # Production security (strict)
-    SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = 'Strict'  # Changed to Strict for production
-    
-    # Production database (SQLite is fine for LAN, but PostgreSQL is better)
-    SQLALCHEMY_DATABASE_URI = f'sqlite:///{BASE_DIR}/database/arndale_cbt_prod.db'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     
     # Production rate limits (stricter)
     RATELIMIT_DEFAULT = ["500 per day", "100 per hour", "20 per minute"]
     
     # Production logging
-    LOG_LEVEL = 'WARNING'  # Only warnings and errors
+    LOG_LEVEL = 'WARNING'
     
     # Production backup settings
     BACKUP_ENABLED = True
-    KEEP_BACKUPS = 30  # Keep 30 days of backups
+    KEEP_BACKUPS = 30
+
+
+class VercelConfig(ProductionConfig):
+    """Vercel-specific production configuration"""
+    
+    # Force Cloudinary for Vercel
+    STORAGE_TYPE = 'cloudinary'
+    
+    # Vercel environment settings
+    SERVER_NAME = os.environ.get('VERCEL_URL')
+    PREFERRED_URL_SCHEME = 'https'
+    
+    # Vercel doesn't have persistent storage for uploads
+    UPLOAD_FOLDER = '/tmp/uploads'  # Temporary folder, files will be deleted
+    REPORT_FOLDER = '/tmp/reports'
+    
+    # Rate limiting with Redis (if available)
+    REDIS_URL = os.environ.get('REDIS_URL')
+    if REDIS_URL:
+        RATELIMIT_STORAGE_URI = REDIS_URL
+
 
 class TestingConfig(Config):
     """Testing configuration"""
     TESTING = True
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    STORAGE_TYPE = 'local'
     WTF_CSRF_ENABLED = False
     SESSION_COOKIE_SECURE = False
+
 
 # Configuration dictionary
 config = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
+    'vercel': VercelConfig,
     'testing': TestingConfig,
     'default': DevelopmentConfig
 }
 
 def init_directories():
-    """Create necessary directories"""
-    directories = [
-        BASE_DIR / 'uploads',
-        BASE_DIR / 'reports',
-        BASE_DIR / 'database',
-        BASE_DIR / 'logs',
-        BASE_DIR / 'backups',
-        BASE_DIR / 'static' / 'exports',
-    ]
+    """Create necessary directories (only for local storage)"""
+    storage_type = os.environ.get('STORAGE_TYPE', 'local')
     
-    for directory in directories:
-        directory.mkdir(parents=True, exist_ok=True)
-    
-    print(f"Directories created in: {BASE_DIR}")
+    if storage_type == 'local':
+        directories = [
+            BASE_DIR / 'uploads',
+            BASE_DIR / 'reports',
+            BASE_DIR / 'database',
+            BASE_DIR / 'logs',
+            BASE_DIR / 'backups',
+            BASE_DIR / 'static' / 'exports',
+            BASE_DIR / 'static' / 'uploads' / 'questions',
+            BASE_DIR / 'static' / 'uploads' / 'options',
+        ]
+        
+        for directory in directories:
+            directory.mkdir(parents=True, exist_ok=True)
+        
+        print(f"Local directories created in: {BASE_DIR}")
+    else:
+        print(f"Using cloud storage ({storage_type}), skipping local directory creation")
 
 # Initialize directories when config is imported
 init_directories()

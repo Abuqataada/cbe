@@ -20,33 +20,12 @@ from flask_talisman import Talisman
 
 # Add CSP headers
 csp = {
-    'default-src': [
-        '\'self\'',
-        'https://cdn.jsdelivr.net',
-        'https://cdnjs.cloudflare.com'
-    ],
-    'style-src': [
-        '\'self\'',
-        'https://cdn.jsdelivr.net',
-        'https://cdnjs.cloudflare.com',
-        '\'unsafe-inline\''  # Allow inline styles
-    ],
-    'script-src': [
-        '\'self\'',
-        'https://cdn.jsdelivr.net',
-        'https://cdnjs.cloudflare.com',
-        '\'unsafe-inline\''  # Allow inline scripts for Bootstrap
-    ],
-    'font-src': [
-        '\'self\'',
-        'https://cdn.jsdelivr.net',
-        'https://cdnjs.cloudflare.com'
-    ],
-    'img-src': [
-        '\'self\'',
-        'data:',
-        'https:'
-    ]
+    'default-src': ["'self'"],
+    'style-src': ["'self'", "'unsafe-inline'"],
+    'script-src': ["'self'", "'unsafe-inline'"],
+    'font-src': ["'self'"],
+    'img-src': ["'self'", "data:", "https:", "res.cloudinary.com"],
+    'connect-src': ["'self'", "https://api.cloudinary.com", "https://res.cloudinary.com"],
 }
 
 
@@ -68,6 +47,12 @@ def create_app(config_name='default'):
     login_manager.init_app(app)
     migrate.init_app(app, db)
     limiter.init_app(app)
+    
+    # Initialize Cloudinary if using cloud storage
+    if app.config.get('STORAGE_TYPE') == 'cloudinary':
+        from utils.cloudinary_helper import cloudinary_helper
+        cloudinary_helper.init_app(app)
+        app.logger.info("Cloudinary initialized for production")
     
     # Configure login manager
     login_manager.login_view = 'auth.login'
@@ -97,7 +82,8 @@ def create_app(config_name='default'):
 
     setup_security(app)
     # Setup logging
-    if not app.debug:
+    # Setup logging
+    if not app.debug and not os.getenv("VERCEL"):
         if not os.path.exists('logs'):
             os.mkdir('logs')
         file_handler = RotatingFileHandler(
@@ -112,9 +98,11 @@ def create_app(config_name='default'):
         app.logger.info('School Management System startup')
     
     # Create upload/report directories
-    os.makedirs(app.config.get('UPLOAD_FOLDER', 'uploads'), exist_ok=True)
-    os.makedirs(app.config.get('REPORT_FOLDER', 'reports'), exist_ok=True)
-    os.makedirs('logs', exist_ok=True)
+    # Create local directories ONLY when using local storage
+    if app.config.get("STORAGE_BACKEND", "local").lower() == "local":
+        os.makedirs('logs', exist_ok=True)
+        os.makedirs(app.config.get("UPLOAD_FOLDER", "uploads"), exist_ok=True)
+        os.makedirs(app.config.get("REPORT_FOLDER", "reports"), exist_ok=True)
     
     # Register blueprints
     from routes.auth import auth_bp
