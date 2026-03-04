@@ -1214,8 +1214,8 @@ def download_question_template():
         'option_4',
         'correct_option',
         'correct_answer',
-        'explanation',
-        'topics'
+        'explanation (optional)',
+        'topics (optional, comma-separated)'
     ])
     
     # Add example rows
@@ -1224,7 +1224,7 @@ def download_question_template():
             'subject_code': 'MATH101',
             'question_text': 'What is 2 + 2?',
             'question_type': 'multiple_choice',
-            'difficulty': 'easy',
+            'difficulty': 'medium',
             'marks': 1.0,
             'option_1': '3',
             'option_2': '4',
@@ -1239,7 +1239,7 @@ def download_question_template():
             'subject_code': 'ENG101',
             'question_text': 'The sky is blue. True or False?',
             'question_type': 'true_false',
-            'difficulty': 'easy',
+            'difficulty': 'medium',
             'marks': 1.0,
             'option_1': '',
             'option_2': '',
