@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
+from sqlalchemy.dialects.postgresql import JSONB
 
 db = SQLAlchemy()
 
@@ -232,7 +233,7 @@ class Subject(db.Model):
     description = db.Column(db.Text)
     category = db.Column(db.String(50))  # Core, Elective
     is_active = db.Column(db.Boolean, default=True)
-    assessment_structure = db.Column(db.JSON)
+    assessment_structure = db.Column(JSONB)  # Add these fields for grading
     pass_mark = db.Column(db.Float, default=40.0)
     max_mark = db.Column(db.Float, default=100.0)
 
@@ -273,10 +274,10 @@ class QuestionBank(db.Model):
     question_type = db.Column(db.String(20), nullable=False)
     difficulty = db.Column(db.String(20), default='medium')
     marks = db.Column(db.Float, default=1.0)
-    options = db.Column(db.JSON)
+    options = db.Column(JSONB)
     correct_answer = db.Column(db.Text)
     explanation = db.Column(db.Text)
-    topics = db.Column(db.JSON)
+    topics = db.Column(JSONB)
     
     # Add these image fields
     question_image = db.Column(db.String(500))  # Path to question image
@@ -473,7 +474,7 @@ class StudentAssessment(db.Model):
     term_id = db.Column(db.String(36), db.ForeignKey('academic_terms.id'), nullable=False)
     
     # CHANGED: Store all assessment scores in JSON format
-    assessment_scores = db.Column(db.JSON, nullable=False, default=dict)  # Format: {assessment_id: score_value}
+    assessment_scores = db.Column(JSONB, nullable=False, default=dict)  # Format: {assessment_id: score_value}
     
     # Add a total score field for easy access
     total_score = db.Column(db.Float, default=0.0)
@@ -620,7 +621,7 @@ class DomainEvaluation(db.Model):
     domain_type = db.Column(db.String(50), nullable=False)  # Affective, Psychomotor, Cognitive
     term = db.Column(db.Integer, nullable=False)
     academic_year = db.Column(db.String(20), nullable=False)
-    evaluation_data = db.Column(db.JSON)  # Add this field - store criteria ratings
+    evaluation_data = db.Column(JSONB)  # Add this field - store criteria ratings
     average_score = db.Column(db.Float)  # Add this field
     comments = db.Column(db.Text)
     total_criteria = db.Column(db.Integer)  # Add this field
@@ -697,7 +698,7 @@ class ReportCard(db.Model):
     generated_by = db.Column(db.String(36), db.ForeignKey('users.id'))
     is_published = db.Column(db.Boolean, default=False)
     published_at = db.Column(db.DateTime(timezone=True))
-    report_data = db.Column(db.JSON)
+    report_data = db.Column(JSONB)
 
     student = db.relationship('Student', back_populates='report_cards')
     generator = db.relationship('User', foreign_keys=[generated_by])
@@ -713,7 +714,7 @@ class ParentNotification(db.Model):
     message = db.Column(db.Text, nullable=False)
     is_read = db.Column(db.Boolean, default=False)
     is_sent = db.Column(db.Boolean, default=False)
-    sent_via = db.Column(db.JSON)
+    sent_via = db.Column(JSONB)
     created_at = db.Column(db.DateTime(timezone=True), default=datetime.now(timezone.utc))
     read_at = db.Column(db.DateTime(timezone=True))
 
@@ -728,7 +729,7 @@ class SystemConfiguration(db.Model):
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     config_key = db.Column(db.String(100), unique=True, nullable=False)
-    config_value = db.Column(db.JSON, nullable=False)
+    config_value = db.Column(JSONB, nullable=False)
     description = db.Column(db.Text)
     updated_at = db.Column(db.DateTime(timezone=True), default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     updated_by = db.Column(db.String(36), db.ForeignKey('users.id'))
@@ -804,9 +805,9 @@ class AuditLog(db.Model):
     action = db.Column(db.String(100), nullable=False)
     table_name = db.Column(db.String(100))
     record_id = db.Column(db.String(36))
-    old_values = db.Column(db.JSON)
-    new_values = db.Column(db.JSON)
-    details = db.Column(db.JSON)  # Add this field
+    old_values = db.Column(JSONB)
+    new_values = db.Column(JSONB)
+    details = db.Column(JSONB)  # Add this field
     ip_address = db.Column(db.String(45))
     user_agent = db.Column(db.Text)
     timestamp = db.Column(db.DateTime(timezone=True), default=datetime.now(timezone.utc))
@@ -836,7 +837,7 @@ class SecurityLog(db.Model):
     user_id = db.Column(db.String(36), db.ForeignKey('users.id'))
     ip_address = db.Column(db.String(45))
     user_agent = db.Column(db.Text)
-    details = db.Column(db.JSON)
+    details = db.Column(JSONB)
     timestamp = db.Column(db.DateTime(timezone=True), default=datetime.now(timezone.utc))
 
     user = db.relationship('User', back_populates='security_logs')
@@ -895,7 +896,7 @@ class LearningMaterial(db.Model):
     
     # Metadata
     material_type = db.Column(db.String(50), default='note')  # note, assignment, video, link, etc.
-    tags = db.Column(db.JSON)  # Array of tags for filtering
+    tags = db.Column(JSONB)  # Array of tags for filtering
     is_published = db.Column(db.Boolean, default=True)
     is_featured = db.Column(db.Boolean, default=False)
     
@@ -954,8 +955,8 @@ class ExamQuestionAnalysis(db.Model):
     incorrect_attempts = db.Column(db.Integer, default=0)
     average_time_spent = db.Column(db.Float)  # in seconds
     difficulty_rating = db.Column(db.Float)  # 1-10 scale
-    common_mistakes = db.Column(db.JSON)
-    learning_gaps = db.Column(db.JSON)
+    common_mistakes = db.Column(JSONB)
+    learning_gaps = db.Column(JSONB)
     
     # Timestamps
     analyzed_at = db.Column(db.DateTime(timezone=True), default=datetime.now(timezone.utc))
@@ -981,14 +982,14 @@ class StudentPerformanceAnalysis(db.Model):
     completion_rate = db.Column(db.Float)
     
     # AI-generated insights
-    strengths = db.Column(db.JSON)  # List of strengths
-    weaknesses = db.Column(db.JSON)  # List of weaknesses
-    recommendations = db.Column(db.JSON)  # List of recommendations
+    strengths = db.Column(JSONB)  # List of strengths
+    weaknesses = db.Column(JSONB)  # List of weaknesses
+    recommendations = db.Column(JSONB)  # List of recommendations
     ai_comment = db.Column(db.Text)  # AI-generated comment for student
     
     # Topic-level analysis
-    topic_performance = db.Column(db.JSON)  # {topic: score}
-    question_type_performance = db.Column(db.JSON)  # {type: score}
+    topic_performance = db.Column(JSONB)  # {topic: score}
+    question_type_performance = db.Column(JSONB)  # {type: score}
     
     # Metadata
     analysis_method = db.Column(db.String(50), default='ai')
@@ -1020,12 +1021,12 @@ class TeacherReport(db.Model):
     report_type = db.Column(db.String(50), nullable=False)  # exam_analysis, student_progress, class_performance
     title = db.Column(db.String(200), nullable=False)
     summary = db.Column(db.Text)
-    insights = db.Column(db.JSON)
-    recommendations = db.Column(db.JSON)
+    insights = db.Column(JSONB)
+    recommendations = db.Column(JSONB)
     
     # Data for charts and visualizations
-    chart_data = db.Column(db.JSON)
-    statistics = db.Column(db.JSON)
+    chart_data = db.Column(JSONB)
+    statistics = db.Column(JSONB)
     
     # AI-generated content
     is_ai_generated = db.Column(db.Boolean, default=True)
@@ -1035,7 +1036,7 @@ class TeacherReport(db.Model):
     # Report status
     status = db.Column(db.String(20), default='draft')  # draft, published, archived
     is_shared = db.Column(db.Boolean, default=False)
-    shared_with = db.Column(db.JSON)  # List of user IDs or roles
+    shared_with = db.Column(JSONB)  # List of user IDs or roles
     
     # Timestamps
     generated_at = db.Column(db.DateTime(timezone=True), default=datetime.now(timezone.utc))

@@ -277,8 +277,7 @@ def staff_index():
 
 @app.route('/expired')
 def expired():
-    return render_template('expired.html')
-
+    return render_template('expired.html')   
 
 # In app.py, add this route to see all endpoints
 @app.route('/debug/routes')
