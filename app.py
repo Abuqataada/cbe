@@ -279,7 +279,524 @@ def staff_index():
 def expired():
     return render_template('expired.html')   
 
-# In app.py, add this route to see all endpoints
+
+STUDENTS_INFO = {
+    "class_id": "fdd21d62-85a9-424e-a2e7-33552be11d9c",
+    "students": [
+    {
+      "address": None,
+      "created_at": "2026-03-02T08:51:13.649415",
+      "dob": "2009-08-12",
+      "email": "bernice.abba@arndaleacademy.com",
+      "first_name": "BERNICE",
+      "full_name": "BERNICE ABBA",
+      "gender": "female",
+      "id": "393e2c40-c5e9-44c8-b3c3-8e595082c58a",
+      "last_name": "ABBA",
+      "medical_info": None,
+      "middle_name": None,
+      "parent_email": None,
+      "parent_name": "MR/MRS ABBA",
+      "parent_phone": "09056999083",
+      "parent_relationship": None,
+      "previous_school": None,
+      "remarks": None,
+      "updated_at": "2026-03-02T08:51:13.649444"
+    },
+    {
+      "address": None,
+      "created_at": "2026-03-02T08:51:13.649415",
+      "dob": "2009-06-11",
+      "email": "maryam.abba@arndaleacademy.com",
+      "first_name": "MARYAM",
+      "full_name": "MARYAM ABBA",
+      "gender": "female",
+      "id": "108d07e3-121c-4ce2-a7e0-fd60a58b1386",
+      "last_name": "ABBA",
+      "medical_info": None,
+      "middle_name": "IBRAHIM",
+      "parent_email": None,
+      "parent_name": "MR/MRS ABBA",
+      "parent_phone": "08038448914",
+      "parent_relationship": None,
+      "previous_school": None,
+      "remarks": None,
+      "updated_at": "2026-03-02T08:51:13.649444"
+    },
+    {
+      "address": None,
+      "created_at": "2026-03-02T08:51:13.649415",
+      "dob": "2010-09-05",
+      "email": "yusuf.abner@arndaleacademy.com",
+      "first_name": "YUSUF",
+      "full_name": "YUSUF ABNER",
+      "gender": "male",
+      "id": "ab61e6b2-a5c2-410e-ad45-621d84cd3764",
+      "last_name": "ABNER",
+      "medical_info": None,
+      "middle_name": None,
+      "parent_email": None,
+      "parent_name": "MR/MRS ABNER",
+      "parent_phone": "08167459508",
+      "parent_relationship": None,
+      "previous_school": None,
+      "remarks": None,
+      "updated_at": "2026-03-02T08:51:13.649444"
+    },
+    {
+      "address": None,
+      "created_at": "2026-03-02T08:51:13.649415",
+      "dob": "2009-09-29",
+      "email": "somtochukwu.akuneaziri@arndaleacademy.com",
+      "first_name": "SOMTOCHUKWU",
+      "full_name": "SOMTOCHUKWU AKUNEAZIRI",
+      "gender": "female",
+      "id": "ea77e243-c0c3-4a26-85ca-6941c0ef8cb9",
+      "last_name": "AKUNEAZIRI",
+      "medical_info": None,
+      "middle_name": None,
+      "parent_email": None,
+      "parent_name": "MR/MRS AKUNEAZIRI",
+      "parent_phone": "08032054934",
+      "parent_relationship": None,
+      "previous_school": None,
+      "remarks": None,
+      "updated_at": "2026-03-02T08:51:13.649444"
+    },
+    {
+      "address": None,
+      "created_at": "2026-03-02T08:51:13.649415",
+      "dob": "2008-07-10",
+      "email": "alaric.kollomi@arndaleacademy.com",
+      "first_name": "ALARIC",
+      "full_name": "ALARIC KOLLOMI",
+      "gender": "male",
+      "id": "fbb6927c-78ea-48a9-9d74-cc1288497011",
+      "last_name": "KOLLOMI",
+      "medical_info": None,
+      "middle_name": None,
+      "parent_email": None,
+      "parent_name": "MR/MRS KOLLOMI",
+      "parent_phone": "08120065261",
+      "parent_relationship": None,
+      "previous_school": None,
+      "remarks": None,
+      "updated_at": "2026-03-02T08:51:13.649444"
+    },
+    {
+      "address": None,
+      "created_at": "2026-03-02T08:51:13.649415",
+      "dob": "2008-10-14",
+      "email": "farouk.ali@arndaleacademy.com",
+      "first_name": "FAROUK",
+      "full_name": "FAROUK ALI",
+      "gender": "male",
+      "id": "95f304b0-2dcc-4e3f-9ecc-7028c8469516",
+      "last_name": "ALI",
+      "medical_info": None,
+      "middle_name": "UMAR",
+      "parent_email": None,
+      "parent_name": "DR/MRS UMAR",
+      "parent_phone": "07036162222",
+      "parent_relationship": None,
+      "previous_school": None,
+      "remarks": None,
+      "updated_at": "2026-03-02T08:51:13.649444"
+    },
+    {
+      "address": None,
+      "created_at": "2026-03-02T08:51:13.649415",
+      "dob": "2009-03-03",
+      "email": "maryam.aminu@arndaleacademy.com",
+      "first_name": "MARYAM",
+      "full_name": "MARYAM AMINU",
+      "gender": "female",
+      "id": "5fc9a519-8e70-45a6-8851-a8db91487843",
+      "last_name": "AMINU",
+      "medical_info": None,
+      "middle_name": "MARYAM",
+      "parent_email": None,
+      "parent_name": "MR/MRS JAMILA MUHA'D",
+      "parent_phone": "08066795028",
+      "parent_relationship": None,
+      "previous_school": None,
+      "remarks": None,
+      "updated_at": "2026-03-02T08:51:13.649444"
+    },
+    {
+      "address": None,
+      "created_at": "2026-03-02T08:51:13.649415",
+      "dob": "2009-05-05",
+      "email": "muhammed.bilya@arndaleacademy.com",
+      "first_name": "MUHAMMED",
+      "full_name": "MUHAMMED BILYA",
+      "gender": "male",
+      "id": "7cfa1915-7400-4c84-83f7-9185f4f4dcf8",
+      "last_name": "BILYA",
+      "medical_info": None,
+      "middle_name": "AUWAL",
+      "parent_email": None,
+      "parent_name": "MR/MRS BILYA",
+      "parent_phone": "08067501111",
+      "parent_relationship": None,
+      "previous_school": None,
+      "remarks": None,
+      "updated_at": "2026-03-02T08:51:13.649444"
+    },
+    {
+      "address": None,
+      "created_at": "2026-03-02T08:51:13.649415",
+      "dob": "2011-04-11",
+      "email": "gabriella.ezeadikwa@arndaleacademy.com",
+      "first_name": "GABRIELLA",
+      "full_name": "GABRIELLA EZEADIKWA",
+      "gender": "female",
+      "id": "94a6cca2-ac9e-4605-8a9e-a6c349a4af75",
+      "last_name": "EZEADIKWA",
+      "medical_info": None,
+      "middle_name": None,
+      "parent_email": None,
+      "parent_name": "DR/MRS EZEADIKWA",
+      "parent_phone": "08039377729",
+      "parent_relationship": None,
+      "previous_school": None,
+      "remarks": None,
+      "updated_at": "2026-03-02T08:51:13.649444"
+    },
+    {
+      "address": None,
+      "created_at": "2026-03-02T08:51:13.649415",
+      "dob": "2010-03-27",
+      "email": "fatimah-zeenah.abdulmalik@arndaleacademy.com",
+      "first_name": "FATIMAH-ZEENAH",
+      "full_name": "FATIMAH-ZEENAH ABDULMALIK",
+      "gender": "female",
+      "id": "31640b37-e385-47cd-a6b2-506946928203",
+      "last_name": "ABDULMALIK",
+      "medical_info": None,
+      "middle_name": None,
+      "parent_email": None,
+      "parent_name": "MR/MRS ABDULMALIK",
+      "parent_phone": "07035744711",
+      "parent_relationship": None,
+      "previous_school": None,
+      "remarks": None,
+      "updated_at": "2026-03-02T08:51:13.649444"
+    },
+    {
+      "address": None,
+      "created_at": "2026-03-02T08:51:13.649415",
+      "dob": "2010-04-13",
+      "email": "ifiemi.tekenah@arndaleacademy.com",
+      "first_name": "IFIEMI",
+      "full_name": "IFIEMI TEKENAH",
+      "gender": "male",
+      "id": "eaa729bb-ee3d-4e56-b6b5-af9585c53e15",
+      "last_name": "TEKENAH",
+      "medical_info": None,
+      "middle_name": "KURUMIOYE",
+      "parent_email": None,
+      "parent_name": "MR/MRS KURUMIOYE",
+      "parent_phone": "08165112033",
+      "parent_relationship": None,
+      "previous_school": None,
+      "remarks": None,
+      "updated_at": "2026-03-02T08:51:13.649444"
+    },
+    {
+      "address": None,
+      "created_at": "2026-03-02T08:51:13.649415",
+      "dob": "2009-03-26",
+      "email": "abdul-mannan.jimoh@arndaleacademy.com",
+      "first_name": "ABDUL-MANNAN",
+      "full_name": "ABDUL-MANNAN JIMOH",
+      "gender": "male",
+      "id": "503d0f36-e5d1-4313-8e90-b1529a210062",
+      "last_name": "JIMOH",
+      "medical_info": None,
+      "middle_name": None,
+      "parent_email": None,
+      "parent_name": "MR/MRS SIKIRU JIMOH",
+      "parent_phone": "08030714489",
+      "parent_relationship": None,
+      "previous_school": None,
+      "remarks": None,
+      "updated_at": "2026-03-02T08:51:13.649444"
+    },
+    {
+      "address": None,
+      "created_at": "2026-03-02T08:51:13.649415",
+      "dob": "2009-10-22",
+      "email": "shalom.kassim@arndaleacademy.com",
+      "first_name": "SHALOM",
+      "full_name": "SHALOM KASSIM",
+      "gender": "female",
+      "id": "edd31905-cf24-488b-aa69-1e7066f3085b",
+      "last_name": "KASSIM",
+      "medical_info": None,
+      "middle_name": "OLUWATUMILARA",
+      "parent_email": None,
+      "parent_name": "MR/MRS AHMED",
+      "parent_phone": "080364368819",
+      "parent_relationship": None,
+      "previous_school": None,
+      "remarks": None,
+      "updated_at": "2026-03-02T08:51:13.649444"
+    },
+    {
+      "address": None,
+      "created_at": "2026-03-02T08:51:13.649415",
+      "dob": "2010-06-02",
+      "email": "stephanie.mbaegbu@arndaleacademy.com",
+      "first_name": "STEPHANIE",
+      "full_name": "STEPHANIE MBAEGBU",
+      "gender": "female",
+      "id": "a761e1d1-2d6e-4f1a-8476-519d5620d3f2",
+      "last_name": "MBAEGBU",
+      "medical_info": None,
+      "middle_name": None,
+      "parent_email": None,
+      "parent_name": "MR/MRS EZIRIM",
+      "parent_phone": "08037884524",
+      "parent_relationship": None,
+      "previous_school": None,
+      "remarks": None,
+      "updated_at": "2026-03-02T08:51:13.649444"
+    },
+    {
+      "address": None,
+      "created_at": "2026-03-02T08:51:13.649415",
+      "dob": "2009-06-30",
+      "email": "miracle.obenwa@arndaleacademy.com",
+      "first_name": "MIRACLE",
+      "full_name": "MIRACLE OBENWA",
+      "gender": "female",
+      "id": "5a4851f5-a1a2-4cf9-b686-0d83bac5fe83",
+      "last_name": "OBENWA",
+      "medical_info": None,
+      "middle_name": "S",
+      "parent_email": None,
+      "parent_name": "DR LILIAN HELEN",
+      "parent_phone": "08035631071",
+      "parent_relationship": None,
+      "previous_school": None,
+      "remarks": None,
+      "updated_at": "2026-03-02T08:51:13.649444"
+    },
+    {
+      "address": None,
+      "created_at": "2026-03-02T08:51:13.649415",
+      "dob": "2009-06-23",
+      "email": "elvis.samuel@arndaleacademy.com",
+      "first_name": "ELVIS",
+      "full_name": "ELVIS SAMUEL",
+      "gender": "male",
+      "id": "ed2c4eee-3468-4853-b0d9-a7232741610e",
+      "last_name": "SAMUEL",
+      "medical_info": None,
+      "middle_name": "N",
+      "parent_email": None,
+      "parent_name": "MR/MRS SAMUEL",
+      "parent_phone": "08065335568",
+      "parent_relationship": None,
+      "previous_school": None,
+      "remarks": None,
+      "updated_at": "2026-03-02T08:51:13.649444"
+    }
+  ],
+    "success": True,
+}
+
+
+import re
+from datetime import datetime, timezone
+from flask import jsonify, request
+from sqlalchemy import func, text
+from sqlalchemy.exc import IntegrityError
+
+ADMISSION_PREFIX = "AAHS"
+ADMISSION_PAD = 5
+DEFAULT_DOMAIN = "arndaleacademy.com"
+
+# Put this in env in production (recommended)
+IMPORT_TOKEN = "RUN_ONCE_2029"  # change this
+
+def _parse_next_adm(latest: str | None) -> int:
+    if not latest:
+        return 1
+    m = re.match(rf"^{ADMISSION_PREFIX}(\d+)$", latest)
+    return int(m.group(1)) + 1 if m else 1
+
+def _fmt_adm(n: int) -> str:
+    return f"{ADMISSION_PREFIX}{n:0{ADMISSION_PAD}d}"
+
+def _clean(s):
+    if s is None:
+        return None
+    if isinstance(s, str):
+        s = s.strip()
+        return s if s else None
+    return s
+
+
+@app.route("/students/import-constant", methods=["GET"])
+def import_students_from_constant():
+    # ✅ token guard
+    token = request.args.get("token")
+    if token != IMPORT_TOKEN:
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+
+    class_id = STUDENTS_INFO["class_id"]
+    students = STUDENTS_INFO.get("students", [])
+
+    classroom = db.session.get(ClassRoom, class_id)
+    if not classroom:
+        return jsonify({"success": False, "message": "Class not found", "class_id": class_id}), 404
+
+    active_session = AcademicSession.query.filter_by(is_active=True).first()
+    if not active_session:
+        return jsonify({"success": False, "message": "No active academic session"}), 400
+
+    created, skipped, errors = [], [], []
+
+    try:
+        # ✅ Postgres-safe lock for this import transaction (no FOR UPDATE on MAX)
+        db.session.execute(text("SELECT pg_advisory_xact_lock(:k)"), {"k": 737001})
+
+        latest_adm = (
+            db.session.query(func.max(Student.admission_number))
+            .filter(Student.admission_number.like(f"{ADMISSION_PREFIX}%"))
+            .scalar()
+        )
+        next_num = _parse_next_adm(latest_adm)
+
+        for i, s in enumerate(students, start=1):
+            try:
+                first_name = _clean(s.get("first_name"))
+                last_name = _clean(s.get("last_name"))
+                middle_name = _clean(s.get("middle_name"))
+                gender = _clean((s.get("gender") or "").lower())
+                address = _clean(s.get("address"))
+
+                parent_name = _clean(s.get("parent_name"))
+                parent_phone = _clean(s.get("parent_phone"))
+                parent_email = _clean(s.get("parent_email"))
+
+                if not first_name or not last_name:
+                    skipped.append({"index": i, "reason": "Missing first_name/last_name"})
+                    continue
+
+                # DOB
+                dob = None
+                dob_str = _clean(s.get("dob"))
+                if dob_str:
+                    try:
+                        dob = datetime.strptime(dob_str, "%Y-%m-%d").date()
+                    except ValueError:
+                        dob = None
+
+                # Generate admission number and ensure it's not taken
+                # (extra safety if you ever re-run)
+                while True:
+                    admission_number = _fmt_adm(next_num)
+                    next_num += 1
+                    if not Student.query.filter_by(admission_number=admission_number).first():
+                        break
+
+                # Email
+                email = _clean(s.get("email")) or f"{admission_number.lower()}@{DEFAULT_DOMAIN}"
+
+                # If email exists already, skip
+                if User.query.filter_by(email=email).first():
+                    skipped.append({"index": i, "reason": "Email already exists", "email": email})
+                    continue
+
+                # If username exists already, skip (because username is unique)
+                if User.query.filter_by(username=admission_number).first():
+                    skipped.append({"index": i, "reason": "Username already exists", "username": admission_number})
+                    continue
+
+                user = User(
+                    username=admission_number,
+                    email=email,
+                    role="student",
+                    is_active=True,
+                    created_at=datetime.now(timezone.utc),
+                )
+                user.set_password(admission_number)
+                user.password_changed_at = datetime.now(timezone.utc)
+                db.session.add(user)
+                db.session.flush()
+
+                student = Student(
+                    user_id=user.id,
+                    admission_number=admission_number,
+                    first_name=first_name,
+                    last_name=last_name,
+                    middle_name=middle_name,
+                    date_of_birth=dob,
+                    gender=gender,
+                    address=address,
+                    parent_name=parent_name,
+                    parent_phone=parent_phone,
+                    parent_email=parent_email,
+                    current_class_id=class_id,
+                    enrollment_date=datetime.now(timezone.utc).date(),
+                    academic_status="active",
+                    is_active=True,
+                )
+                db.session.add(student)
+                db.session.flush()
+
+                created.append({
+                    "index": i,
+                    "student_id": student.id,
+                    "user_id": user.id,
+                    "admission_number": admission_number,
+                    "name": f"{first_name} {last_name}",
+                })
+
+            except IntegrityError as ie:
+                db.session.rollback()
+                errors.append({"index": i, "error": "IntegrityError", "details": str(ie)})
+                continue
+            except Exception as e:
+                db.session.rollback()
+                errors.append({"index": i, "error": str(e)})
+                continue
+
+        db.session.add(AuditLog(
+            user_id="a40a5fea-579a-4387-b0ab-59219ff1f8ee",
+            action="IMPORT_STUDENTS_CONSTANT",
+            table_name="students",
+            new_values={
+                "class_id": class_id,
+                "created": len(created),
+                "skipped": len(skipped),
+                "errors": len(errors),
+            },
+            ip_address=request.remote_addr,
+        ))
+
+        db.session.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Import complete. Delete/disable this route now.",
+            "class_id": class_id,
+            "created_count": len(created),
+            "skipped_count": len(skipped),
+            "error_count": len(errors),
+            "created": created,
+            "skipped": skipped,
+            "errors": errors,
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "message": str(e)}), 500   
+
+# See all endpoints
 @app.route('/debug/routes')
 def list_routes():
     import urllib.parse

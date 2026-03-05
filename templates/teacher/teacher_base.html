@@ -748,6 +748,12 @@
                         <span>Question Bank</span>
                     </a>
                 </div>
+                <div class="nav-item">
+                    <a href="{{ url_for('teacher.convert_mcq_txt_to_excel') }}" class="nav-link {% if request.endpoint == 'teacher.convert_mcq_txt_to_excel' %}active{% endif %}">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Convert MCQ TXT to Excel</span>
+                    </a>
+                </div>
             </div>
             
             <!-- Tools Section -->

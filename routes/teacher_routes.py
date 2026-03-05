@@ -2,6 +2,7 @@
 from flask import Blueprint, render_template, request, jsonify, flash, send_file, redirect, url_for, current_app, make_response
 from werkzeug.utils import secure_filename
 import os
+import re
 from flask_login import login_required, current_user
 from models import (
     db, User, Teacher, Student, Subject, SubjectAssignment, Assessment, 
@@ -1195,6 +1196,138 @@ def bulk_upload_questions():
     
     # GET request - show upload form
     return render_template('teacher/bulk_upload.html', teacher=teacher)
+
+
+
+LETTER_TO_INDEX = {"A":1, "B":2, "C":3, "D":4}
+
+def parse_mcq_text_to_rows(text):
+
+    text = text.replace("\r\n","\n").replace("\r","\n").strip()
+
+    # Split by question numbers
+    blocks = re.split(r"\n\s*(?=\d+\.\s)", text)
+
+    questions = []
+
+    for block in blocks:
+
+        block = block.strip()
+        if not block:
+            continue
+
+        lines = [l.strip() for l in block.split("\n") if l.strip()]
+
+        if not re.match(r"^\d+\.", lines[0]):
+            continue
+
+        question_text = re.sub(r"^\d+\.\s*", "", lines[0]).strip()
+
+        options = {1:None,2:None,3:None,4:None}
+        correct_index = None
+
+        for line in lines[1:]:
+
+            # Accept multiple formats
+            match = re.match(r"^([A-Da-d])[\)\.\:\-\s]\s*(.+)", line)
+
+            if not match:
+                continue
+
+            letter = match.group(1).upper()
+            option_text = match.group(2).strip()
+
+            # Detect correct marker
+            if "*" in option_text:
+                correct_index = LETTER_TO_INDEX[letter]
+                option_text = option_text.replace("*","").strip()
+
+            idx = LETTER_TO_INDEX[letter]
+            options[idx] = option_text
+
+        # Ensure 4 options exist
+        if not all(options.values()):
+            continue
+
+        questions.append({
+            "question_text": question_text,
+            "option_1": options[1],
+            "option_2": options[2],
+            "option_3": options[3],
+            "option_4": options[4],
+            "correct_option": correct_index,
+            "correct_answer": options.get(correct_index)
+        })
+
+    return questions
+
+
+import io
+from flask import request, render_template, send_file
+import openpyxl
+
+HEADERS = [
+    "subject_code", "question_text", "question_type", "difficulty", "marks",
+    "option_1", "option_2", "option_3", "option_4",
+    "correct_option", "correct_answer", "explanation", "topics"
+]
+
+@teacher_bp.route("/tools/convert-mcq-txt", methods=["GET", "POST"])
+def convert_mcq_txt_to_excel():
+    if request.method == "GET":
+        return render_template("tools/upload_questions_txt.html")
+
+    f = request.files.get("question_file")
+    if not f or not f.filename.strip():
+        return "No TXT file uploaded", 400
+
+    text = f.read().decode("utf-8", errors="ignore")
+    items = parse_mcq_text_to_rows(text)
+
+    subject_code = (request.form.get("subject_code") or "PHYSS1").strip()
+    difficulty = (request.form.get("difficulty") or "medium").strip()
+    marks = request.form.get("marks") or "1"
+
+    # Optional columns (leave blank unless user provided)
+    explanation = (request.form.get("explanation") or "").strip()
+    topics = (request.form.get("topics") or "").strip()
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "questions"
+
+    ws.append(HEADERS)
+
+    for q in items:
+        ws.append([
+            subject_code,
+            q["question_text"],
+            "multiple_choice",
+            difficulty,
+            float(marks),
+
+            q["option_1"],
+            q["option_2"],
+            q["option_3"],
+            q["option_4"],
+
+            q["correct_option"] or "",   # required by your system
+            "",                          # correct_answer OPTIONAL -> keep blank
+            explanation,                 # optional
+            topics,                      # optional
+        ])
+
+    out = io.BytesIO()
+    wb.save(out)
+    out.seek(0)
+
+    return send_file(
+        out,
+        as_attachment=True,
+        download_name=f"{subject_code}_bulk_upload.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
 
 @teacher_bp.route('/question-bank/download-template')
 @login_required

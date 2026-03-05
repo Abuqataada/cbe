@@ -1,0 +1,593 @@
+{% extends "teacher/teacher_base.html" %}
+
+{% block title %}Convert Questions TXT to Excel{% endblock %}
+
+{% block page_title %}
+<h1><i class="fas fa-file-export"></i> Convert Questions</h1>
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="separator">/</span>
+<span>Question Bank</span>
+<span class="separator">/</span>
+<span>Convert TXT to Excel</span>
+{% endblock %}
+
+{% block content %}
+<!-- Welcome Card Style Header -->
+<div class="welcome-card">
+    <div class="welcome-content">
+        <h3>📄 TXT to Excel Converter</h3>
+        <p>Upload your formatted text file with MCQs and convert them to Excel format for easy import.</p>
+        <div class="welcome-meta">
+            <span class="meta-badge">
+                <i class="fas fa-info-circle me-1"></i>
+                Use * to mark correct answers
+            </span>
+            <span class="meta-badge">
+                <i class="fas fa-file-alt me-1"></i>
+                Supports .txt files
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Grid Style Info -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon-wrapper">
+            <i class="fas fa-check-circle stat-icon"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">*</div>
+            <div class="stat-label">Asterisk marks correct answer</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon-wrapper">
+            <i class="fas fa-arrow-right stat-icon"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">B) *</div>
+            <div class="stat-label">Example: B) Energy *</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon-wrapper">
+            <i class="fas fa-file-excel stat-icon"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">Excel</div>
+            <div class="stat-label">Output format</div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon-wrapper">
+            <i class="fas fa-tags stat-icon"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">Batch</div>
+            <div class="stat-label">Process multiple questions</div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Form - Compact Container Style -->
+<div class="compact-container">
+    <div class="section-header">
+        <h3 class="section-title"><i class="fas fa-upload"></i> Upload Questions File</h3>
+    </div>
+    
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('teacher.convert_mcq_txt_to_excel') }}">
+        <!-- File Upload -->
+        <div class="compact-item" style="flex-direction: column; align-items: flex-start;">
+            <div style="width: 100%;">
+                <label class="form-label fw-semibold mb-2">Questions TXT File</label>
+                <input type="file" name="question_file" class="form-control" accept=".txt" required>
+                <small class="text-muted d-block mt-2">
+                    <i class="fas fa-info-circle me-1 text-primary"></i>
+                    Format: Each question with options, use <code>*</code> for correct answer
+                </small>
+            </div>
+        </div>
+
+        <!-- Quick Actions Style Row -->
+        <div class="action-grid" style="margin-top: 1rem; margin-bottom: 1rem;">
+            <div style="background: none; padding: 0; border: none; box-shadow: none;">
+                <label class="form-label fw-semibold">Subject Code</label>
+                <input type="text" name="subject_code" class="form-control" value="PHY" required>
+            </div>
+            
+            <div style="background: none; padding: 0; border: none; box-shadow: none;">
+                <label class="form-label fw-semibold">Difficulty</label>
+                <select name="difficulty" class="form-select">
+                    <option value="easy">Easy</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
+            </div>
+            
+            <div style="background: none; padding: 0; border: none; box-shadow: none;">
+                <label class="form-label fw-semibold">Marks</label>
+                <input type="number" name="marks" class="form-control" value="1" step="0.5">
+            </div>
+        </div>
+
+        <!-- Optional Fields -->
+        <div class="compact-item" style="flex-direction: column; align-items: flex-start; margin-bottom: 1rem;">
+            <div style="width: 100%;">
+                <label class="form-label fw-semibold mb-2">Topics (optional)</label>
+                <input type="text" name="topics" class="form-control" placeholder="e.g. Heat, Temperature, Expansion">
+                <small class="text-muted d-block mt-2">
+                    <i class="fas fa-tag me-1 text-primary"></i>
+                    Applied to all questions in the export
+                </small>
+            </div>
+        </div>
+
+        <div class="compact-item" style="flex-direction: column; align-items: flex-start; margin-bottom: 1.5rem;">
+            <div style="width: 100%;">
+                <label class="form-label fw-semibold mb-2">Explanation (optional)</label>
+                <textarea name="explanation" class="form-control" rows="3" placeholder="Optional explanation applied to all questions"></textarea>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="section-header" style="border-bottom: none; padding-bottom: 0;">
+            <button type="submit" class="btn btn-primary" style="padding: 0.6rem 1.5rem;">
+                <i class="fas fa-file-excel me-2"></i>
+                Generate Excel File
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Format Guide -->
+<div class="row">
+    <div class="col-lg-12 mb-3">
+        <div class="compact-container">
+            <div class="section-header">
+                <h3 class="section-title"><i class="fas fa-info-circle"></i> File Format Guide</h3>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="upcoming-item" style="margin-bottom: 0.75rem;">
+                        <h6 class="upcoming-title">✅ Correct Format Example</h6>
+                        <div class="upcoming-meta" style="margin-bottom: 0.25rem;">
+                            <code>What is the capital of France?</code><br>
+                            <code>A) London</code><br>
+                            <code>B) Paris *</code><br>
+                            <code>C) Berlin</code><br>
+                            <code>D) Madrid</code>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="upcoming-item" style="margin-bottom: 0.75rem;">
+                        <h6 class="upcoming-title">📝 Key Points</h6>
+                        <div class="upcoming-meta">
+                            <ul style="padding-left: 1.2rem; margin-bottom: 0;">
+                                <li>Place <code>*</code> after the correct option</li>
+                                <li>One question per block</li>
+                                <li>Options labeled A), B), C), D)</li>
+                                <li>Question and options on separate lines</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sample Badge -->
+            <div class="mt-3">
+                <span class="status-badge status-scheduled" style="font-size: 0.75rem;">
+                    <i class="fas fa-circle"></i>
+                    Multiple questions supported
+                </span>
+                <span class="status-badge status-active" style="font-size: 0.75rem; margin-left: 0.5rem;">
+                    <i class="fas fa-circle"></i>
+                    Blank lines separate questions
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="section-header">
+    <h3 class="section-title"><i class="fas fa-bolt"></i> Quick Actions</h3>
+</div>
+
+<div class="action-grid">
+    <a href="{{ url_for('teacher.question_bank') }}" class="action-card">
+        <div class="action-icon-wrapper">
+            <i class="fas fa-database action-icon"></i>
+        </div>
+        <h4 class="action-title">Question Bank</h4>
+        <p class="action-description">View all questions</p>
+    </a>
+    
+    <a href="{{ url_for('teacher.exams') }}" class="action-card">
+        <div class="action-icon-wrapper">
+            <i class="fas fa-plus-circle action-icon"></i>
+        </div>
+        <h4 class="action-title">Create Exam</h4>
+        <p class="action-description">Set up new exam</p>
+    </a>
+    
+    <a href="#" class="action-card">
+        <div class="action-icon-wrapper">
+            <i class="fas fa-download action-icon"></i>
+        </div>
+        <h4 class="action-title">Sample Format</h4>
+        <p class="action-description">Download template</p>
+    </a>
+</div>
+
+<style>
+    /* Keep all the existing styles from the dashboard */
+    /* Welcome Card */
+    .welcome-card {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-radius: 14px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .welcome-content h3 {
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        font-size: 1.4rem;
+        line-height: 1.3;
+    }
+    
+    .welcome-content p {
+        opacity: 0.9;
+        margin-bottom: 0.75rem;
+        font-size: 0.95rem;
+    }
+    
+    .welcome-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+    
+    .meta-badge {
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 8px;
+        padding: 0.4rem 0.75rem;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.25rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 3px 15px rgba(0, 0, 0, 0.04);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.12);
+        border-color: #bbf7d0;
+    }
+    
+    .stat-card::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+    }
+    
+    .stat-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.08) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.75rem;
+    }
+    
+    .stat-icon {
+        font-size: 1.4rem;
+        color: #10b981;
+    }
+    
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin: 0.25rem 0;
+        line-height: 1;
+    }
+    
+    .stat-label {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin: 0;
+        font-weight: 500;
+        line-height: 1.3;
+    }
+    
+    /* Section Headers */
+    .section-header {
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .section-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0;
+    }
+    
+    .section-title i {
+        color: #10b981;
+        font-size: 1rem;
+    }
+    
+    /* Quick Actions */
+    .action-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .action-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.25rem;
+        border: 1px solid #e2e8f0;
+        text-decoration: none;
+        color: #334155;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04);
+    }
+    
+    .action-card:hover {
+        transform: translateY(-3px);
+        border-color: #10b981;
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.12);
+        color: #10b981;
+    }
+    
+    .action-icon-wrapper {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.75rem;
+    }
+    
+    .action-icon {
+        font-size: 1.4rem;
+        color: white;
+    }
+    
+    .action-title {
+        font-size: 1rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+    }
+    
+    .action-description {
+        font-size: 0.8rem;
+        color: #64748b;
+        line-height: 1.3;
+    }
+    
+    /* Compact Container */
+    .compact-container {
+        background: white;
+        border-radius: 12px;
+        padding: 1.25rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04);
+        margin-bottom: 1.5rem;
+    }
+    
+    .compact-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem;
+        border-radius: 8px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 0.75rem;
+        transition: all 0.2s ease;
+    }
+    
+    .compact-item:hover {
+        background: white;
+        border-color: #bbf7d0;
+        box-shadow: 0 3px 10px rgba(16, 185, 129, 0.08);
+    }
+    
+    .compact-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    /* Form Controls */
+    .form-control, .form-select {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        outline: none;
+    }
+    
+    .form-label {
+        color: #1e293b;
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    /* Status Badges */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+    
+    .status-scheduled { background: rgba(59, 130, 246, 0.08); color: #2563eb; }
+    .status-active { background: rgba(16, 185, 129, 0.08); color: #10b981; }
+    
+    /* Upcoming Item for examples */
+    .upcoming-item {
+        background: white;
+        border-radius: 8px;
+        padding: 0.75rem;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s ease;
+    }
+    
+    .upcoming-item:hover {
+        border-color: #10b981;
+        box-shadow: 0 3px 10px rgba(16, 185, 129, 0.08);
+    }
+    
+    .upcoming-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        color: #1e293b;
+    }
+    
+    .upcoming-meta {
+        font-size: 0.75rem;
+        color: #64748b;
+        line-height: 1.3;
+    }
+    
+    /* Button */
+    .btn-primary {
+        background: #10b981;
+        border-color: #10b981;
+        font-weight: 500;
+    }
+    
+    .btn-primary:hover {
+        background: #059669;
+        border-color: #059669;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .welcome-card {
+            padding: 1.25rem;
+        }
+        
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+        
+        .action-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .compact-container {
+            padding: 1rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .action-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    /* Code styling */
+    code {
+        background: #eef2f6;
+        color: #059669;
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Smooth loading animations
+        const fadeElements = document.querySelectorAll('.welcome-card, .stat-card, .compact-container, .action-card');
+        fadeElements.forEach((el, index) => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(10px)';
+            setTimeout(() => {
+                el.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
+            }, index * 50);
+        });
+        
+        // File input enhancement
+        const fileInput = document.querySelector('input[type="file"]');
+        if (fileInput) {
+            fileInput.addEventListener('change', function(e) {
+                const fileName = e.target.files[0]?.name;
+                if (fileName) {
+                    this.style.borderColor = '#10b981';
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
