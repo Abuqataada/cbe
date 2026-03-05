@@ -12,6 +12,10 @@ from models import (
     AuditLog, LearningMaterial, StudentMaterialDownload, ExamQuestionAnalysis,
     StudentPerformanceAnalysis, TeacherReport, ExamResponse, AssessmentScoreMapping
 )
+
+from utils.cloudinary_helper import cloudinary_helper
+
+
 import mimetypes
 from utils.decorators import teacher_required
 from datetime import datetime, timezone, timedelta, date
@@ -22,6 +26,7 @@ from services.ai_analysis_service import AIAnalysisService
 import json
 
 teacher_bp = Blueprint('teacher', __name__, url_prefix='/teacher')
+
 
 # =========================
 # Teacher Dashboard Routes
@@ -616,71 +621,139 @@ def question_bank():
                          subjects=teacher_subjects,
                          current_term=current_term)
 
-@teacher_bp.route('/question-bank/add', methods=['GET', 'POST'])
+
+# ----------------------------
+# Helpers
+# ----------------------------
+def _using_cloudinary() -> bool:
+    return (current_app.config.get("STORAGE_TYPE") or "local").lower() == "cloudinary"
+
+
+def _save_local(file_storage, subfolder: str, filename_prefix: str) -> str:
+    """
+    Save locally into: <app_root>/static/uploads/<subfolder>/<unique_filename>
+    Return a URL path: /static/uploads/<subfolder>/<unique_filename>
+    """
+    filename = secure_filename(file_storage.filename)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    unique_filename = f"{filename_prefix}_{ts}_{filename}"
+
+    upload_dir = os.path.join(current_app.root_path, "static", "uploads", subfolder)
+    os.makedirs(upload_dir, exist_ok=True)
+
+    filepath = os.path.join(upload_dir, unique_filename)
+    file_storage.save(filepath)
+
+    return f"/static/uploads/{subfolder}/{unique_filename}"
+
+
+def _cloudinary_public_id_from_url(url: str) -> str | None:
+    """
+    Best-effort public_id extraction from Cloudinary secure_url.
+    Used for deletion if you did not store public_id in DB.
+    """
+    if not url or "res.cloudinary.com" not in url or "/upload/" not in url:
+        return None
+    try:
+        after = url.split("/upload/")[1]  # may start with v123/...
+        if after.startswith("v"):
+            after = after.split("/", 1)[1]
+        # strip extension
+        return after.rsplit(".", 1)[0]
+    except Exception:
+        return None
+
+
+def _delete_media(url: str) -> bool:
+    """
+    Delete media from whichever storage was used.
+    - local: deletes file if under /static/...
+    - cloudinary: tries to delete by derived public_id
+    """
+    if not url:
+        return False
+
+    # local
+    if url.startswith("/static/"):
+        rel = url[len("/static/"):]
+        full = os.path.join(current_app.root_path, "static", rel)
+        if os.path.exists(full):
+            os.remove(full)
+            return True
+        return False
+
+    # cloudinary (best effort)
+    public_id = _cloudinary_public_id_from_url(url)
+    if public_id:
+        res = cloudinary_helper.delete_file(public_id)
+        return bool(res.get("success"))
+
+    return False
+
+
+def _upload_question_image(file_storage, question_id_hint: str) -> str:
+    """Return URL (local or cloud)"""
+    if _using_cloudinary():
+        # Prefer stable public_id per question record/id hint
+        res = cloudinary_helper.upload_question_image(file_storage, question_id_hint)
+        if not res.get("success"):
+            raise RuntimeError(res.get("error") or "Cloudinary upload failed")
+        return res["url"]
+    return _save_local(file_storage, "questions", "question")
+
+
+def _upload_option_image(file_storage, option_id_hint: str) -> str:
+    """Return URL (local or cloud)"""
+    if _using_cloudinary():
+        res = cloudinary_helper.upload_option_image(file_storage, option_id_hint)
+        if not res.get("success"):
+            raise RuntimeError(res.get("error") or "Cloudinary upload failed")
+        return res["url"]
+    return _save_local(file_storage, "options", f"option_{option_id_hint}")
+
+
+# ============================================================
+# ✅ ADD QUESTION
+# ============================================================
+@teacher_bp.route("/question-bank/add", methods=["GET", "POST"])
 @login_required
 @teacher_required
 def add_question():
-    """Add a new question to the question bank"""
     teacher = Teacher.query.filter_by(user_id=current_user.id).first_or_404()
-    
+
     # Get subjects assigned to teacher
     current_term = AcademicTerm.query.filter_by(is_active=True).first()
     assigned_subjects = []
-    
     if current_term:
         assignments = SubjectAssignment.query.filter_by(
             teacher_id=teacher.id,
             academic_term_id=current_term.id,
             is_active=True
         ).all()
-        
+
+        seen = set()
         for assignment in assignments:
             subject = Subject.query.get(assignment.subject_id)
             classroom = ClassRoom.query.get(assignment.class_id)
-            
-            if subject and subject.id not in [s['subject'].id for s in assigned_subjects]:
-                assigned_subjects.append({
-                    'subject': subject,
-                    'classroom': classroom
-                })
-    
-    if request.method == 'POST':
+            if subject and subject.id not in seen:
+                assigned_subjects.append({"subject": subject, "classroom": classroom})
+                seen.add(subject.id)
+
+    if request.method == "POST":
         try:
-            subject_id = request.form.get('subject_id')
-            question_text = request.form.get('question_text')
-            question_type = request.form.get('question_type')
-            difficulty = request.form.get('difficulty')
-            marks = request.form.get('marks', 1.0)
-            explanation = request.form.get('explanation')
-            topics = request.form.get('topics', '')
-            
-            # Validate required fields
+            subject_id = request.form.get("subject_id")
+            question_text = request.form.get("question_text")
+            question_type = request.form.get("question_type")
+            difficulty = request.form.get("difficulty")
+            marks = request.form.get("marks", 1.0)
+            explanation = request.form.get("explanation")
+            topics = request.form.get("topics", "")
+
             if not all([subject_id, question_text, question_type]):
-                flash('Please fill in all required fields', 'danger')
-                return redirect(url_for('teacher.add_question'))
-            
-            # Handle question image upload
-            question_image = None
-            question_image_filename = None
-            if 'question_image' in request.files:
-                image_file = request.files['question_image']
-                if image_file and image_file.filename != '':
-                    # Secure the filename
-                    filename = secure_filename(image_file.filename)
-                    # Create unique filename
-                    unique_filename = f"question_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{filename}"
-                    
-                    # Create uploads directory if it doesn't exist
-                    upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'questions')
-                    os.makedirs(upload_dir, exist_ok=True)
-                    
-                    # Save the file
-                    filepath = os.path.join(upload_dir, unique_filename)
-                    image_file.save(filepath)
-                    question_image = f"/static/uploads/questions/{unique_filename}"
-                    question_image_filename = unique_filename
-            
-            # Create question object
+                flash("Please fill in all required fields", "danger")
+                return redirect(url_for("teacher.add_question"))
+
+            # Create question FIRST so we have a stable id for cloudinary public_id
             question = QuestionBank(
                 subject_id=subject_id,
                 teacher_id=teacher.id,
@@ -691,375 +764,320 @@ def add_question():
                 explanation=explanation,
                 created_by=current_user.id,
                 is_approved=False,
-                question_image=question_image
+                question_image=None
             )
-            
+            db.session.add(question)
+            db.session.flush()  # ✅ now question.id exists
+
+            # Question image upload (local OR cloudinary)
+            if "question_image" in request.files:
+                image_file = request.files["question_image"]
+                if image_file and image_file.filename:
+                    question.question_image = _upload_question_image(
+                        image_file,
+                        question_id_hint=str(question.id)
+                    )
+
             # Handle question type specific fields
-            if question_type in ['multiple_choice', 'true_false']:
+            if question_type in ["multiple_choice", "true_false"]:
                 options = []
                 correct_answer = None
-                
-                if question_type == 'multiple_choice':
-                    option_count = int(request.form.get('option_count', 4))
-                    
-                    # Handle option images
+
+                if question_type == "multiple_choice":
+                    option_count = int(request.form.get("option_count", 4))
+
+                    # Upload option images first (so we can attach them)
                     option_images = {}
-                    for i in range(1, 6):  # Max 5 options
-                        image_key = f'option_image_{i}'
-                        if image_key in request.files:
-                            image_file = request.files[image_key]
-                            if image_file and image_file.filename != '':
-                                filename = secure_filename(image_file.filename)
-                                unique_filename = f"option_{i}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{filename}"
-                                
-                                upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'options')
-                                os.makedirs(upload_dir, exist_ok=True)
-                                
-                                filepath = os.path.join(upload_dir, unique_filename)
-                                image_file.save(filepath)
-                                option_images[str(i)] = f"/static/uploads/options/{unique_filename}"
-                    
+                    for i in range(1, 6):
+                        key = f"option_image_{i}"
+                        if key in request.files:
+                            img = request.files[key]
+                            if img and img.filename:
+                                # use question.id + option index for unique, stable id
+                                option_images[str(i)] = _upload_option_image(
+                                    img,
+                                    option_id_hint=f"{question.id}_{i}"
+                                )
+
                     for i in range(1, option_count + 1):
-                        option_text = request.form.get(f'option_{i}')
+                        option_text = request.form.get(f"option_{i}")
                         if option_text:
-                            is_correct = request.form.get(f'correct_option') == str(i)
-                            option_data = {
-                                'text': option_text,
-                                'is_correct': is_correct
-                            }
-                            
-                            # Add image if exists for this option
+                            is_correct = request.form.get("correct_option") == str(i)
+                            opt = {"text": option_text, "is_correct": is_correct}
                             if str(i) in option_images:
-                                option_data['image'] = option_images[str(i)]
-                            
-                            options.append(option_data)
+                                opt["image"] = option_images[str(i)]
+                            options.append(opt)
                             if is_correct:
                                 correct_answer = option_text
-                
-                elif question_type == 'true_false':
-                    options = [
-                        {'text': 'True', 'is_correct': False},
-                        {'text': 'False', 'is_correct': False}
-                    ]
-                    correct_answer = request.form.get('correct_tf')
-                    if correct_answer == 'true':
-                        options[0]['is_correct'] = True
-                        correct_answer = 'True'
+
+                else:  # true_false
+                    options = [{"text": "True", "is_correct": False}, {"text": "False", "is_correct": False}]
+                    correct_tf = request.form.get("correct_tf")
+                    if correct_tf == "true":
+                        options[0]["is_correct"] = True
+                        correct_answer = "True"
                     else:
-                        options[1]['is_correct'] = True
-                        correct_answer = 'False'
-                
+                        options[1]["is_correct"] = True
+                        correct_answer = "False"
+
                 question.options = options
                 question.correct_answer = correct_answer
-            
-            elif question_type == 'short_answer':
-                correct_answer = request.form.get('short_answer')
-                question.correct_answer = correct_answer
-            
-            elif question_type == 'essay':
-                # Essay questions don't have a single correct answer
+
+            elif question_type == "short_answer":
+                question.correct_answer = request.form.get("short_answer")
+
+            elif question_type == "essay":
                 question.correct_answer = None
-            
-            # Handle topics
+
+            # Topics
             if topics:
-                topic_list = [t.strip() for t in topics.split(',')]
-                question.topics = topic_list
-            
-            db.session.add(question)
-            
-            # Log action
-            audit_log = AuditLog(
+                question.topics = [t.strip() for t in topics.split(",") if t.strip()]
+
+            # Audit log
+            db.session.add(AuditLog(
                 user_id=current_user.id,
-                action='ADD_QUESTION',
-                table_name='question_banks',
+                action="ADD_QUESTION",
+                table_name="question_banks",
                 record_id=question.id,
                 details={
-                    'subject_id': subject_id,
-                    'question_type': question_type,
-                    'difficulty': difficulty,
-                    'has_image': question_image is not None
+                    "subject_id": subject_id,
+                    "question_type": question_type,
+                    "difficulty": difficulty,
+                    "has_image": bool(question.question_image),
+                    "storage": "cloudinary" if _using_cloudinary() else "local",
                 },
                 ip_address=request.remote_addr
-            )
-            db.session.add(audit_log)
-            
+            ))
+
             db.session.commit()
-            
-            flash('Question added successfully!', 'success')
-            return redirect(url_for('teacher.question_bank'))
-        
+            flash("Question added successfully!", "success")
+            return redirect(url_for("teacher.question_bank"))
+
         except Exception as e:
             db.session.rollback()
-            flash(f'Error adding question: {str(e)}', 'danger')
-            return redirect(url_for('teacher.add_question'))
-    
-    return render_template('teacher/add_question.html',
-                         teacher=teacher,
-                         assigned_subjects=assigned_subjects)
+            flash(f"Error adding question: {str(e)}", "danger")
+            return redirect(url_for("teacher.add_question"))
 
-@teacher_bp.route('/question-bank/edit/<question_id>', methods=['GET', 'POST'])
+    return render_template(
+        "teacher/add_question.html",
+        teacher=teacher,
+        assigned_subjects=assigned_subjects
+    )
+
+
+# ============================================================
+# ✅ EDIT QUESTION
+# ============================================================
+@teacher_bp.route("/question-bank/edit/<question_id>", methods=["GET", "POST"])
 @login_required
 @teacher_required
 def edit_question(question_id):
-    """Edit a question in the question bank"""
     teacher = Teacher.query.filter_by(user_id=current_user.id).first_or_404()
     question = QuestionBank.query.get_or_404(question_id)
-    
-    # Verify ownership
+
     if question.teacher_id != teacher.id:
-        flash('You do not have permission to edit this question', 'danger')
-        return redirect(url_for('teacher.question_bank'))
-    
+        flash("You do not have permission to edit this question", "danger")
+        return redirect(url_for("teacher.question_bank"))
+
     # Get subjects assigned to teacher
     current_term = AcademicTerm.query.filter_by(is_active=True).first()
     assigned_subjects = []
-    
     if current_term:
         assignments = SubjectAssignment.query.filter_by(
             teacher_id=teacher.id,
             academic_term_id=current_term.id,
             is_active=True
         ).all()
-        
+
+        seen = set()
         for assignment in assignments:
             subject = Subject.query.get(assignment.subject_id)
-            if subject and subject.id not in [s['subject'].id for s in assigned_subjects]:
-                assigned_subjects.append({
-                    'subject': subject
-                })
-    
-    if request.method == 'POST':
+            if subject and subject.id not in seen:
+                assigned_subjects.append({"subject": subject})
+                seen.add(subject.id)
+
+    if request.method == "POST":
         try:
-            # Update basic fields
-            question.question_text = request.form.get('question_text')
-            question.difficulty = request.form.get('difficulty')
-            question.marks = float(request.form.get('marks', 1.0))
-            question.explanation = request.form.get('explanation')
-            
-            # Handle topics
-            topics = request.form.get('topics', '')
-            if topics:
-                question.topics = [t.strip() for t in topics.split(',') if t.strip()]
-            else:
-                question.topics = []
-            
-            # Handle question image upload
-            if 'question_image' in request.files:
-                image_file = request.files['question_image']
-                if image_file and image_file.filename != '':
-                    # Secure the filename
-                    filename = secure_filename(image_file.filename)
-                    # Create unique filename
-                    unique_filename = f"question_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{filename}"
-                    
-                    # Create uploads directory if it doesn't exist
-                    upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'questions')
-                    os.makedirs(upload_dir, exist_ok=True)
-                    
-                    # Save the file
-                    filepath = os.path.join(upload_dir, unique_filename)
-                    image_file.save(filepath)
-                    question.question_image = f"/static/uploads/questions/{unique_filename}"
-                elif request.form.get('remove_question_image') == 'true':
-                    # Remove existing image if requested
-                    question.question_image = None
-            
-            # Handle question type specific fields
-            if question.question_type in ['multiple_choice', 'true_false']:
-                if question.question_type == 'multiple_choice':
+            question.question_text = request.form.get("question_text")
+            question.difficulty = request.form.get("difficulty")
+            question.marks = float(request.form.get("marks", 1.0))
+            question.explanation = request.form.get("explanation")
+
+            # topics
+            topics = request.form.get("topics", "")
+            question.topics = [t.strip() for t in topics.split(",") if t.strip()] if topics else []
+
+            # Question image handling
+            if request.form.get("remove_question_image") == "true":
+                _delete_media(question.question_image)
+                question.question_image = None
+
+            if "question_image" in request.files:
+                image_file = request.files["question_image"]
+                if image_file and image_file.filename:
+                    # replace old
+                    _delete_media(question.question_image)
+                    question.question_image = _upload_question_image(image_file, str(question.id))
+
+            # Options + correct answer for MCQ/TF
+            if question.question_type in ["multiple_choice", "true_false"]:
+                if question.question_type == "multiple_choice":
+                    existing_options = question.options or []
+                    option_count = int(request.form.get("option_count", len(existing_options) or 4))
+
+                    option_images_new = {}       # newly uploaded images
+                    option_images_remove = set() # options requested to remove image
+
+                    for i in range(1, 6):
+                        key = f"option_image_{i}"
+                        if key in request.files:
+                            img = request.files[key]
+                            if img and img.filename:
+                                option_images_new[str(i)] = _upload_option_image(img, f"{question.id}_{i}")
+
+                        if request.form.get(f"remove_option_image_{i}") == "true":
+                            option_images_remove.add(str(i))
+
                     options = []
                     correct_answer = None
-                    option_count = int(request.form.get('option_count', len(question.options or [])))
-                    
-                    # Handle option images
-                    option_images = {}
-                    for i in range(1, 6):  # Max 5 options
-                        image_key = f'option_image_{i}'
-                        if image_key in request.files:
-                            image_file = request.files[image_key]
-                            if image_file and image_file.filename != '':
-                                filename = secure_filename(image_file.filename)
-                                unique_filename = f"option_{i}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{filename}"
-                                
-                                upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'options')
-                                os.makedirs(upload_dir, exist_ok=True)
-                                
-                                filepath = os.path.join(upload_dir, unique_filename)
-                                image_file.save(filepath)
-                                option_images[str(i)] = f"/static/uploads/options/{unique_filename}"
-                        elif request.form.get(f'remove_option_image_{i}') == 'true':
-                            # Mark image for removal
-                            option_images[str(i)] = None
-                    
+
                     for i in range(1, option_count + 1):
-                        option_text = request.form.get(f'option_{i}')
-                        if option_text:
-                            is_correct = request.form.get(f'correct_option') == str(i)
-                            option_data = {
-                                'text': option_text,
-                                'is_correct': is_correct
-                            }
-                            
-                            # Handle option images
-                            if str(i) in option_images:
-                                if option_images[str(i)] is None:
-                                    # Remove existing image
-                                    option_data['image'] = None
-                                else:
-                                    # Add new image
-                                    option_data['image'] = option_images[str(i)]
-                            elif question.options and i-1 < len(question.options) and 'image' in question.options[i-1]:
-                                # Keep existing image
-                                option_data['image'] = question.options[i-1]['image']
-                            
-                            options.append(option_data)
-                            if is_correct:
-                                correct_answer = option_text
-                    
+                        option_text = request.form.get(f"option_{i}")
+                        if not option_text:
+                            continue
+
+                        is_correct = request.form.get("correct_option") == str(i)
+                        opt = {"text": option_text, "is_correct": is_correct}
+
+                        # determine old image (if any)
+                        old_img = None
+                        if i - 1 < len(existing_options) and isinstance(existing_options[i - 1], dict):
+                            old_img = existing_options[i - 1].get("image")
+
+                        # remove image if requested
+                        if str(i) in option_images_remove:
+                            _delete_media(old_img)
+                            opt["image"] = None
+                        # new upload overrides old
+                        elif str(i) in option_images_new:
+                            _delete_media(old_img)
+                            opt["image"] = option_images_new[str(i)]
+                        # keep old
+                        elif old_img:
+                            opt["image"] = old_img
+
+                        options.append(opt)
+                        if is_correct:
+                            correct_answer = option_text
+
                     question.options = options
                     question.correct_answer = correct_answer
-                
-                elif question.question_type == 'true_false':
-                    correct_answer = request.form.get('correct_tf')
-                    if correct_answer == 'true':
-                        question.options = [
-                            {'text': 'True', 'is_correct': True},
-                            {'text': 'False', 'is_correct': False}
-                        ]
-                        question.correct_answer = 'True'
+
+                else:  # true_false
+                    correct_tf = request.form.get("correct_tf")
+                    if correct_tf == "true":
+                        question.options = [{"text": "True", "is_correct": True}, {"text": "False", "is_correct": False}]
+                        question.correct_answer = "True"
                     else:
-                        question.options = [
-                            {'text': 'True', 'is_correct': False},
-                            {'text': 'False', 'is_correct': True}
-                        ]
-                        question.correct_answer = 'False'
-            
-            elif question.question_type == 'short_answer':
-                question.correct_answer = request.form.get('short_answer')
-            
+                        question.options = [{"text": "True", "is_correct": False}, {"text": "False", "is_correct": True}]
+                        question.correct_answer = "False"
+
+            elif question.question_type == "short_answer":
+                question.correct_answer = request.form.get("short_answer")
+
             question.updated_at = datetime.now(timezone.utc)
-            
-            # Log action
-            audit_log = AuditLog(
+
+            db.session.add(AuditLog(
                 user_id=current_user.id,
-                action='EDIT_QUESTION',
-                table_name='question_banks',
+                action="EDIT_QUESTION",
+                table_name="question_banks",
                 record_id=question_id,
                 details={
-                    'subject_id': question.subject_id,
-                    'question_type': question.question_type,
-                    'difficulty': question.difficulty
+                    "subject_id": question.subject_id,
+                    "question_type": question.question_type,
+                    "difficulty": question.difficulty,
+                    "storage": "cloudinary" if _using_cloudinary() else "local",
                 },
                 ip_address=request.remote_addr
-            )
-            db.session.add(audit_log)
-            
+            ))
+
             db.session.commit()
-            
-            flash('Question updated successfully!', 'success')
-            return redirect(url_for('teacher.question_bank'))
-        
+            flash("Question updated successfully!", "success")
+            return redirect(url_for("teacher.question_bank"))
+
         except Exception as e:
             db.session.rollback()
-            flash(f'Error updating question: {str(e)}', 'danger')
-    
-    # Prepare existing data for template
-    existing_options = question.options or []
-    
-    return render_template('teacher/edit_question.html',
-                         teacher=teacher,
-                         question=question,
-                         assigned_subjects=assigned_subjects,
-                         existing_options=existing_options)
+            flash(f"Error updating question: {str(e)}", "danger")
 
-@teacher_bp.route('/question-bank/delete/<question_id>', methods=['POST'])
+    existing_options = question.options or []
+
+    return render_template(
+        "teacher/edit_question.html",
+        teacher=teacher,
+        question=question,
+        assigned_subjects=assigned_subjects,
+        existing_options=existing_options
+    )
+
+
+# ============================================================
+# ✅ DELETE QUESTION (with Cloudinary support)
+# ============================================================
+@teacher_bp.route("/question-bank/delete/<question_id>", methods=["POST"])
 @login_required
 @teacher_required
 def delete_question(question_id):
-    """Delete a question from the question bank"""
     try:
         teacher = Teacher.query.filter_by(user_id=current_user.id).first_or_404()
         question = QuestionBank.query.get_or_404(question_id)
-        
-        # Verify ownership
+
         if question.teacher_id != teacher.id:
-            return jsonify({'success': False, 'message': 'Permission denied'}), 403
-        
-        # Check if question is used in any exam
+            return jsonify({"success": False, "message": "Permission denied"}), 403
+
+        # prevent deleting questions used in exams
         exam_questions = ExamQuestion.query.filter_by(question_bank_id=question_id).first()
         if exam_questions:
-            return jsonify({
-                'success': False, 
-                'message': 'Cannot delete question that is used in an exam'
-            }), 400
-        
-        # Delete associated images
-        deleted_images = []
-        
-        # Delete question image if exists
+            return jsonify({"success": False, "message": "Cannot delete question that is used in an exam"}), 400
+
+        deleted_images = 0
+
+        # delete question image
         if question.question_image:
-            try:
-                # Extract filename from path
-                image_path = question.question_image
-                if image_path.startswith('/static/'):
-                    # Convert to filesystem path
-                    relative_path = image_path[len('/static/'):]
-                    full_path = os.path.join(current_app.root_path, 'static', relative_path)
-                    
-                    if os.path.exists(full_path):
-                        os.remove(full_path)
-                        deleted_images.append(f'Question image: {os.path.basename(full_path)}')
-            except Exception as img_error:
-                # Log but don't fail the deletion
-                print(f"Error deleting question image: {img_error}")
-        
-        # Delete option images for multiple choice questions
-        if question.question_type == 'multiple_choice' and question.options:
-            for i, option in enumerate(question.options):
-                if 'image' in option and option['image']:
-                    try:
-                        image_path = option['image']
-                        if image_path.startswith('/static/'):
-                            relative_path = image_path[len('/static/'):]
-                            full_path = os.path.join(current_app.root_path, 'static', relative_path)
-                            
-                            if os.path.exists(full_path):
-                                os.remove(full_path)
-                                deleted_images.append(f'Option {i+1} image: {os.path.basename(full_path)}')
-                    except Exception as img_error:
-                        print(f"Error deleting option image: {img_error}")
-        
-        # Log action before deletion
-        audit_log = AuditLog(
+            if _delete_media(question.question_image):
+                deleted_images += 1
+
+        # delete option images
+        if question.question_type == "multiple_choice" and question.options:
+            for opt in question.options:
+                if isinstance(opt, dict) and opt.get("image"):
+                    if _delete_media(opt.get("image")):
+                        deleted_images += 1
+
+        db.session.add(AuditLog(
             user_id=current_user.id,
-            action='DELETE_QUESTION',
-            table_name='question_banks',
+            action="DELETE_QUESTION",
+            table_name="question_banks",
             record_id=question_id,
             old_values={
-                'subject_id': question.subject_id,
-                'question_text': question.question_text[:100] + '...' if len(question.question_text) > 100 else question.question_text,
-                'question_type': question.question_type,
-                'had_images': len(deleted_images) > 0,
-                'deleted_images': deleted_images if deleted_images else None
+                "subject_id": question.subject_id,
+                "question_text": (question.question_text[:100] + "...") if question.question_text and len(question.question_text) > 100 else question.question_text,
+                "question_type": question.question_type,
+                "had_images": bool(deleted_images),
+                "deleted_images_count": deleted_images,
+                "storage": "cloudinary" if _using_cloudinary() else "local",
             },
             ip_address=request.remote_addr
-        )
-        db.session.add(audit_log)
-        
-        # Delete the question
+        ))
+
         db.session.delete(question)
         db.session.commit()
-        
-        return jsonify({
-            'success': True, 
-            'message': 'Question deleted successfully',
-            'deleted_images': len(deleted_images)
-        })
-    
+
+        return jsonify({"success": True, "message": "Question deleted successfully", "deleted_images": deleted_images})
+
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 400
-    
+        return jsonify({"success": False, "message": str(e)}), 400
+       
 @teacher_bp.route('/question-bank/bulk-upload', methods=['GET', 'POST'])
 @login_required
 @teacher_required

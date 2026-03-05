@@ -2,7 +2,7 @@ import os
 import logging
 import click
 from logging.handlers import RotatingFileHandler
-from flask import Flask, request, render_template, redirect, url_for, flash
+from flask import Flask, app, request, render_template, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
@@ -56,11 +56,14 @@ def create_app(config_name='default'):
     # Load configuration
     app.config.from_object(config[config_name])
     
+    from utils.cloudinary_helper import cloudinary_helper
+
     # Initialize extensions
     db.init_app(app)
     login_manager.init_app(app)
     migrate.init_app(app, db)
     limiter.init_app(app)
+    cloudinary_helper.init_app(app)
     
     # Configure login manager
     login_manager.login_view = 'auth.login'
