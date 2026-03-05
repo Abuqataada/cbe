@@ -1725,7 +1725,7 @@
                 if (data.success) {
                     if (examData.showResultsImmediately) {
                         // Redirect to exam result page immediately
-                        window.location.href = '/student/exam/' + examData.examId + '/result';
+                        window.location.href = '/student/exam/' + examData.sessionId + '/result';
                     } else {
                         // Redirect to student dashboard with success message
                         window.location.href = '/student/dashboard?exam_submitted=true';
