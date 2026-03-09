@@ -10,7 +10,8 @@ from models import (
     AuditLog, GradeScale, SubjectCategory, QuestionBank, Exam, ExamQuestion,
     ExamSession, ExamResponse, ExamResult, StudentPromotion, Attendance, DomainEvaluation,
     TeacherComment, FormTeacherComment, PrincipalRemark, ReportCard,
-    ParentNotification
+    ParentNotification, AssessmentScoreMapping,TeacherReport, StudentPerformanceAnalysis,
+    ExamQuestionAnalysis, StudentMaterialDownload, LearningMaterial, LoginAttempt, SecurityLog
 )
 from utils.decorators import admin_required
 from config import Config
@@ -18,6 +19,7 @@ from datetime import datetime, timezone, date
 import io
 import csv
 import traceback
+import json
 
 # For Excel export/import
 try:
@@ -5102,6 +5104,900 @@ def assessment_details(assessment_id):
         'success': True,
         'html': html
     })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@admin_bp.route('/database/export', methods=['GET'])
+def export_database():
+    """Export all database tables to CSV"""
+    try:
+        import csv
+        import io
+        import zipfile
+        from datetime import datetime
+        
+        # Create a timestamp for the filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        # Create a zip file in memory
+        zip_buffer = io.BytesIO()
+        
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            
+            # List of all models to export
+            models_to_export = [
+                ('users', User),
+                ('students', Student),
+                ('teachers', Teacher),
+                ('parents', Parent),
+                ('student_parents', StudentParent),
+                ('academic_sessions', AcademicSession),
+                ('academic_terms', AcademicTerm),
+                ('classrooms', ClassRoom),
+                ('subjects', Subject),
+                ('subject_assignments', SubjectAssignment),
+                ('assessments', Assessment),
+                ('student_assessments', StudentAssessment),
+                ('assessment_score_mappings', AssessmentScoreMapping),
+                ('exams', Exam),
+                ('exam_questions', ExamQuestion),
+                ('exam_sessions', ExamSession),
+                ('exam_responses', ExamResponse),
+                ('exam_results', ExamResult),
+                ('question_banks', QuestionBank),
+                ('attendance', Attendance),
+                ('domain_evaluations', DomainEvaluation),
+                ('teacher_comments', TeacherComment),
+                ('form_teacher_comments', FormTeacherComment),
+                ('principal_remarks', PrincipalRemark),
+                ('report_cards', ReportCard),
+                ('parent_notifications', ParentNotification),
+                ('student_promotions', StudentPromotion),
+                ('grade_scales', GradeScale),
+                ('subject_categories', SubjectCategory),
+                ('system_configuration', SystemConfiguration),
+                ('audit_logs', AuditLog),
+                ('security_logs', SecurityLog),
+                ('login_attempts', LoginAttempt),
+                ('learning_materials', LearningMaterial),
+                ('student_material_downloads', StudentMaterialDownload),
+                ('exam_question_analysis', ExamQuestionAnalysis),
+                ('student_performance_analysis', StudentPerformanceAnalysis),
+                ('teacher_reports', TeacherReport)
+            ]
+            
+            for table_name, model in models_to_export:
+                try:
+                    # Query all records
+                    records = model.query.all()
+                    
+                    if not records:
+                        # Create empty CSV with headers
+                        output = io.StringIO()
+                        
+                        # Try to get column names from model
+                        if hasattr(model, '__table__'):
+                            columns = [col.name for col in model.__table__.columns]
+                        else:
+                            columns = ['id']  # Fallback
+                        
+                        writer = csv.DictWriter(output, fieldnames=columns)
+                        writer.writeheader()
+                        
+                        # Add to zip
+                        zip_file.writestr(f'{table_name}.csv', output.getvalue())
+                        output.close()
+                        continue
+                    
+                    # Create CSV in memory
+                    output = io.StringIO()
+                    
+                    # Get column names from first record
+                    if hasattr(records[0], '__table__'):
+                        columns = [col.name for col in records[0].__table__.columns]
+                    else:
+                        # Fallback to using dict keys
+                        sample_dict = records[0].__dict__
+                        columns = [key for key in sample_dict.keys() if not key.startswith('_')]
+                    
+                    writer = csv.DictWriter(output, fieldnames=columns)
+                    writer.writeheader()
+                    
+                    # Write records
+                    for record in records:
+                        row = {}
+                        for column in columns:
+                            value = getattr(record, column, '')
+                            
+                            # Handle different data types
+                            if value is None:
+                                row[column] = ''
+                            elif isinstance(value, (datetime)):
+                                row[column] = value.isoformat()
+                            elif isinstance(value, (date)):
+                                row[column] = value.isoformat()
+                            elif isinstance(value, (dict, list)):
+                                import json
+                                row[column] = json.dumps(value)
+                            else:
+                                row[column] = str(value)
+                        
+                        writer.writerow(row)
+                    
+                    # Add to zip
+                    zip_file.writestr(f'{table_name}.csv', output.getvalue())
+                    output.close()
+                    
+                except Exception as e:
+                    # Log error but continue with other tables
+                    print(f"Error exporting {table_name}: {str(e)}")
+                    # Create error file
+                    zip_file.writestr(f'{table_name}_ERROR.txt', 
+                                     f"Error exporting {table_name}: {str(e)}")
+            
+            # Add metadata file
+            metadata = f"""Database Export
+Generated: {datetime.now().isoformat()}
+Generated By: {current_user.username} (ID: {current_user.id})
+Total Tables: {len(models_to_export)}
+
+This export contains all database tables in CSV format.
+Each table is exported as a separate CSV file.
+JSON fields are exported as JSON strings.
+"""
+            zip_file.writestr('export_metadata.txt', metadata)
+        
+        # Prepare zip for download
+        zip_buffer.seek(0)
+        
+        # Log export action
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action='EXPORT_DATABASE',
+            details={
+                'tables_exported': len(models_to_export),
+                'filename': f'database_export_{timestamp}.zip'
+            },
+            ip_address=request.remote_addr
+        )
+        db.session.add(audit_log)
+        db.session.commit()
+        
+        # Return zip file
+        return Response(
+            zip_buffer.getvalue(),
+            mimetype='application/zip',
+            headers={
+                'Content-Disposition': f'attachment;filename=database_export_{timestamp}.zip',
+                'Content-Type': 'application/zip'
+            }
+        )
+    
+    except Exception as e:
+        print(f"Error exporting database: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'Error exporting database: {str(e)}'
+        }), 500
+
+
+@admin_bp.route('/database/export/json', methods=['GET'])
+def export_database_json():
+    """Export all database tables as JSON"""
+    try:
+        import json
+        import zipfile
+        import io
+        from datetime import datetime
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        zip_buffer = io.BytesIO()
+        
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            
+            # Same list of models as above
+            models_to_export = [
+                ('users', User),
+                ('students', Student),
+                ('teachers', Teacher),
+                ('parents', Parent),
+                ('student_parents', StudentParent),
+                ('academic_sessions', AcademicSession),
+                ('academic_terms', AcademicTerm),
+                ('classrooms', ClassRoom),
+                ('subjects', Subject),
+                ('subject_assignments', SubjectAssignment),
+                ('assessments', Assessment),
+                ('student_assessments', StudentAssessment),
+                ('assessment_score_mappings', AssessmentScoreMapping),
+                ('exams', Exam),
+                ('exam_questions', ExamQuestion),
+                ('exam_sessions', ExamSession),
+                ('exam_responses', ExamResponse),
+                ('exam_results', ExamResult),
+                ('question_banks', QuestionBank),
+                ('attendance', Attendance),
+                ('domain_evaluations', DomainEvaluation),
+                ('teacher_comments', TeacherComment),
+                ('form_teacher_comments', FormTeacherComment),
+                ('principal_remarks', PrincipalRemark),
+                ('report_cards', ReportCard),
+                ('parent_notifications', ParentNotification),
+                ('student_promotions', StudentPromotion),
+                ('grade_scales', GradeScale),
+                ('subject_categories', SubjectCategory),
+                ('system_configuration', SystemConfiguration),
+                ('audit_logs', AuditLog),
+                ('security_logs', SecurityLog),
+                ('login_attempts', LoginAttempt),
+                ('learning_materials', LearningMaterial),
+                ('student_material_downloads', StudentMaterialDownload),
+                ('exam_question_analysis', ExamQuestionAnalysis),
+                ('student_performance_analysis', StudentPerformanceAnalysis),
+                ('teacher_reports', TeacherReport)
+            ]
+            
+            all_data = {}
+            
+            for table_name, model in models_to_export:
+                try:
+                    records = model.query.all()
+                    table_data = []
+                    
+                    for record in records:
+                        record_dict = {}
+                        
+                        # Get all columns
+                        if hasattr(record, '__table__'):
+                            columns = [col.name for col in record.__table__.columns]
+                        else:
+                            columns = [key for key in record.__dict__.keys() if not key.startswith('_')]
+                        
+                        for column in columns:
+                            value = getattr(record, column, None)
+                            
+                            # Handle different data types
+                            if value is None:
+                                record_dict[column] = None
+                            elif isinstance(value, (datetime, date)):
+                                record_dict[column] = value.isoformat()
+                            elif isinstance(value, (dict, list)):
+                                record_dict[column] = value
+                            else:
+                                try:
+                                    # Try to convert to appropriate type
+                                    record_dict[column] = value
+                                except:
+                                    record_dict[column] = str(value)
+                        
+                        table_data.append(record_dict)
+                    
+                    all_data[table_name] = table_data
+                    
+                except Exception as e:
+                    all_data[table_name] = {'error': str(e)}
+            
+            # Add metadata
+            all_data['_metadata'] = {
+                'generated_at': datetime.now().isoformat(),
+                'generated_by': current_user.username,
+                'generated_by_id': current_user.id,
+                'total_tables': len(models_to_export)
+            }
+            
+            # Write JSON file
+            json_data = json.dumps(all_data, indent=2, default=str)
+            zip_file.writestr('database_export.json', json_data)
+            
+            # Add metadata file
+            metadata = f"""JSON Database Export
+Generated: {datetime.now().isoformat()}
+Generated By: {current_user.username} (ID: {current_user.id})
+Total Tables: {len(models_to_export)}
+
+This export contains all database tables in a single JSON file.
+The file is structured with table names as keys and arrays of records as values.
+"""
+            zip_file.writestr('export_metadata.txt', metadata)
+        
+        zip_buffer.seek(0)
+        
+        # Log export action
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action='EXPORT_DATABASE_JSON',
+            details={
+                'tables_exported': len(models_to_export),
+                'filename': f'database_export_{timestamp}.zip'
+            },
+            ip_address=request.remote_addr
+        )
+        db.session.add(audit_log)
+        db.session.commit()
+        
+        return Response(
+            zip_buffer.getvalue(),
+            mimetype='application/zip',
+            headers={
+                'Content-Disposition': f'attachment;filename=database_export_{timestamp}.zip',
+                'Content-Type': 'application/zip'
+            }
+        )
+    
+    except Exception as e:
+        print(f"Error exporting database as JSON: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'Error exporting database: {str(e)}'
+        }), 500
+
+
+@admin_bp.route('/database/export/single-csv', methods=['GET'])
+def export_database_single_csv():
+    """Export all database tables as a single CSV file (for viewing in spreadsheet apps)"""
+    try:
+        import csv
+        import io
+        from datetime import datetime
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output = io.StringIO()
+        
+        # Same list of models
+        models_to_export = [
+            ('users', User),
+            ('students', Student),
+            ('teachers', Teacher),
+            ('parents', Parent),
+            ('academic_sessions', AcademicSession),
+            ('academic_terms', AcademicTerm),
+            ('classrooms', ClassRoom),
+            ('subjects', Subject),
+            ('assessments', Assessment),
+            ('exams', Exam),
+            ('attendance', Attendance),
+            ('audit_logs', AuditLog)
+        ]
+        
+        for table_name, model in models_to_export:
+            try:
+                # Write table header
+                output.write(f"\n\n--- {table_name.upper()} ---\n")
+                
+                records = model.query.all()
+                if not records:
+                    output.write("No records found\n")
+                    continue
+                
+                # Get column names
+                if hasattr(records[0], '__table__'):
+                    columns = [col.name for col in records[0].__table__.columns]
+                else:
+                    columns = [key for key in records[0].__dict__.keys() if not key.startswith('_')]
+                
+                # Write headers
+                output.write(','.join(columns) + '\n')
+                
+                # Write records
+                for record in records:
+                    row = []
+                    for column in columns:
+                        value = getattr(record, column, '')
+                        
+                        if value is None:
+                            row.append('')
+                        elif isinstance(value, (datetime, date)):
+                            row.append(value.isoformat())
+                        elif isinstance(value, (dict, list)):
+                            import json
+                            row.append(json.dumps(value))
+                        else:
+                            # Escape commas and quotes for CSV
+                            str_value = str(value)
+                            if ',' in str_value or '"' in str_value or '\n' in str_value:
+                                str_value = '"' + str_value.replace('"', '""') + '"'
+                            row.append(str_value)
+                    
+                    output.write(','.join(row) + '\n')
+                
+            except Exception as e:
+                output.write(f"Error exporting {table_name}: {str(e)}\n")
+        
+        # Log export action
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action='EXPORT_DATABASE_SINGLE_CSV',
+            ip_address=request.remote_addr
+        )
+        db.session.add(audit_log)
+        db.session.commit()
+        
+        # Return CSV file
+        output.seek(0)
+        return Response(
+            output.getvalue(),
+            mimetype='text/csv',
+            headers={
+                'Content-Disposition': f'attachment;filename=database_export_{timestamp}.csv',
+                'Content-Type': 'text/csv'
+            }
+        )
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error exporting database: {str(e)}'
+        }), 500
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@admin_bp.route('/database/import', methods=['POST'])
+@login_required
+@admin_required
+def import_database():
+    """Import database data from uploaded CSV/ZIP files"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'message': 'No file uploaded'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'success': False, 'message': 'No file selected'}), 400
+        
+        # Get import options
+        import_mode = request.form.get('import_mode', 'safe')  # 'safe', 'overwrite', 'update'
+        clear_existing = request.form.get('clear_existing', 'false').lower() == 'true'
+        
+        # Validate file extension
+        filename = file.filename.lower()
+        is_zip = filename.endswith('.zip')
+        is_csv = filename.endswith('.csv')
+        
+        if not (is_zip or is_csv):
+            return jsonify({
+                'success': False, 
+                'message': 'Invalid file type. Please upload a CSV or ZIP file.'
+            }), 400
+        
+        # Track import results
+        results = {
+            'success': True,
+            'tables_processed': 0,
+            'records_created': 0,
+            'records_updated': 0,
+            'records_skipped': 0,
+            'errors': [],
+            'tables': {}
+        }
+        
+        if is_zip:
+            # Process ZIP file
+            import zipfile
+            import io
+            
+            zip_data = io.BytesIO(file.read())
+            
+            with zipfile.ZipFile(zip_data, 'r') as zip_file:
+                # Get list of CSV files in zip
+                csv_files = [f for f in zip_file.namelist() if f.endswith('.csv')]
+                
+                for csv_file in csv_files:
+                    try:
+                        # Extract table name from filename (remove .csv)
+                        table_name = csv_file.replace('.csv', '')
+                        
+                        # Read CSV content
+                        with zip_file.open(csv_file) as f:
+                            content = f.read().decode('utf-8')
+                            table_results = process_csv_import(
+                                table_name, 
+                                content, 
+                                import_mode,
+                                clear_existing
+                            )
+                            
+                            results['tables'][table_name] = table_results
+                            results['records_created'] += table_results.get('created', 0)
+                            results['records_updated'] += table_results.get('updated', 0)
+                            results['records_skipped'] += table_results.get('skipped', 0)
+                            results['tables_processed'] += 1
+                            
+                            if table_results.get('errors'):
+                                results['errors'].extend(table_results['errors'])
+                                
+                    except Exception as e:
+                        error_msg = f"Error processing {csv_file}: {str(e)}"
+                        results['errors'].append(error_msg)
+                        results['tables'][csv_file] = {'error': error_msg}
+        
+        elif is_csv:
+            # Process single CSV file
+            content = file.read().decode('utf-8')
+            
+            # Try to determine table name from filename or content
+            table_name = filename.replace('.csv', '')
+            table_results = process_csv_import(table_name, content, import_mode, clear_existing)
+            
+            results['tables'][table_name] = table_results
+            results['records_created'] += table_results.get('created', 0)
+            results['records_updated'] += table_results.get('updated', 0)
+            results['records_skipped'] += table_results.get('skipped', 0)
+            results['tables_processed'] = 1
+            
+            if table_results.get('errors'):
+                results['errors'].extend(table_results['errors'])
+        
+        # Log import action
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action='IMPORT_DATABASE',
+            details={
+                'filename': file.filename,
+                'import_mode': import_mode,
+                'tables_processed': results['tables_processed'],
+                'records_created': results['records_created'],
+                'records_updated': results['records_updated'],
+                'records_skipped': results['records_skipped'],
+                'errors': len(results['errors'])
+            },
+            ip_address=request.remote_addr
+        )
+        db.session.add(audit_log)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Import completed. {results["records_created"]} created, {results["records_updated"]} updated, {results["records_skipped"]} skipped.',
+            'results': results
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error importing database: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'Error importing database: {str(e)}'
+        }), 500
+
+
+def process_csv_import(table_name, csv_content, import_mode='safe', clear_existing=False):
+    """Process a single CSV file import"""
+    import csv
+    import io
+    import json
+    from datetime import datetime, date
+    
+    results = {
+        'created': 0,
+        'updated': 0,
+        'skipped': 0,
+        'errors': [],
+        'table': table_name
+    }
+    
+    # Map table names to models
+    model_map = {
+        'users': User,
+        'students': Student,
+        'teachers': Teacher,
+        'parents': Parent,
+        'student_parents': StudentParent,
+        'academic_sessions': AcademicSession,
+        'academic_terms': AcademicTerm,
+        'classrooms': ClassRoom,
+        'subjects': Subject,
+        'subject_assignments': SubjectAssignment,
+        'assessments': Assessment,
+        'student_assessments': StudentAssessment,
+        'assessment_score_mappings': AssessmentScoreMapping,
+        'exams': Exam,
+        'exam_questions': ExamQuestion,
+        'exam_sessions': ExamSession,
+        'exam_responses': ExamResponse,
+        'exam_results': ExamResult,
+        'question_banks': QuestionBank,
+        'attendance': Attendance,
+        'domain_evaluations': DomainEvaluation,
+        'teacher_comments': TeacherComment,
+        'form_teacher_comments': FormTeacherComment,
+        'principal_remarks': PrincipalRemark,
+        'report_cards': ReportCard,
+        'parent_notifications': ParentNotification,
+        'student_promotions': StudentPromotion,
+        'grade_scales': GradeScale,
+        'subject_categories': SubjectCategory,
+        'system_configuration': SystemConfiguration,
+        'audit_logs': AuditLog,
+        'security_logs': SecurityLog,
+        'login_attempts': LoginAttempt,
+        'learning_materials': LearningMaterial,
+        'student_material_downloads': StudentMaterialDownload,
+        'exam_question_analysis': ExamQuestionAnalysis,
+        'student_performance_analysis': StudentPerformanceAnalysis,
+        'teacher_reports': TeacherReport
+    }
+    
+    if table_name not in model_map:
+        results['errors'].append(f"Unknown table: {table_name}")
+        return results
+    
+    model = model_map[table_name]
+    
+    try:
+        # Parse CSV
+        csv_reader = csv.DictReader(io.StringIO(csv_content))
+        
+        if clear_existing and import_mode != 'safe':
+            # Clear existing records (be careful with this!)
+            model.query.delete()
+            db.session.commit()
+        
+        for row_num, row in enumerate(csv_reader, start=2):  # Start at 2 for row numbers
+            try:
+                # Clean and convert data types
+                cleaned_data = {}
+                for key, value in row.items():
+                    if value == '' or value is None:
+                        cleaned_data[key] = None
+                    else:
+                        # Try to detect and convert data types
+                        cleaned_data[key] = parse_value(value)
+                
+                # Check if record exists (by ID)
+                record_id = cleaned_data.get('id')
+                existing_record = None
+                
+                if record_id:
+                    existing_record = model.query.get(record_id)
+                
+                if existing_record:
+                    # Record exists
+                    if import_mode == 'safe':
+                        # Skip existing records in safe mode
+                        results['skipped'] += 1
+                        continue
+                    elif import_mode == 'update':
+                        # Update existing record
+                        for key, value in cleaned_data.items():
+                            if hasattr(existing_record, key):
+                                setattr(existing_record, key, value)
+                        results['updated'] += 1
+                    elif import_mode == 'overwrite':
+                        # Delete and recreate
+                        db.session.delete(existing_record)
+                        db.session.flush()
+                        new_record = model(**cleaned_data)
+                        db.session.add(new_record)
+                        results['created'] += 1
+                else:
+                    # Create new record
+                    # Handle relationships and special fields
+                    new_record = model(**cleaned_data)
+                    db.session.add(new_record)
+                    results['created'] += 1
+                
+                # Commit every 100 records to avoid memory issues
+                if (results['created'] + results['updated']) % 100 == 0:
+                    db.session.commit()
+                    
+            except Exception as e:
+                db.session.rollback()
+                results['errors'].append(f"Row {row_num}: {str(e)}")
+                results['skipped'] += 1
+        
+        # Final commit
+        db.session.commit()
+        
+    except Exception as e:
+        db.session.rollback()
+        results['errors'].append(f"Error processing table {table_name}: {str(e)}")
+    
+    return results
+
+
+def parse_value(value):
+    """Parse string value to appropriate Python type"""
+    if value is None or value == '':
+        return None
+    
+    # Try to parse as JSON
+    if value.startswith('{') or value.startswith('['):
+        try:
+            return json.loads(value)
+        except:
+            pass
+    
+    # Try to parse as boolean
+    if value.lower() in ('true', 'false', 'yes', 'no'):
+        return value.lower() in ('true', 'yes')
+    
+    # Try to parse as number
+    try:
+        if '.' in value:
+            return float(value)
+        else:
+            return int(value)
+    except:
+        pass
+    
+    # Try to parse as datetime
+    try:
+        return datetime.fromisoformat(value.replace('Z', '+00:00'))
+    except:
+        pass
+    
+    # Try to parse as date
+    try:
+        return date.fromisoformat(value)
+    except:
+        pass
+    
+    # Return as string
+    return value
+
+
+@admin_bp.route('/database/import/preview', methods=['POST'])
+@login_required
+@admin_required
+def preview_database_import():
+    """Preview database import without actually importing"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'message': 'No file uploaded'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'success': False, 'message': 'No file selected'}), 400
+        
+        filename = file.filename.lower()
+        is_zip = filename.endswith('.zip')
+        is_csv = filename.endswith('.csv')
+        
+        if not (is_zip or is_csv):
+            return jsonify({'success': False, 'message': 'Invalid file type'}), 400
+        
+        preview = {
+            'filename': file.filename,
+            'tables': [],
+            'total_records': 0
+        }
+        
+        if is_zip:
+            import zipfile
+            import io
+            
+            zip_data = io.BytesIO(file.read())
+            
+            with zipfile.ZipFile(zip_data, 'r') as zip_file:
+                csv_files = [f for f in zip_file.namelist() if f.endswith('.csv')]
+                
+                for csv_file in csv_files:
+                    table_name = csv_file.replace('.csv', '')
+                    
+                    with zip_file.open(csv_file) as f:
+                        content = f.read().decode('utf-8')
+                        csv_reader = csv.DictReader(io.StringIO(content))
+                        
+                        rows = list(csv_reader)
+                        preview['tables'].append({
+                            'name': table_name,
+                            'records': len(rows),
+                            'columns': csv_reader.fieldnames
+                        })
+                        preview['total_records'] += len(rows)
+        
+        elif is_csv:
+            content = file.read().decode('utf-8')
+            csv_reader = csv.DictReader(io.StringIO(content))
+            
+            rows = list(csv_reader)
+            preview['tables'].append({
+                'name': filename.replace('.csv', ''),
+                'records': len(rows),
+                'columns': csv_reader.fieldnames
+            })
+            preview['total_records'] += len(rows)
+        
+        return jsonify({
+            'success': True,
+            'preview': preview
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error previewing import: {str(e)}'
+        }), 500
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
