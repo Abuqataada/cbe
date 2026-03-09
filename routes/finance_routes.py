@@ -32,7 +32,7 @@ def finance_dashboard():
     """
 
 
-@finance_bp.route('/finance/api/dashboard-stats')
+@finance_bp.route('/api/finance/dashboard-stats')
 def dashboard_stats():
     """API endpoint for dashboard stats badges"""
     return "Hi"

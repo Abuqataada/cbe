@@ -34,3 +34,5 @@ ttkbootstrap
 pystray
 cloudinary
 openai
+pandas
+openpyxl

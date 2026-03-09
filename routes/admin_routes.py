@@ -17,6 +17,15 @@ from config import Config
 from datetime import datetime, timezone, date
 import io
 import csv
+import traceback
+
+# For Excel export/import
+try:
+    import pandas as pd
+    PANDAS_AVAILABLE = True
+except ImportError:
+    PANDAS_AVAILABLE = False
+    print("Warning: pandas not installed. Excel export/import will not work.")
 
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -1804,21 +1813,305 @@ def student_bulk_actions():
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 400
 
+
+@admin_bp.route('/students/import', methods=['POST'])
+@login_required
+@admin_required
+def import_students():
+    """Import students data from CSV or Excel"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'message': 'No file uploaded'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'success': False, 'message': 'No file selected'}), 400
+        
+        # Validate file extension
+        allowed_extensions = {'csv', 'xlsx', 'xls'}
+        if '.' not in file.filename or file.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
+            return jsonify({
+                'success': False,
+                'message': 'Invalid file type. Please upload CSV or Excel file.'
+            }), 400
+        
+        # Get import options
+        import_format = request.form.get('format', 'csv')
+        update_existing = request.form.get('update_existing', 'false').lower() == 'true'
+        skip_duplicates = request.form.get('skip_duplicates', 'true').lower() == 'true'
+        
+        # Read file based on format
+        import_data = []
+        try:
+            if import_format == 'csv':
+                stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+                csv_reader = csv.DictReader(stream)
+                import_data = list(csv_reader)
+                
+                # Validate CSV has required headers
+                required_fields = ['admission_number']
+                if csv_reader.fieldnames:
+                    missing_fields = [f for f in required_fields if f not in csv_reader.fieldnames]
+                    if missing_fields:
+                        return jsonify({
+                            'success': False,
+                            'message': f'CSV missing required fields: {", ".join(missing_fields)}'
+                        }), 400
+                
+            elif import_format == 'excel':
+                try:
+                    import pandas as pd
+                    df = pd.read_excel(file)
+                    # Convert NaN to empty string
+                    df = df.fillna('')
+                    import_data = df.to_dict('records')
+                    
+                    # Validate Excel has required columns
+                    required_fields = ['admission_number']
+                    if not df.empty:
+                        missing_fields = [f for f in required_fields if f not in df.columns]
+                        if missing_fields:
+                            return jsonify({
+                                'success': False,
+                                'message': f'Excel missing required columns: {", ".join(missing_fields)}'
+                            }), 400
+                            
+                except ImportError:
+                    return jsonify({
+                        'success': False,
+                        'message': 'Excel import requires pandas and openpyxl. Please install with: pip install pandas openpyxl'
+                    }), 400
+                except Exception as e:
+                    return jsonify({
+                        'success': False,
+                        'message': f'Error reading Excel file: {str(e)}'
+                    }), 400
+            
+            else:
+                return jsonify({'success': False, 'message': 'Unsupported import format'}), 400
+                
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'message': f'Error reading file: {str(e)}'
+            }), 400
+        
+        if not import_data:
+            return jsonify({'success': False, 'message': 'File contains no data'}), 400
+        
+        # Process import
+        results = {
+            'total': len(import_data),
+            'created': 0,
+            'updated': 0,
+            'skipped': 0,
+            'errors': []
+        }
+        
+        for index, row in enumerate(import_data):
+            try:
+                # Clean up row data - convert all values to strings and strip
+                cleaned_row = {}
+                for key, value in row.items():
+                    if value is None:
+                        cleaned_row[key] = ''
+                    elif isinstance(value, (int, float)):
+                        cleaned_row[key] = str(int(value)) if value.is_integer() else str(value)
+                    else:
+                        cleaned_row[key] = str(value).strip()
+                
+                # Check required fields
+                if not cleaned_row.get('admission_number'):
+                    results['errors'].append(f"Row {index + 2}: Missing admission_number")
+                    results['skipped'] += 1
+                    continue
+                
+                # Check if student exists
+                student = Student.query.filter_by(admission_number=cleaned_row['admission_number']).first()
+                
+                if student:
+                    if skip_duplicates:
+                        results['skipped'] += 1
+                        continue
+                    
+                    if update_existing:
+                        # Update existing student
+                        if cleaned_row.get('first_name'):
+                            student.first_name = cleaned_row['first_name']
+                        if cleaned_row.get('last_name'):
+                            student.last_name = cleaned_row['last_name']
+                        if cleaned_row.get('middle_name'):
+                            student.middle_name = cleaned_row['middle_name']
+                        if cleaned_row.get('gender'):
+                            student.gender = cleaned_row['gender']
+                        
+                        if cleaned_row.get('date_of_birth'):
+                            try:
+                                student.date_of_birth = datetime.strptime(cleaned_row['date_of_birth'], '%Y-%m-%d').date()
+                            except ValueError:
+                                results['errors'].append(f"Row {index + 2}: Invalid date format for date_of_birth (use YYYY-MM-DD)")
+                        
+                        if cleaned_row.get('parent_name'):
+                            student.parent_name = cleaned_row['parent_name']
+                        if cleaned_row.get('parent_phone'):
+                            student.parent_phone = cleaned_row['parent_phone']
+                        if cleaned_row.get('parent_email'):
+                            student.parent_email = cleaned_row['parent_email']
+                        
+                        # Handle classroom
+                        if cleaned_row.get('class'):
+                            classroom = ClassRoom.query.filter_by(name=cleaned_row['class']).first()
+                            if classroom:
+                                student.current_class_id = classroom.id
+                            else:
+                                results['errors'].append(f"Row {index + 2}: Class '{cleaned_row['class']}' not found")
+                        
+                        if cleaned_row.get('enrollment_date'):
+                            try:
+                                student.enrollment_date = datetime.strptime(cleaned_row['enrollment_date'], '%Y-%m-%d').date()
+                            except ValueError:
+                                results['errors'].append(f"Row {index + 2}: Invalid date format for enrollment_date (use YYYY-MM-DD)")
+                        
+                        if cleaned_row.get('academic_status'):
+                            student.academic_status = cleaned_row['academic_status']
+                        
+                        if cleaned_row.get('is_active'):
+                            student.is_active = str(cleaned_row['is_active']).lower() in ['yes', 'true', '1', 'active']
+                        
+                        results['updated'] += 1
+                    else:
+                        results['skipped'] += 1
+                else:
+                    # Create new student
+                    student = Student()
+                    student.admission_number = cleaned_row['admission_number']
+                    student.first_name = cleaned_row.get('first_name', '')
+                    student.last_name = cleaned_row.get('last_name', '')
+                    student.middle_name = cleaned_row.get('middle_name', '')
+                    student.gender = cleaned_row.get('gender', '')
+                    
+                    if cleaned_row.get('date_of_birth'):
+                        try:
+                            student.date_of_birth = datetime.strptime(cleaned_row['date_of_birth'], '%Y-%m-%d').date()
+                        except ValueError:
+                            results['errors'].append(f"Row {index + 2}: Invalid date format for date_of_birth (use YYYY-MM-DD)")
+                    
+                    student.parent_name = cleaned_row.get('parent_name', '')
+                    student.parent_phone = cleaned_row.get('parent_phone', '')
+                    student.parent_email = cleaned_row.get('parent_email', '')
+                    
+                    # Handle classroom
+                    if cleaned_row.get('class'):
+                        classroom = ClassRoom.query.filter_by(name=cleaned_row['class']).first()
+                        if classroom:
+                            student.current_class_id = classroom.id
+                        else:
+                            results['errors'].append(f"Row {index + 2}: Class '{cleaned_row['class']}' not found")
+                    
+                    if cleaned_row.get('enrollment_date'):
+                        try:
+                            student.enrollment_date = datetime.strptime(cleaned_row['enrollment_date'], '%Y-%m-%d').date()
+                        except ValueError:
+                            student.enrollment_date = datetime.now().date()
+                            results['errors'].append(f"Row {index + 2}: Invalid enrollment_date format, using today's date")
+                    else:
+                        student.enrollment_date = datetime.now().date()
+                    
+                    student.academic_status = cleaned_row.get('academic_status', 'active')
+                    student.is_active = str(cleaned_row.get('is_active', 'yes')).lower() in ['yes', 'true', '1', 'active']
+                    
+                    db.session.add(student)
+                    db.session.flush()
+                    
+                    # Create user account if email is provided
+                    if cleaned_row.get('email'):
+                        # Check if user already exists
+                        existing_user = User.query.filter_by(email=cleaned_row['email']).first()
+                        if not existing_user:
+                            user = User()
+                            user.email = cleaned_row['email']
+                            user.username = cleaned_row['admission_number']
+                            user.role = 'student'
+                            user.set_password(cleaned_row['admission_number'])  # Default password is admission number
+                            db.session.add(user)
+                            db.session.flush()
+                            student.user_id = user.id
+                        else:
+                            results['errors'].append(f"Row {index + 2}: Email '{cleaned_row['email']}' already exists")
+                    
+                    results['created'] += 1
+                
+                # Commit after each successful record
+                db.session.commit()
+                
+            except Exception as e:
+                db.session.rollback()
+                results['errors'].append(f"Row {index + 2} ({cleaned_row.get('admission_number', 'unknown')}): {str(e)}")
+                results['skipped'] += 1
+        
+        # Log import action
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action='IMPORT_STUDENTS',
+            details={
+                'total': results['total'],
+                'created': results['created'],
+                'updated': results['updated'],
+                'skipped': results['skipped'],
+                'errors': len(results['errors'])
+            },
+            ip_address=request.remote_addr
+        )
+        db.session.add(audit_log)
+        db.session.commit()
+        
+        # Prepare success message
+        if results['errors']:
+            message = f"Import completed with errors: {results['created']} created, {results['updated']} updated, {results['skipped']} skipped. Check errors list."
+        else:
+            message = f"Import completed successfully: {results['created']} created, {results['updated']} updated, {results['skipped']} skipped"
+        
+        return jsonify({
+            'success': True,
+            'results': results,
+            'message': message
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error importing students: {str(e)}")  # For debugging
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'Error importing students: {str(e)}'
+        }), 500
+
 @admin_bp.route('/students/export', methods=['POST'])
 @login_required
 @admin_required
 def export_students():
-    """Export students data"""
+    """Export students data to CSV or Excel"""
     try:
         data = request.get_json()
         student_ids = data.get('student_ids', [])
         export_format = data.get('format', 'csv')
         
-        if not student_ids:
-            # Export all students
-            students = Student.query.all()
+        # Build query
+        query = Student.query
+        
+        if student_ids and len(student_ids) > 0:
+            # Export selected students
+            students = query.filter(Student.id.in_(student_ids)).all()
         else:
-            students = Student.query.filter(Student.id.in_(student_ids)).all()
+            # Export all students
+            students = query.all()
+        
+        if not students:
+            return jsonify({
+                'success': False,
+                'message': 'No students found to export'
+            }), 404
         
         # Prepare data for export
         export_data = []
@@ -1830,7 +2123,7 @@ def export_students():
                 'middle_name': student.middle_name or '',
                 'gender': student.gender or '',
                 'date_of_birth': student.date_of_birth.strftime('%Y-%m-%d') if student.date_of_birth else '',
-                'email': student.user.email if student.user else '',  # Get email from User model
+                'email': student.user.email if student.user else '',
                 'parent_name': student.parent_name or '',
                 'parent_phone': student.parent_phone or '',
                 'parent_email': student.parent_email or '',
@@ -1845,48 +2138,140 @@ def export_students():
         audit_log = AuditLog(
             user_id=current_user.id,
             action='EXPORT_STUDENTS',
-            details={'count': len(export_data), 'format': export_format},
+            details={
+                'count': len(export_data),
+                'format': export_format,
+                'selected': bool(student_ids)
+            },
             ip_address=request.remote_addr
         )
         db.session.add(audit_log)
         db.session.commit()
         
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
         if export_format == 'csv':
             # Generate CSV
-            import csv
-            import io
-            
             output = io.StringIO()
-            writer = csv.DictWriter(output, fieldnames=export_data[0].keys())
-            writer.writeheader()
-            writer.writerows(export_data)
+            if export_data:
+                # Use the keys from the first item as fieldnames
+                fieldnames = export_data[0].keys()
+                writer = csv.DictWriter(output, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(export_data)
+            else:
+                # Write headers even if no data
+                fieldnames = ['admission_number', 'first_name', 'last_name', 'middle_name', 
+                             'gender', 'date_of_birth', 'email', 'parent_name', 'parent_phone',
+                             'parent_email', 'class', 'enrollment_date', 'academic_status', 'is_active']
+                writer = csv.DictWriter(output, fieldnames=fieldnames)
+                writer.writeheader()
+            
+            csv_data = output.getvalue()
+            output.close()
             
             return jsonify({
                 'success': True,
-                'data': output.getvalue(),
-                'filename': f'students_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+                'data': csv_data,
+                'filename': f'students_export_{timestamp}.csv'
             })
         
         elif export_format == 'excel':
-            # Generate Excel
-            import pandas as pd
-            
-            df = pd.DataFrame(export_data)
-            excel_buffer = io.BytesIO()
-            with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
-                df.to_excel(writer, index=False, sheet_name='Students')
-            
-            return jsonify({
-                'success': True,
-                'data': excel_buffer.getvalue().hex(),
-                'filename': f'students_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
-            })
+            try:
+                import pandas as pd
+                from io import BytesIO
+                
+                # Create DataFrame
+                df = pd.DataFrame(export_data) if export_data else pd.DataFrame(columns=[
+                    'admission_number', 'first_name', 'last_name', 'middle_name',
+                    'gender', 'date_of_birth', 'email', 'parent_name', 'parent_phone',
+                    'parent_email', 'class', 'enrollment_date', 'academic_status', 'is_active'
+                ])
+                
+                # Create Excel file in memory
+                excel_buffer = BytesIO()
+                with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+                    df.to_excel(writer, index=False, sheet_name='Students')
+                
+                # Get the value and convert to hex for JSON transmission
+                excel_data = excel_buffer.getvalue()
+                hex_data = excel_data.hex()
+                excel_buffer.close()
+                
+                return jsonify({
+                    'success': True,
+                    'data': hex_data,
+                    'filename': f'students_export_{timestamp}.xlsx'
+                })
+            except ImportError:
+                return jsonify({
+                    'success': False,
+                    'message': 'Excel export requires pandas and openpyxl. Please install with: pip install pandas openpyxl'
+                }), 400
         
         else:
-            return jsonify({'success': False, 'message': 'Unsupported export format'}), 400
+            return jsonify({
+                'success': False,
+                'message': 'Unsupported export format'
+            }), 400
+    
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error exporting students: {str(e)}")  # For debugging
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'Error exporting students: {str(e)}'
+        }), 500
+    
+
+@admin_bp.route('/students/template', methods=['GET'])
+@login_required
+@admin_required
+def download_template():
+    """Download import template"""
+    try:
+        import csv
+        import io
+        
+        output = io.StringIO()
+        fieldnames = [
+            'admission_number', 'first_name', 'last_name', 'middle_name',
+            'gender', 'date_of_birth', 'email', 'parent_name', 'parent_phone',
+            'parent_email', 'class', 'enrollment_date', 'academic_status', 'is_active'
+        ]
+        
+        writer = csv.DictWriter(output, fieldnames=fieldnames)
+        writer.writeheader()
+        
+        # Add sample row
+        writer.writerow({
+            'admission_number': 'STU001',
+            'first_name': 'John',
+            'last_name': 'Doe',
+            'middle_name': '',
+            'gender': 'Male',
+            'date_of_birth': '2010-01-15',
+            'email': 'john.doe@example.com',
+            'parent_name': 'Jane Doe',
+            'parent_phone': '+1234567890',
+            'parent_email': 'jane.doe@example.com',
+            'class': 'Grade 1A',
+            'enrollment_date': '2024-01-10',
+            'academic_status': 'active',
+            'is_active': 'Yes'
+        })
+        
+        return jsonify({
+            'success': True,
+            'data': output.getvalue(),
+            'filename': 'students_import_template.csv'
+        })
     
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 400
+    
 
 @admin_bp.route('/students/statistics')
 @login_required
