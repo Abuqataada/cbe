@@ -211,15 +211,15 @@
     </div>
 </div>
 
-<!-- Add to your admin dashboard or create a new database export page -->
+<!-- Database Export/Import Section -->
 <div class="admin-card">
     <div class="card-header">
         <h3 class="card-title">
-            <i class="fas fa-database"></i> Database Export
+            <i class="fas fa-database"></i> Database Export/Import
         </h3>
     </div>
     <div class="card-body">
-        <p>Export all database tables for backup or analysis.</p>
+        <p>Export all database tables for backup or analysis, or import previously exported data.</p>
         
         <div class="export-options">
             <h4>Export Formats:</h4>
@@ -247,6 +247,7 @@
                     <i class="fas fa-download"></i> Export as Single CSV
                 </button>
             </div>
+            
             <div class="export-option">
                 <h5><i class="fas fa-upload"></i> Import Database</h5>
                 <p>Import previously exported database files back into the system.</p>
@@ -257,53 +258,6 @@
         </div>
     </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('exportDatabaseZip')?.addEventListener('click', function() {
-        window.location.href = '/admin/database/export';
-    });
-    
-    document.getElementById('exportDatabaseJson')?.addEventListener('click', function() {
-        window.location.href = '/admin/database/export/json';
-    });
-    
-    document.getElementById('exportDatabaseSingleCsv')?.addEventListener('click', function() {
-        window.location.href = '/admin/database/export/single-csv';
-    });
-});
-</script>
-
-<style>
-.export-options {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-    margin-top: 20px;
-}
-
-.export-option {
-    background: var(--admin-card);
-    border: 1px solid var(--admin-border);
-    border-radius: 8px;
-    padding: 20px;
-}
-
-.export-option h5 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    color: var(--admin-primary);
-}
-
-.export-option p {
-    color: var(--admin-text-light);
-    font-size: 0.9rem;
-    margin-bottom: 15px;
-}
-</style>
-
-
-
 
 <!-- Import Database Modal -->
 <div class="modal fade" id="importDatabaseModal" tabindex="-1">
@@ -384,204 +338,6 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const importModal = new bootstrap.Modal(document.getElementById('importDatabaseModal'));
-    
-    document.getElementById('importDatabaseBtn')?.addEventListener('click', function() {
-        importModal.show();
-    });
-    
-    document.getElementById('previewImportBtn')?.addEventListener('click', function() {
-        previewImport();
-    });
-    
-    document.getElementById('startImportBtn')?.addEventListener('click', function() {
-        startImport();
-    });
-    
-    document.getElementById('importDatabaseFile')?.addEventListener('change', function() {
-        document.getElementById('importPreview').style.display = 'none';
-        document.getElementById('importResults').style.display = 'none';
-    });
-});
-
-function previewImport() {
-    const fileInput = document.getElementById('importDatabaseFile');
-    const file = fileInput.files[0];
-    
-    if (!file) {
-        showToast('Please select a file to preview', 'warning');
-        return;
-    }
-    
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    showToast('Previewing file...', 'info');
-    
-    fetch('/admin/database/import/preview', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            displayPreview(data.preview);
-        } else {
-            showToast(data.message || 'Preview failed', 'error');
-        }
-    })
-    .catch(error => {
-        showToast('Error previewing file: ' + error, 'error');
-    });
-}
-
-function displayPreview(preview) {
-    const previewDiv = document.getElementById('importPreview');
-    const contentDiv = previewDiv.querySelector('.preview-content');
-    
-    let html = `
-        <p><strong>File:</strong> ${preview.filename}</p>
-        <p><strong>Total Records:</strong> ${preview.total_records}</p>
-        <table class="table table-sm">
-            <thead>
-                <tr>
-                    <th>Table</th>
-                    <th>Records</th>
-                    <th>Columns</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-    
-    preview.tables.forEach(table => {
-        html += `
-            <tr>
-                <td>${table.name}</td>
-                <td>${table.records}</td>
-                <td>${table.columns ? table.columns.join(', ') : 'N/A'}</td>
-            </tr>
-        `;
-    });
-    
-    html += '</tbody></table>';
-    
-    contentDiv.innerHTML = html;
-    previewDiv.style.display = 'block';
-}
-
-function startImport() {
-    const fileInput = document.getElementById('importDatabaseFile');
-    const file = fileInput.files[0];
-    
-    if (!file) {
-        showToast('Please select a file to import', 'warning');
-        return;
-    }
-    
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('import_mode', document.getElementById('importMode').value);
-    formData.append('clear_existing', document.getElementById('clearExisting').checked);
-    
-    // Show progress
-    document.getElementById('importPreview').style.display = 'none';
-    document.getElementById('importProgress').style.display = 'block';
-    document.getElementById('importResults').style.display = 'none';
-    document.getElementById('startImportBtn').disabled = true;
-    document.getElementById('previewImportBtn').disabled = true;
-    
-    // Simulate progress
-    let progress = 0;
-    const progressInterval = setInterval(() => {
-        progress += 5;
-        if (progress <= 90) {
-            document.getElementById('importProgressBar').style.width = progress + '%';
-            document.getElementById('importProgressBar').textContent = progress + '%';
-        }
-    }, 500);
-    
-    showToast('Importing database...', 'info');
-    
-    fetch('/admin/database/import', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        clearInterval(progressInterval);
-        document.getElementById('importProgressBar').style.width = '100%';
-        document.getElementById('importProgressBar').textContent = '100%';
-        
-        if (data.success) {
-            displayImportResults(data.results);
-            showToast(data.message, 'success');
-        } else {
-            document.getElementById('importProgress').style.display = 'none';
-            showToast(data.message || 'Import failed', 'error');
-        }
-        
-        document.getElementById('startImportBtn').disabled = false;
-        document.getElementById('previewImportBtn').disabled = false;
-    })
-    .catch(error => {
-        clearInterval(progressInterval);
-        document.getElementById('importProgress').style.display = 'none';
-        document.getElementById('startImportBtn').disabled = false;
-        document.getElementById('previewImportBtn').disabled = false;
-        showToast('Error importing database: ' + error, 'error');
-    });
-}
-
-function displayImportResults(results) {
-    document.getElementById('importProgress').style.display = 'none';
-    document.getElementById('importResults').style.display = 'block';
-    
-    const contentDiv = document.querySelector('#importResults .results-content');
-    
-    let html = `
-        <p><strong>Summary:</strong></p>
-        <ul>
-            <li>Tables Processed: ${results.tables_processed}</li>
-            <li>Records Created: ${results.records_created}</li>
-            <li>Records Updated: ${results.records_updated}</li>
-            <li>Records Skipped: ${results.records_skipped}</li>
-            <li>Errors: ${results.errors.length}</li>
-        </ul>
-    `;
-    
-    if (results.errors.length > 0) {
-        html += '<p><strong>Errors:</strong></p><ul>';
-        results.errors.forEach(error => {
-            html += `<li class="text-danger">${error}</li>`;
-        });
-        html += '</ul>';
-    }
-    
-    if (results.tables) {
-        html += '<p><strong>Table Details:</strong></p>';
-        html += '<table class="table table-sm"><thead><tr><th>Table</th><th>Created</th><th>Updated</th><th>Skipped</th></tr></thead><tbody>';
-        
-        for (const [table, data] of Object.entries(results.tables)) {
-            html += `
-                <tr>
-                    <td>${table}</td>
-                    <td>${data.created || 0}</td>
-                    <td>${data.updated || 0}</td>
-                    <td>${data.skipped || 0}</td>
-                </tr>
-            `;
-        }
-        
-        html += '</tbody></table>';
-    }
-    
-    contentDiv.innerHTML = html;
-}
-</script>
-
 
 <!-- Pending Tasks (Only show if there are actual pending tasks) -->
 {% if stats.pending_tasks_count and stats.pending_tasks_count > 0 %}
@@ -904,6 +660,33 @@ function displayImportResults(results) {
         text-overflow: ellipsis;
     }
     
+    /* Export Options */
+    .export-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    .export-option {
+        background: var(--admin-card);
+        border: 1px solid var(--admin-border);
+        border-radius: 8px;
+        padding: 20px;
+    }
+    
+    .export-option h5 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        color: var(--admin-primary);
+    }
+    
+    .export-option p {
+        color: var(--admin-text-light);
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+    }
+    
     /* Pending Tasks - Compact */
     .list-group {
         border: 1px solid var(--admin-border);
@@ -963,6 +746,73 @@ function displayImportResults(results) {
         margin-bottom: 0.5rem;
     }
     
+    /* Toast Notifications */
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+    
+    .toast {
+        min-width: 250px;
+        margin-bottom: 10px;
+        padding: 12px 15px;
+        background: white;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        animation: slideIn 0.3s ease;
+        border-left: 4px solid;
+    }
+    
+    .toast-success {
+        border-left-color: var(--admin-success);
+    }
+    
+    .toast-error {
+        border-left-color: var(--admin-danger);
+    }
+    
+    .toast-info {
+        border-left-color: var(--admin-primary);
+    }
+    
+    .toast-warning {
+        border-left-color: var(--admin-warning);
+    }
+    
+    .toast-body {
+        flex: 1;
+        font-size: 0.9rem;
+    }
+    
+    .toast-close {
+        background: none;
+        border: none;
+        color: var(--admin-text-light);
+        cursor: pointer;
+        padding: 0 5px;
+        font-size: 1rem;
+    }
+    
+    .toast-close:hover {
+        color: var(--admin-text);
+    }
+    
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
     /* Responsive */
     @media (max-width: 768px) {
         .quick-actions {
@@ -993,6 +843,10 @@ function displayImportResults(results) {
             grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             gap: 0.5rem;
         }
+        
+        .export-options {
+            grid-template-columns: 1fr;
+        }
     }
     
     @media (max-width: 480px) {
@@ -1019,6 +873,47 @@ function displayImportResults(results) {
 </style>
 
 <script>
+    // Define showToast function at the top level so it's available everywhere
+    function showToast(message, type = 'info') {
+        const toastContainer = document.querySelector('.toast-container') || (() => {
+            const container = document.createElement('div');
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+            return container;
+        })();
+        
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        
+        const icon = type === 'success' ? 'check-circle' : 
+                     type === 'error' ? 'exclamation-circle' : 
+                     type === 'warning' ? 'exclamation-triangle' : 'info-circle';
+        
+        toast.innerHTML = `
+            <div class="toast-body">
+                <i class="fas fa-${icon}"></i> ${message}
+            </div>
+            <button class="toast-close">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        toastContainer.appendChild(toast);
+        
+        // Remove toast on close click
+        toast.querySelector('.toast-close').addEventListener('click', () => {
+            toast.remove();
+        });
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.remove();
+            }
+        }, 5000);
+    }
+
+    // Main DOM Content Loaded event
     document.addEventListener('DOMContentLoaded', function() {
         // Quick action cards animation
         const actionCards = document.querySelectorAll('.quick-action-card');
@@ -1059,16 +954,14 @@ function displayImportResults(results) {
         // Real-time activity updates
         const activityList = document.querySelector('.activity-list');
         if (activityList) {
-            // Listen for new activities (simulated)
             setInterval(() => {
-                // Check if there are new activities (would be from WebSocket in real app)
                 fetch('{{ url_for("admin.recent_activities") }}')
                     .then(response => response.json())
                     .then(data => {
                         // Update activity list if new activities exist
                         if (data.new_activities && data.new_activities.length > 0) {
                             // Add new activities to the list
-                            // Note: In a real app, you would update the DOM with new items
+                            console.log('New activities available');
                         }
                     })
                     .catch(error => console.error('Error checking activities:', error));
@@ -1087,6 +980,218 @@ function displayImportResults(results) {
         }
         
         setInterval(updateOnlineStatus, 60000); // Check every minute
+
+        // Export buttons
+        document.getElementById('exportDatabaseZip')?.addEventListener('click', function() {
+            window.location.href = '/admin/database/export';
+        });
+        
+        document.getElementById('exportDatabaseJson')?.addEventListener('click', function() {
+            window.location.href = '/admin/database/export/json';
+        });
+        
+        document.getElementById('exportDatabaseSingleCsv')?.addEventListener('click', function() {
+            window.location.href = '/admin/database/export/single-csv';
+        });
+
+        // Import Database Modal
+        const importModal = new bootstrap.Modal(document.getElementById('importDatabaseModal'));
+        
+        document.getElementById('importDatabaseBtn')?.addEventListener('click', function() {
+            importModal.show();
+        });
+        
+        document.getElementById('previewImportBtn')?.addEventListener('click', function() {
+            previewImport();
+        });
+        
+        document.getElementById('startImportBtn')?.addEventListener('click', function() {
+            startImport();
+        });
+        
+        document.getElementById('importDatabaseFile')?.addEventListener('change', function() {
+            document.getElementById('importPreview').style.display = 'none';
+            document.getElementById('importResults').style.display = 'none';
+        });
     });
+
+    // Preview Import Function
+    function previewImport() {
+        const fileInput = document.getElementById('importDatabaseFile');
+        const file = fileInput.files[0];
+        
+        if (!file) {
+            showToast('Please select a file to preview', 'warning');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        showToast('Previewing file...', 'info');
+        
+        fetch('/admin/database/import/preview', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayPreview(data.preview);
+                showToast('Preview loaded successfully', 'success');
+            } else {
+                showToast(data.message || 'Preview failed', 'error');
+            }
+        })
+        .catch(error => {
+            showToast('Error previewing file: ' + error, 'error');
+        });
+    }
+
+    // Display Preview Function
+    function displayPreview(preview) {
+        const previewDiv = document.getElementById('importPreview');
+        const contentDiv = previewDiv.querySelector('.preview-content');
+        
+        let html = `
+            <p><strong>File:</strong> ${preview.filename}</p>
+            <p><strong>Total Records:</strong> ${preview.total_records}</p>
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Table</th>
+                        <th>Records</th>
+                        <th>Columns</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        preview.tables.forEach(table => {
+            html += `
+                <tr>
+                    <td>${table.name}</td>
+                    <td>${table.records}</td>
+                    <td>${table.columns ? table.columns.join(', ') : 'N/A'}</td>
+                </tr>
+            `;
+        });
+        
+        html += '</tbody></table>';
+        
+        contentDiv.innerHTML = html;
+        previewDiv.style.display = 'block';
+    }
+
+    // Start Import Function
+    function startImport() {
+        const fileInput = document.getElementById('importDatabaseFile');
+        const file = fileInput.files[0];
+        
+        if (!file) {
+            showToast('Please select a file to import', 'warning');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('import_mode', document.getElementById('importMode').value);
+        formData.append('clear_existing', document.getElementById('clearExisting').checked);
+        
+        // Show progress
+        document.getElementById('importPreview').style.display = 'none';
+        document.getElementById('importProgress').style.display = 'block';
+        document.getElementById('importResults').style.display = 'none';
+        document.getElementById('startImportBtn').disabled = true;
+        document.getElementById('previewImportBtn').disabled = true;
+        
+        // Simulate progress
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += 5;
+            if (progress <= 90) {
+                document.getElementById('importProgressBar').style.width = progress + '%';
+                document.getElementById('importProgressBar').textContent = progress + '%';
+            }
+        }, 500);
+        
+        showToast('Importing database...', 'info');
+        
+        fetch('/admin/database/import', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            clearInterval(progressInterval);
+            document.getElementById('importProgressBar').style.width = '100%';
+            document.getElementById('importProgressBar').textContent = '100%';
+            
+            if (data.success) {
+                displayImportResults(data.results);
+                showToast(data.message, 'success');
+            } else {
+                document.getElementById('importProgress').style.display = 'none';
+                showToast(data.message || 'Import failed', 'error');
+            }
+            
+            document.getElementById('startImportBtn').disabled = false;
+            document.getElementById('previewImportBtn').disabled = false;
+        })
+        .catch(error => {
+            clearInterval(progressInterval);
+            document.getElementById('importProgress').style.display = 'none';
+            document.getElementById('startImportBtn').disabled = false;
+            document.getElementById('previewImportBtn').disabled = false;
+            showToast('Error importing database: ' + error, 'error');
+        });
+    }
+
+    // Display Import Results Function
+    function displayImportResults(results) {
+        document.getElementById('importProgress').style.display = 'none';
+        document.getElementById('importResults').style.display = 'block';
+        
+        const contentDiv = document.querySelector('#importResults .results-content');
+        
+        let html = `
+            <p><strong>Summary:</strong></p>
+            <ul>
+                <li>Tables Processed: ${results.tables_processed}</li>
+                <li>Records Created: ${results.records_created}</li>
+                <li>Records Updated: ${results.records_updated}</li>
+                <li>Records Skipped: ${results.records_skipped}</li>
+                <li>Errors: ${results.errors.length}</li>
+            </ul>
+        `;
+        
+        if (results.errors.length > 0) {
+            html += '<p><strong>Errors:</strong></p><ul>';
+            results.errors.forEach(error => {
+                html += `<li class="text-danger">${error}</li>`;
+            });
+            html += '</ul>';
+        }
+        
+        if (results.tables) {
+            html += '<p><strong>Table Details:</strong></p>';
+            html += '<table class="table table-sm"><thead><tr><th>Table</th><th>Created</th><th>Updated</th><th>Skipped</th></tr></thead><tbody>';
+            
+            for (const [table, data] of Object.entries(results.tables)) {
+                html += `
+                    <tr>
+                        <td>${table}</td>
+                        <td>${data.created || 0}</td>
+                        <td>${data.updated || 0}</td>
+                        <td>${data.skipped || 0}</td>
+                    </tr>
+                `;
+            }
+            
+            html += '</tbody></table>';
+        }
+        
+        contentDiv.innerHTML = html;
+    }
 </script>
 {% endblock %}
