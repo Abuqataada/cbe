@@ -85,6 +85,11 @@
 
 <!-- Results Table -->
 <div class="results-container">
+    <!-- Add this button in the student results list -->
+    <button class="btn btn-sm btn-outline-warning" onclick="resetStudentExam('{{ exam.id }}', '{{ student.id }}')">
+        <i class="fas fa-redo-alt"></i> Reset for Retake
+    </button>
+
     {% if results %}
     <div class="table-responsive">
         <table class="results-table">
@@ -565,6 +570,30 @@
 </style>
 
 <script>
+    function resetStudentExam(examId, studentId) {
+        if (confirm('Reset this student\'s exam session? They will be able to retake the exam.')) {
+            fetch(`/teacher/exams/reset-student/${examId}/${studentId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert(data.message || 'Error resetting student exam');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error resetting student exam');
+            });
+        }
+    }
+
     function exportToCSV() {
         // Create CSV content
         let csvContent = "Student Name,Admission Number,Class,Score,Percentage,Grade,Status\n";

@@ -1839,6 +1839,172 @@ def view_exam(exam_id):
                          total_questions=total_questions,
                          total_marks=total_marks)
 
+
+@teacher_bp.route('/exams/reopen/<exam_id>', methods=['POST'])
+@login_required
+@teacher_required
+def reopen_exam(exam_id):
+    """Reopen a completed exam for students to retake"""
+    try:
+        teacher = Teacher.query.filter_by(user_id=current_user.id).first_or_404()
+        exam = Exam.query.get_or_404(exam_id)
+        
+        # Verify ownership
+        if exam.teacher_id != teacher.id:
+            return jsonify({'success': False, 'message': 'Permission denied'}), 403
+        
+        # Check if exam is completed
+        if exam.status != 'completed':
+            return jsonify({
+                'success': False, 
+                'message': f'Exam is {exam.status}, not completed. Only completed exams can be reopened.'
+            }), 400
+        
+        data = request.get_json() or {}
+        new_status = data.get('new_status', 'active')
+        clear_previous_sessions = data.get('clear_previous_sessions', False)
+        
+        # Validate new status
+        if new_status not in ['active', 'scheduled']:
+            return jsonify({
+                'success': False,
+                'message': 'Invalid status. Choose "active" or "scheduled"'
+            }), 400
+        
+        # If clearing previous sessions
+        if clear_previous_sessions:
+            # Get all exam sessions
+            exam_sessions = ExamSession.query.filter_by(exam_id=exam_id).all()
+            
+            # Delete associated responses first (due to foreign key constraints)
+            for session in exam_sessions:
+                ExamResponse.query.filter_by(exam_session_id=session.id).delete()
+            
+            # Delete the sessions
+            ExamSession.query.filter_by(exam_id=exam_id).delete()
+            
+            # Also delete any existing analyses
+            StudentPerformanceAnalysis.query.filter_by(exam_id=exam_id).delete()
+            
+            deleted_count = len(exam_sessions)
+            session_message = f" Cleared {deleted_count} previous student sessions."
+        else:
+            # Option 2: Keep sessions but mark them as available for retake
+            # This would require adding a 'retake_allowed' field to ExamSession
+            # For now, we'll just keep them
+            session_message = " Previous sessions preserved. Students can still retake."
+        
+        # Update exam status
+        old_status = exam.status
+        exam.status = new_status
+        exam.updated_at = datetime.now(timezone.utc)
+        
+        # If setting to scheduled, ensure we have dates (use current time if not set)
+        if new_status == 'scheduled' and not exam.scheduled_start:
+            exam.scheduled_start = datetime.now(timezone.utc)
+            exam.scheduled_end = datetime.now(timezone.utc) + timedelta(days=7)  # Default 7 days
+        
+        # Log action
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action='REOPEN_EXAM',
+            table_name='exams',
+            record_id=exam_id,
+            details={
+                'exam_id': exam_id,
+                'old_status': old_status,
+                'new_status': new_status,
+                'clear_previous_sessions': clear_previous_sessions,
+                'exam_name': exam.name
+            },
+            ip_address=request.remote_addr
+        )
+        db.session.add(audit_log)
+        
+        db.session.commit()
+        
+        status_messages = {
+            'active': 'activated and available for students',
+            'scheduled': 'scheduled for a new date'
+        }
+        
+        return jsonify({
+            'success': True,
+            'message': f'Exam "{exam.name}" has been reopened and {status_messages.get(new_status, "updated")}.{session_message}',
+            'exam_status': exam.status,
+            'cleared_sessions': clear_previous_sessions
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 400
+    
+@teacher_bp.route('/exams/reset-student/<exam_id>/<student_id>', methods=['POST'])
+@login_required
+@teacher_required
+def reset_student_exam(exam_id, student_id):
+    """Reset a specific student's exam session to allow retake"""
+    try:
+        teacher = Teacher.query.filter_by(user_id=current_user.id).first_or_404()
+        exam = Exam.query.get_or_404(exam_id)
+        
+        # Verify ownership
+        if exam.teacher_id != teacher.id:
+            return jsonify({'success': False, 'message': 'Permission denied'}), 403
+        
+        # Verify student exists and is in the exam class
+        student = Student.query.get_or_404(student_id)
+        if student.current_class_id != exam.class_id:
+            return jsonify({
+                'success': False,
+                'message': 'Student is not in the exam class'
+            }), 400
+        
+        # Find existing exam session
+        exam_session = ExamSession.query.filter_by(
+            exam_id=exam_id,
+            student_id=student_id
+        ).first()
+        
+        if exam_session:
+            # Delete associated responses
+            ExamResponse.query.filter_by(exam_session_id=exam_session.id).delete()
+            
+            # Delete the session
+            db.session.delete(exam_session)
+        
+        # Also delete any analysis for this student and exam
+        StudentPerformanceAnalysis.query.filter_by(
+            exam_id=exam_id,
+            student_id=student_id
+        ).delete()
+        
+        # Log action
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action='RESET_STUDENT_EXAM',
+            table_name='exam_sessions',
+            details={
+                'exam_id': exam_id,
+                'student_id': student_id,
+                'exam_name': exam.name,
+                'student_name': f"{student.first_name} {student.last_name}"
+            },
+            ip_address=request.remote_addr
+        )
+        db.session.add(audit_log)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Exam session reset for {student.first_name} {student.last_name}. They can now retake the exam.'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 400
+    
 @teacher_bp.route('/exams/edit/<exam_id>', methods=['GET', 'POST'])
 @login_required
 @teacher_required

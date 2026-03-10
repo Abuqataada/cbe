@@ -294,6 +294,7 @@
     <!-- Sidebar -->
     <div>
         <!-- Exam Actions -->
+        <!-- Replace the exam actions section with this updated version -->
         <div class="content-card">
             <div class="card-header">
                 <i class="fas fa-cog"></i>
@@ -315,6 +316,10 @@
                 {% elif exam.status == 'scheduled' %}
                 <button class="btn btn-outline-success" onclick="activateExam('{{ exam.id }}')">
                     <i class="fas fa-play"></i> Activate Exam
+                </button>
+                {% elif exam.status == 'completed' %}
+                <button class="btn btn-outline-warning" onclick="showReopenModal('{{ exam.id }}')">
+                    <i class="fas fa-redo-alt"></i> Reopen Exam
                 </button>
                 {% endif %}
 
@@ -411,6 +416,76 @@
                 </div>
             </div>
             {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Reopen Exam Modal -->
+<div class="modal fade" id="reopenExamModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-redo-alt"></i>
+                    <span>Reopen Exam</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 1rem;">
+                    <strong>{{ exam.name }}</strong> is currently completed. How would you like to reopen it?
+                </div>
+                
+                <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); border-left: 4px solid #f59e0b; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <i class="fas fa-exclamation-triangle" style="color: #f59e0b;"></i>
+                        <strong style="color: #92400e;">Options:</strong>
+                    </div>
+                    <div style="color: #92400e; font-size: 0.85rem; line-height: 1.4;">
+                        Choose how you want to handle previous student sessions.
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="font-weight: 600; color: #475569; font-size: 0.9rem; margin-bottom: 0.5rem; display: block;">
+                        Set New Status:
+                    </label>
+                    <select class="form-select" id="reopen_status">
+                        <option value="active">Active (Start immediately)</option>
+                        <option value="scheduled">Scheduled (Set new date/time)</option>
+                    </select>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="clearPreviousSessions">
+                        <label class="form-check-label" for="clearPreviousSessions">
+                            <strong>Clear previous student sessions</strong>
+                        </label>
+                    </div>
+                    <div style="font-size: 0.8rem; color: #64748b; margin-top: 0.25rem; margin-left: 1.75rem;">
+                        If checked, all previous student attempts will be deleted, allowing them to start fresh.
+                        If unchecked, students can still retake but previous attempts remain in the system.
+                    </div>
+                </div>
+                
+                <div style="background: #f8fafc; border-radius: 8px; padding: 1rem;">
+                    <div style="font-weight: 600; color: #475569; margin-bottom: 0.5rem;">
+                        Current Sessions:
+                    </div>
+                    <ul style="margin: 0; padding-left: 1.5rem; color: #64748b;">
+                        <li>{{ exam_sessions|length }} student sessions recorded</li>
+                        <li>{{ exam_sessions|selectattr('status', 'equalto', 'completed')|list|length }} completed attempts</li>
+                        <li>Average score: {{ average_score|round(1) }}%</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" id="confirmReopen">
+                    <i class="fas fa-redo-alt"></i> Reopen Exam
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -882,6 +957,136 @@
 <script>
 let currentExamId = null;
 let publishExamModal = null;
+
+let reopenExamModal = null;
+let reopenExamId = null;
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Bootstrap modals
+    const modalElement = document.getElementById('publishExamModal');
+    if (modalElement) {
+        publishExamModal = new bootstrap.Modal(modalElement);
+    }
+    
+    const reopenModalElement = document.getElementById('reopenExamModal');
+    if (reopenModalElement) {
+        reopenExamModal = new bootstrap.Modal(reopenModalElement);
+    }
+    
+    // Setup event listener for confirm publish button
+    const confirmPublishBtn = document.getElementById('confirmPublish');
+    if (confirmPublishBtn) {
+        confirmPublishBtn.addEventListener('click', function() {
+            if (!currentExamId) return;
+            
+            const status = document.getElementById('exam_status').value;
+            
+            fetch(`/teacher/exams/publish/${currentExamId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ status: status })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (status === 'scheduled') {
+                        // Redirect to edit page to set schedule
+                        window.location.href = "{{ url_for('teacher.edit_exam', exam_id=0) }}".replace('0', currentExamId);
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    alert(data.message || 'Error publishing exam');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error publishing exam');
+            });
+        });
+    }
+    
+    // Setup event listener for confirm reopen button
+    const confirmReopenBtn = document.getElementById('confirmReopen');
+    if (confirmReopenBtn) {
+        confirmReopenBtn.addEventListener('click', function() {
+            if (!reopenExamId) return;
+            
+            const newStatus = document.getElementById('reopen_status').value;
+            const clearPreviousSessions = document.getElementById('clearPreviousSessions').checked;
+            
+            fetch(`/teacher/exams/reopen/${reopenExamId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    new_status: newStatus,
+                    clear_previous_sessions: clearPreviousSessions
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    reopenExamModal.hide();
+                    if (newStatus === 'scheduled') {
+                        // Redirect to edit page to set new schedule
+                        window.location.href = "{{ url_for('teacher.edit_exam', exam_id=0) }}".replace('0', reopenExamId);
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    alert(data.message || 'Error reopening exam');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error reopening exam');
+            });
+        });
+    }
+});
+
+function showReopenModal(examId) {
+    reopenExamId = examId;
+    if (reopenExamModal) {
+        reopenExamModal.show();
+    } else {
+        // Fallback: use confirm dialog
+        if (confirm('Reopen this exam for students to retake?')) {
+            reopenExamSimple(examId);
+        }
+    }
+}
+
+// Simple reopen without modal (as fallback)
+function reopenExamSimple(examId) {
+    fetch(`/teacher/exams/reopen/${examId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+            new_status: 'active',
+            clear_previous_sessions: false
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.message || 'Error reopening exam');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error reopening exam');
+    });
+}
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
