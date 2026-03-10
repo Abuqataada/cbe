@@ -150,11 +150,7 @@ def login():
             else:
                 # Failed login
                 user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
-                
-                if user.failed_login_attempts >= 5:
-                    user.locked_until = now + timedelta(minutes=30)
-                    flash('Account locked due to multiple failed attempts. Please try again in 30 minutes.', 'danger')
-                
+
                 # Log failed attempt
                 login_attempt = LoginAttempt(
                     username=username,

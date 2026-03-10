@@ -1830,6 +1830,37 @@ def view_exam(exam_id):
     total_questions = len(questions)
     total_marks = sum(q['marks'] for q in questions) if questions else exam.total_marks
     
+    # Calculate average score safely
+    average_score = 0
+    if exam_sessions:
+        total_scores = 0
+        session_count = 0
+        
+        for session in exam_sessions:
+            # Get responses for this session
+            responses = ExamResponse.query.filter_by(exam_session_id=session.id).all()
+            
+            if responses:
+                session_score = 0
+                for response in responses:
+                    if response.is_correct:
+                        exam_question = ExamQuestion.query.get(response.exam_question_id)
+                        if exam_question:
+                            session_score += exam_question.marks or 0
+                
+                total_scores += session_score
+                session_count += 1
+        
+        if session_count > 0:
+            average_score = (total_scores / session_count) / (total_marks / 100) if total_marks > 0 else 0
+        else:
+            average_score = 0
+    else:
+        average_score = 0
+    
+    # Ensure average_score is a float
+    average_score = float(average_score)
+    
     return render_template('teacher/view_exam.html',
                          teacher=teacher,
                          exam=exam,
@@ -1837,7 +1868,8 @@ def view_exam(exam_id):
                          exam_sessions=exam_sessions,
                          students=students,
                          total_questions=total_questions,
-                         total_marks=total_marks)
+                         total_marks=total_marks,
+                         average_score=average_score)  # Make sure this is passed
 
 
 @teacher_bp.route('/exams/reopen/<exam_id>', methods=['POST'])
@@ -1889,9 +1921,7 @@ def reopen_exam(exam_id):
             deleted_count = len(exam_sessions)
             session_message = f" Cleared {deleted_count} previous student sessions."
         else:
-            # Option 2: Keep sessions but mark them as available for retake
-            # This would require adding a 'retake_allowed' field to ExamSession
-            # For now, we'll just keep them
+            # Keep previous sessions but allow new attempts
             session_message = " Previous sessions preserved. Students can still retake."
         
         # Update exam status
@@ -1924,21 +1954,20 @@ def reopen_exam(exam_id):
         db.session.commit()
         
         status_messages = {
-            'active': 'activated and available for students',
+            'active': 'activated and available for students immediately',
             'scheduled': 'scheduled for a new date'
         }
         
         return jsonify({
             'success': True,
             'message': f'Exam "{exam.name}" has been reopened and {status_messages.get(new_status, "updated")}.{session_message}',
-            'exam_status': exam.status,
-            'cleared_sessions': clear_previous_sessions
+            'exam_status': exam.status
         })
         
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 400
-    
+        
 @teacher_bp.route('/exams/reset-student/<exam_id>/<student_id>', methods=['POST'])
 @login_required
 @teacher_required
@@ -2004,7 +2033,7 @@ def reset_student_exam(exam_id, student_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 400
-    
+        
 @teacher_bp.route('/exams/edit/<exam_id>', methods=['GET', 'POST'])
 @login_required
 @teacher_required
